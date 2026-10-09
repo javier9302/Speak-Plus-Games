@@ -1,0 +1,108 @@
+/* City Run: map colours (brand tokens come from styles.css) */
+:root{--road:#FFFFFF; --road-edge:#E4DFD4; --tree:#9DB4E0; --place:#F7F4EE}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--road:#2C3A63; --road-edge:#3B4B7C; --tree:#2C3A63; --place:#1A2546}}
+:root[data-theme="dark"]{--road:#2C3A63; --road-edge:#3B4B7C; --tree:#2C3A63; --place:#1A2546}
+
+/* Hub card art */
+.city-art{position:absolute;inset:0;width:100%;height:100%}
+.city-art-road{fill:none;stroke:var(--road);stroke-width:26}
+.city-art-route{fill:none;stroke:var(--accent);stroke-width:5;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:2 11}
+.city-art-a{fill:var(--road);stroke:var(--fg);stroke-width:4}
+.city-art-b{fill:var(--accent)}
+.city-art-la,.city-art-lb{font-weight:700;font-size:16px;text-anchor:middle;fill:var(--fg)}
+.city-art-lb{fill:#fff}
+.city-art-car{fill:var(--primary);stroke:var(--field);stroke-width:3}
+.city-art-arrow{fill:var(--primary-fg)}
+
+/* Setup */
+.cr-steps{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:8px;font-size:15px}
+.cr-steps kbd{font-size:13px}
+
+/* Game: bar → team chips → map stage | side panel */
+#view-city-game{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px);z-index:10}
+.cr-main{flex:1;min-height:0;display:flex;gap:14px;padding:0 16px 16px}
+.cr-stage{position:relative;flex:1;min-width:0;min-height:0;border-radius:18px;background:var(--field);overflow:hidden}
+.cr-map{position:absolute;left:10px;top:10px;width:calc(100% - 20px);height:calc(100% - 20px);font-family:var(--f-display)}
+.cr-stage .overlay.cr-solid{background:var(--bg);backdrop-filter:none}
+.cr-side{width:clamp(230px,24vw,330px);display:flex;flex-direction:column;gap:12px;overflow:auto}
+.cr-box{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.cr-team{font-weight:700;font-size:clamp(18px,2vw,24px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cr-time{font-weight:700;font-size:clamp(36px,4.4vw,60px);line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.cr-pen{font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums;min-height:1.5em}
+.cr-tasks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;font-weight:500;font-size:clamp(16px,1.7vw,20px)}
+.cr-tasks li{display:flex;align-items:center;gap:10px}
+.cr-check{flex:none;width:22px;height:22px;border-radius:7px;border:2px solid var(--line);display:inline-flex;align-items:center;justify-content:center;font-size:14px;color:#fff}
+.cr-tasks li.done{color:var(--muted);text-decoration:line-through}
+.cr-tasks li.done .cr-check{background:var(--good);border-color:var(--good)}
+.cr-tasks li.done .cr-check::before{content:"✓"}
+.cr-tasks li.now{font-weight:700}
+.cr-tasks li.now .cr-check{border-color:var(--fg)}
+.cr-tasks li.more{color:var(--muted);font-size:.85em;padding-left:32px}
+.cr-fuel{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--muted)}
+.cr-fuel b{color:var(--fg);font-size:20px;font-variant-numeric:tabular-nums;min-width:1.4em;text-align:right}
+.cr-fuel-bar{flex:1;height:12px;border-radius:999px;background:var(--bg);border:1px solid var(--line);overflow:hidden}
+.cr-fuel-bar i{display:block;height:100%;background:var(--good);transition:width .16s}
+.cr-fuel-bar.low i{background:var(--accent)}
+.cr-brief{margin:0;font-size:clamp(16px,1.8vw,20px);text-wrap:balance}
+.cr-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.cr-pad .icon-btn{width:auto;height:52px;font-size:20px;font-weight:700;touch-action:manipulation}
+.cr-pad .cr-pad-wide{grid-column:1 / -1;font-size:15px}
+
+/* Map pieces (SVG, 100 units per step) */
+.cr-tile{fill:var(--road);stroke:var(--road-edge);stroke-width:2}
+.cr-tree{fill:var(--tree);opacity:.6}
+.cr-place rect{fill:var(--place);stroke:var(--line);stroke-width:3}
+.cr-place.stop rect{stroke:var(--accent);stroke-width:8}
+.cr-place.done rect{stroke:var(--good);stroke-width:8}
+.cr-icon{font-size:72px;text-anchor:middle}
+.cr-name{font-size:25px;font-weight:700;text-anchor:middle;fill:var(--fg)}
+.cr-door{stroke:var(--fg);stroke-width:14;stroke-linecap:round}
+.cr-place.stop .cr-door{stroke:var(--accent)}
+.cr-place.done .cr-door{stroke:var(--good)}
+.cr-ring{display:none;fill:none;stroke:var(--accent);stroke-width:6;stroke-dasharray:14 10}
+.cr-ring.on{display:block}
+.cr-tile.works{fill:var(--accent-soft);stroke:var(--accent);stroke-width:4;stroke-dasharray:12 9}
+.cr-cone{font-size:54px;text-anchor:middle}
+.cr-sleepers{fill:none;stroke:var(--road-edge);stroke-width:48;stroke-dasharray:9 16}
+.cr-rails{fill:none;stroke:var(--muted);stroke-width:5}
+#cr-train rect{fill:var(--primary);stroke:var(--road);stroke-width:5}
+#cr-train path{fill:none;stroke:var(--sky);stroke-width:22;stroke-linecap:round;stroke-dasharray:34 26}
+.cr-mark text{font-size:44px;font-weight:700;text-anchor:middle}
+.cr-a circle{fill:var(--road);stroke:var(--fg);stroke-width:6}
+.cr-a text{fill:var(--fg)}
+.cr-b circle{fill:var(--accent)}
+.cr-b text{fill:#fff}
+.cr-light rect{fill:none;stroke:var(--good);stroke-width:8}
+.cr-light circle{fill:var(--good);stroke:var(--road);stroke-width:4}
+.cr-light path{stroke:#fff;stroke-width:6;stroke-linecap:round;opacity:0}
+.cr-light.red rect{stroke:var(--accent)}
+.cr-light.red circle{fill:var(--accent)}
+.cr-light.red path{opacity:1}
+.cr-light.warn rect{stroke:var(--accent);animation:crblink .35s steps(1) infinite}
+.cr-light.warn circle{fill:var(--accent);animation:crblink .35s steps(1) infinite}
+@keyframes crblink{50%{opacity:.15}}
+#cr-car{transition:transform .16s ease-out}
+.cr-car-body circle{fill:var(--primary);stroke:var(--road);stroke-width:5}
+.cr-car-body path{fill:var(--primary-fg)}
+.cr-car-body.bump{animation:crbump .3s}
+@keyframes crbump{30%{transform:translateY(-16px)}65%{transform:translateY(6px)}}
+
+/* Messages over the map */
+.cr-toast{position:absolute;left:50%;top:16px;transform:translateX(-50%);z-index:4;padding:10px 20px;border-radius:999px;font-weight:700;font-size:clamp(17px,2.2vw,26px);white-space:nowrap;background:var(--good);color:#fff}
+.cr-toast.bad{background:var(--accent)}
+.cr-code{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);z-index:3;background:var(--surface);border:2px solid var(--accent);border-radius:18px;padding:12px 18px;display:flex;flex-direction:column;align-items:center;gap:8px;max-width:calc(100% - 24px)}
+.cr-code.top{bottom:auto;top:18px}
+.cr-q{font-weight:700;font-size:clamp(18px,2.4vw,30px);text-align:center;text-wrap:balance}
+.cr-letters{display:flex;gap:6px}
+.cr-letters span{width:1.5em;height:1.7em;font-size:clamp(26px,3.6vw,48px);font-weight:700;border-radius:10px;background:var(--bg);border:2px solid var(--line);display:inline-flex;align-items:center;justify-content:center}
+.cr-letters span.ok{background:var(--good);border-color:var(--good);color:#fff}
+.cr-letters span.next{border-color:var(--fg)}
+
+@media (max-width:780px){
+  .cr-main{flex-direction:column;padding:0 10px 10px}
+  .cr-stage{min-height:46vh}
+  .cr-side{width:auto;flex-direction:row;flex-wrap:wrap;align-items:flex-start;overflow:visible}
+  .cr-box{flex:1 1 150px}
+  .cr-pad{flex:1 1 100%}
+}
+@media (prefers-reduced-motion:reduce){#cr-car{transition:none}.cr-car-body.bump{animation-duration:.01s}.cr-light.warn rect,.cr-light.warn circle{animation:none}}
