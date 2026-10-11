@@ -1,0 +1,45 @@
+{
+  "id": "the-rangers-test",
+  "title": "The ranger's test",
+  "story": "The ranger wants to hear you speak before giving up the crystals. Answer out loud, to the teacher.",
+  "zone": "forest",
+  "minutes": 25,
+  "goal": {
+    "label": "Crystals",
+    "items": {
+      "crystal": 3
+    },
+    "restore": "forest-mill"
+  },
+  "stations": [
+    {
+      "at": "f-tablet-5",
+      "filter": {
+        "type": "code",
+        "level": "group"
+      }
+    },
+    {
+      "at": "f-tablet-2",
+      "filter": {
+        "type": "code",
+        "level": "group"
+      }
+    },
+    {
+      "at": "f-tablet-3",
+      "filter": {
+        "type": "choice",
+        "level": "group"
+      }
+    },
+    {
+      "at": "f-tablet-4",
+      "filter": {
+        "type": "code",
+        "level": "group"
+      }
+    }
+  ],
+  "monster": "group-setting"
+}

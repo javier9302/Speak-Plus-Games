@@ -1,0 +1,45 @@
+{
+  "id": "the-lost-crystals",
+  "title": "The lost crystals",
+  "story": "The forest lost its light. Three crystals are hidden among the trees: find them for the ranger.",
+  "zone": "forest",
+  "minutes": 25,
+  "goal": {
+    "label": "Crystals",
+    "items": {
+      "crystal": 3
+    },
+    "restore": "forest-cabin"
+  },
+  "stations": [
+    {
+      "at": "f-tablet-1",
+      "filter": {
+        "type": "choice",
+        "level": "group"
+      }
+    },
+    {
+      "at": "f-tablet-2",
+      "filter": {
+        "type": "typed",
+        "level": "group"
+      }
+    },
+    {
+      "at": "f-tablet-3",
+      "filter": {
+        "type": "spelling",
+        "level": "group"
+      }
+    },
+    {
+      "at": "f-tablet-4",
+      "filter": {
+        "type": "code",
+        "level": "group"
+      }
+    }
+  ],
+  "monster": "group-setting"
+}

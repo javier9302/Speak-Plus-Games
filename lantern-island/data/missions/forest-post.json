@@ -1,0 +1,45 @@
+{
+  "id": "forest-post",
+  "title": "Forest post",
+  "story": "Letters for the forest people! Carry them to the right hands, and read what the ranger sends.",
+  "zone": "forest",
+  "minutes": 25,
+  "goal": {
+    "label": "Crystals",
+    "items": {
+      "crystal": 3
+    },
+    "restore": "forest-well"
+  },
+  "stations": [
+    {
+      "at": "f-tablet-1",
+      "filter": {
+        "type": "courier",
+        "level": "group"
+      }
+    },
+    {
+      "at": "f-tablet-2",
+      "filter": {
+        "type": "typed",
+        "level": "group"
+      }
+    },
+    {
+      "at": "f-tablet-3",
+      "filter": {
+        "type": "spelling",
+        "level": "group"
+      }
+    },
+    {
+      "at": "f-tablet-5",
+      "filter": {
+        "type": "link",
+        "level": "group"
+      }
+    }
+  ],
+  "monster": "group-setting"
+}
