@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Word Drop · Speak Plus Games</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;700&family=Zen+Kaku+Gothic+New:wght@500;700&display=swap">
+<link rel="stylesheet" href="../shared/styles.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="plus" viewBox="0 0 40 40"><g transform="rotate(12 20 20)"><line x1="20" y1="6" x2="20" y2="34" stroke="#E8483B" stroke-width="8.5" stroke-linecap="round"/><line x1="6" y1="20" x2="34" y2="20" stroke="#E8483B" stroke-width="8.5" stroke-linecap="round"/></g></symbol>
+    <symbol id="heart" viewBox="0 0 24 24"><path d="M12 20.6 4.3 13.2a4.9 4.9 0 0 1 7-6.9l.7.7.7-.7a4.9 4.9 0 0 1 7 6.9z"/></symbol>
+  </defs>
+</svg>
+
+<!-- SETUP -->
+<section id="view-setup">
+  <div class="wrap">
+    <button class="link-back" id="back-hub" type="button">← All games</button>
+    <div class="setup-head">
+      <div><span class="eyebrow">Game setup</span><h1>Word Drop</h1></div>
+      <div class="logo" aria-label="Speak Plus">speak<svg><use href="#plus"/></svg></div>
+    </div>
+    <div class="setup">
+      <div class="panel">
+        <div class="field-group">
+          <div class="row-between"><label for="words">Words</label><span class="count" id="word-count"></span></div>
+          <p class="hint">Separate with commas (, or 、) or new lines. Words are shared out equally, so every team gets the same number and never sees another team's words.</p>
+          <textarea id="words" spellcheck="false"></textarea>
+        </div>
+        <div class="chips" aria-label="Example lists">
+          <button class="chip-btn" type="button" data-sample="jp">Example: Japanese → English</button>
+          <button class="chip-btn" type="button" data-sample="cap">Example: Countries → capitals</button>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="field-group">
+          <div class="row-between"><label for="teams">Teams or students</label><span class="count" id="team-count"></span></div>
+          <p class="hint">Up to 8, one per line or separated by commas. One name plays solo survival.</p>
+          <p class="hint" id="split-note"></p>
+          <textarea id="teams" spellcheck="false"></textarea>
+        </div>
+        <fieldset><span class="legend">Lives</span><div class="seg" id="seg-lives"></div></fieldset>
+        <fieldset><span class="legend">Falling speed</span><div class="seg" id="seg-speed"></div><span class="speed-note" id="speed-note"></span></fieldset>
+        <fieldset><span class="legend">Words on screen at once</span><div class="seg" id="seg-max"></div><span class="hint">If students take long, extra words keep dropping up to this number.</span></fieldset>
+        <label class="switch"><input type="checkbox" id="sound"> Sound effects</label>
+        <div class="start-row">
+          <p class="error" id="setup-error" role="alert" hidden></p>
+          <button class="btn btn-primary btn-big" id="start" type="button">Start game</button>
+          <span class="keyhint"><kbd>Space</kbd> start / pause · tap a word when the answer is right</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- GAME -->
+<section id="view-game" hidden>
+  <div class="bar">
+    <div class="logo">speak<svg><use href="#plus"/></svg></div>
+    <span class="progress" id="progress"></span>
+    <span class="spacer"></span>
+    <button class="icon-btn" id="btn-full" type="button" aria-label="Full screen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+    <button class="icon-btn" id="btn-pause" type="button" aria-label="Pause"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 5v14M15 5v14"/></svg></button>
+  </div>
+  <div class="board" id="board"></div>
+  <div class="field" id="field">
+    <div class="floor" id="floor"></div>
+    <div class="overlay" id="overlay" hidden><div class="card" id="card"></div></div>
+  </div>
+</section>
+
+<script src="word-drop.js"></script>
+</body>
+</html>

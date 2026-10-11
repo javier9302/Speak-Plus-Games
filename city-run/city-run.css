@@ -3,17 +3,6 @@
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--road:#2C3A63; --road-edge:#3B4B7C; --tree:#2C3A63; --place:#1A2546}}
 :root[data-theme="dark"]{--road:#2C3A63; --road-edge:#3B4B7C; --tree:#2C3A63; --place:#1A2546}
 
-/* Hub card art */
-.city-art{position:absolute;inset:0;width:100%;height:100%}
-.city-art-road{fill:none;stroke:var(--road);stroke-width:26}
-.city-art-route{fill:none;stroke:var(--accent);stroke-width:5;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:2 11}
-.city-art-a{fill:var(--road);stroke:var(--fg);stroke-width:4}
-.city-art-b{fill:var(--accent)}
-.city-art-la,.city-art-lb{font-weight:700;font-size:16px;text-anchor:middle;fill:var(--fg)}
-.city-art-lb{fill:#fff}
-.city-art-car{fill:var(--primary);stroke:var(--field);stroke-width:3}
-.city-art-arrow{fill:var(--primary-fg)}
-
 /* Setup */
 .cr-steps{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:8px;font-size:15px}
 .cr-steps kbd{font-size:13px}

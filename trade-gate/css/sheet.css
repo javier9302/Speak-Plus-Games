@@ -1,0 +1,63 @@
+/* Printable teacher sheet. Black and white friendly: outlines, lines and bold
+   text only. No filled backgrounds anywhere, so nothing is lost on a
+   printer that skips background colors. */
+
+* { background: none !important; box-sizing: border-box; }
+
+body {
+  margin: 0 auto;
+  padding: 16px;
+  max-width: 820px;
+  color: #000;
+  font: 14px/1.4 Georgia, "Times New Roman", serif;
+}
+
+h1 { margin: 0 0 4px; font-size: 22px; }
+h2 { margin: 0; font-size: 17px; }
+h3 { margin: 10px 0 2px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; }
+h2 small, h3 small { font-weight: normal; text-transform: none; letter-spacing: 0; }
+p { margin: 4px 0; }
+ul, ol { margin: 2px 0; padding-left: 22px; }
+
+.level { page-break-after: always; break-after: page; margin-bottom: 32px; }
+.level:last-child { page-break-after: auto; break-after: auto; }
+.level > header { border-bottom: 3px double #000; padding-bottom: 6px; margin-bottom: 10px; }
+
+table.roles { border-collapse: collapse; width: 100%; margin-bottom: 12px; }
+table.roles th, table.roles td { border: 1px solid #000; padding: 3px 8px; text-align: left; }
+
+.gate {
+  border: 2px solid #000;
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin: 10px 0;
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+.gate-head { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #000; padding-bottom: 4px; margin-bottom: 6px; }
+.code { margin: 0; font-size: 14px; }
+.code strong {
+  font: bold 22px "Courier New", monospace;
+  letter-spacing: 0.15em;
+  border: 2px dashed #000;
+  padding: 0 8px;
+  margin-left: 6px;
+}
+.question { font-size: 17px; font-weight: bold; margin: 6px 0; }
+
+.hints { list-style: none; padding-left: 0; }
+.hints li { margin: 3px 0; }
+.box { display: inline-block; width: 12px; height: 12px; border: 1.5px solid #000; margin-right: 8px; vertical-align: -1px; }
+
+.notes { page-break-inside: avoid; break-inside: avoid; }
+.lines { height: 96px; background-image: none; border-top: 1px solid #000; }
+.lines::before, .lines::after { content: ""; display: block; height: 32px; border-bottom: 1px solid #000; }
+
+.no-print { font-family: system-ui, sans-serif; }
+.no-print button { font: inherit; padding: 4px 14px; border: 2px solid #000; border-radius: 6px; cursor: pointer; margin-right: 10px; }
+a { color: #000; }
+
+@media print {
+  body { padding: 0; max-width: none; }
+  .no-print { display: none; }
+}

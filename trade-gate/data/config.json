@@ -1,0 +1,121 @@
+{
+  "title": "TRADE GATE",
+  "subtitle": "Talk. Trade. Escape together!",
+
+  "resourceOrder": ["gold", "wood", "gems", "gears"],
+  "resources": {
+    "gold": { "name": "gold" },
+    "wood": { "name": "wood" },
+    "gems": { "name": "gems" },
+    "gears": { "name": "gears" }
+  },
+
+  "players": [
+    { "id": "P1", "name": "RED", "color": "#e0485f", "character": "cat" },
+    { "id": "P2", "name": "BLUE", "color": "#41a6f6", "character": "robot" },
+    { "id": "P3", "name": "GREEN", "color": "#38b764", "character": "sprout" },
+    { "id": "P4", "name": "YELLOW", "color": "#ffcd75", "character": "king" }
+  ],
+
+  "levels": ["level-1", "level-2", "level-3"],
+
+  "settings": {
+    "timerEnabled": false,
+    "timerSeconds": 600,
+    "phraseHints": true,
+    "hintCostsResource": false,
+    "pickupRespawnSeconds": 20,
+    "switchHoldSeconds": 3,
+    "muted": false
+  },
+
+  "numbers": ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"],
+
+  "phrases": {
+    "receiver": [
+      "Do you have {res}?",
+      "I need {n} {res}, please.",
+      "Can you give me the {res}, please?"
+    ],
+    "giver": [
+      "Yes, I do. Here you are.",
+      "How many do you need?",
+      "I'll give you {res} if you help me."
+    ],
+    "general": [
+      "Can we have a hint, please?",
+      "Can you say that again, please?",
+      "Let's count down: three, two, one!"
+    ]
+  },
+
+  "text": {
+    "pressToJoin": "PRESS A",
+    "toJoin": "to join",
+    "joinKeys": "Controller: A   |   Keyboard 1: E   |   Keyboard 2: ENTER",
+    "needPlayers": "2 to 4 players. Everyone wins together!",
+    "pressStart": "Press START or SPACE to begin",
+    "get": "GET",
+    "use": "USE",
+
+    "chooseLevel": "CHOOSE A LEVEL",
+    "playersN": "{n} players",
+    "adapted": "made for {n} players - adapted for {m}",
+    "extra": "made for {n} players - extra players can help and talk",
+    "notReady": "this level is not ready for {m} players",
+    "selectHelp": "UP / DOWN to choose   |   A to play   |   ESC = back",
+
+    "goal": "GOAL",
+    "gates": "GATES",
+    "exitOpen": "EXIT OPEN! Everyone go to the exit!",
+    "extraTime": "EXTRA TIME",
+
+    "cantCollect": "Only {who} can pick up {res}!",
+    "cantSpend": "Only {who} can use {res}!",
+    "needRes": "I need {res}!",
+    "gateNotYours": "This gate is for {who}.",
+    "needFirst": "{who} needs {n} {res} first!",
+    "nothingToTrade": "Nothing to trade!",
+    "traded": "Trade done!",
+    "holdTogether": "Stand on both switches together!",
+    "barsOpen": "Open!",
+    "hintCost": "Hint: -1 {res}",
+
+    "gateTitle": "TRADE GATE {n}",
+    "asks": "{who} asks",
+    "answers": "{who} answers",
+    "minSentences": "Use {n} sentences or more.",
+    "openBonus": "Long answer = bonus gem!",
+    "callTeacher": "CALL THE TEACHER!",
+    "enterCode": "Enter the code",
+    "wrongCode": "Wrong code!",
+    "hint": "HINT {n}",
+    "youSay": "YOU CAN SAY:",
+    "describes": "{who} describes",
+    "chooses": "{who} chooses",
+    "describerLook": "{a}: hold A to see the secret card. Describe it in English!",
+    "pickerPick": "{b}: listen, choose with LEFT / RIGHT, then press A.",
+    "secret": "SECRET CARD",
+    "lookAway": "{b}: LOOK AWAY!",
+    "pickWrong": "Not that one. Ask more questions!",
+    "pickRight": "Correct card!",
+
+    "paused": "PAUSED",
+    "resume": "Press START or ESC to continue",
+    "disconnected": "{who}: controller disconnected. Reconnect it, or press A on another controller.",
+    "reconnected": "Controller is back!",
+    "controls": "A: pick up / use    B: ask at a gate    X: my role    Y: phrases",
+
+    "iGet": "I GET",
+    "iUse": "I USE",
+    "giveTo": "I give {res} to {who}.",
+    "getFrom": "I get {res} from {who}.",
+
+    "winTitle": "YOU DID IT - TOGETHER!",
+    "statTime": "Time",
+    "statTrades": "Trades",
+    "statHints": "Hints used",
+    "statBonus": "Bonus gems",
+    "winNext": "Press A to continue"
+  }
+}

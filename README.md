@@ -1,24 +1,35 @@
 # Speak Plus Games
 
 Juegos y actividades para profesores de inglés, con la marca de Speak Plus (スピークプラス).
-Juegos: **Word Drop** y **City Run**.
+Juegos: **Word Drop**, **City Run** y **Trade Gate**.
 
 ## Cómo abrirlo
 
 No necesita instalación ni servidor. Abre `index.html` en el navegador.
 
+**Trade Gate** es la excepción: necesita un servidor local. Usa Live Server, o ejecuta `python3 -m http.server` en esta carpeta y abre <http://localhost:8000>.
+
 En VS Code también puedes usar la extensión **Live Server** (clic derecho en `index.html` → *Open with Live Server*) para que la página se recargue sola al guardar cambios.
 
 ## Estructura
 
+Una carpeta por juego. Cada juego es su propia página; el menú solo enlaza a ellas.
+
 ```
-speak-plus-games/
-├── index.html          Pantallas: menú de juegos, configuración y juego
-├── css/styles.css      Estilos, colores de marca y modo oscuro
-├── css/city-run.css    Estilos de City Run
-├── js/word-drop.js     Toda la lógica de Word Drop
-├── js/city-run.js      Toda la lógica de City Run
-├── CLAUDE.md           Contexto del proyecto para Claude Code
+Games/
+├── index.html              Menú de juegos (una tarjeta por juego)
+├── shared/
+│   ├── styles.css          Marca, modo oscuro y piezas comunes (botones, configuración, marcador, tarjetas)
+│   └── hub.css             Solo el menú: dibujos de las tarjetas
+├── word-drop/
+│   ├── index.html          Configuración y juego
+│   └── word-drop.js        Toda la lógica de Word Drop
+├── city-run/
+│   ├── index.html          Configuración y juego
+│   ├── city-run.js         Toda la lógica de City Run
+│   └── city-run.css        Estilos de City Run
+├── trade-gate/             Trade Gate: juego aparte, con su propio README, css/, js/, data/ y tests/
+├── CLAUDE.md               Contexto del proyecto para Claude Code
 └── README.md
 ```
 
@@ -53,3 +64,7 @@ La configuración se guarda en el navegador (localStorage).
   - **Quiz doors**: en cada puerta el navegador hace una pregunta y el conductor escribe la respuesta. Necesita teclado.
 - Cada equipo juega la misma ciudad en espejo. Cada ronda genera una ciudad nueva.
 - En un portátil conviene usar un teclado aparte o extender la pantalla, para que el conductor no vea el mapa.
+
+## Trade Gate
+
+Juego cooperativo para 2 a 4 alumnos en una pantalla. Cada jugador recoge un recurso que no puede usar, así que tienen que encontrarse en una **Trade Gate**, responder una pregunta en inglés y pedir el código al profesor. Reglas, controles, panel del profesor y cómo editar preguntas y niveles: ver `trade-gate/README.md`.

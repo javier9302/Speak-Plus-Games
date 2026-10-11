@@ -1,0 +1,6 @@
+{
+  "name": "trade-gate",
+  "private": true,
+  "type": "module",
+  "description": "No dependencies and no build step. This file only tells node that the js files are ES modules, for `node tests/run.mjs`."
+}

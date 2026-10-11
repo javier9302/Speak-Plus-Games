@@ -1,0 +1,94 @@
+{
+  "id": "level-2",
+  "name": "The Clock Tower",
+  "description": "A circle of trades and a two-person switch.",
+  "players": 3,
+
+  "map": [
+    "########################",
+    "#..o......#......#.....#",
+    "#.p.......#.d..d.#.....#",
+    "#.p..1....B......#.EEE.#",
+    "#.....o...#.d..d.#.EEE.#",
+    "#.p.......########.EEE.#",
+    "#.p..S.......S...X.....#",
+    "#................#.....#",
+    "#..C...2....M....#.....#",
+    "#.o......w..w..w.#.....#",
+    "########################"
+  ],
+
+  "goal": {
+    "chest": { "gold": 2, "gems": 2 },
+    "machine": { "wood": 2 }
+  },
+
+  "variants": {
+    "4": {
+      "gates": {
+        "g2": {
+          "transfers": [
+            { "from": "P2", "to": "P3", "give": { "wood": 2 } },
+            { "from": "P3", "to": "P4", "give": { "gems": 2 } }
+          ],
+          "card": { "asker": "P4" }
+        }
+      }
+    }
+  },
+
+  "gates": [
+    {
+      "id": "g1",
+      "type": "question",
+      "from": "P1",
+      "to": "P2",
+      "give": { "gold": 2 },
+      "card": {
+        "asker": "P1",
+        "answerer": "P2",
+        "question": "What are you going to do this weekend?",
+        "minSentences": 2
+      },
+      "teacher": {
+        "code": "7305",
+        "accepted": [
+          "Two full sentences about the future (going to / will).",
+          "I'm going to visit my grandmother. We are going to cook together."
+        ],
+        "hints": [
+          "Think about the future.",
+          "Start with 'I'm going to ...'",
+          "I'm going to play games with my friends."
+        ]
+      }
+    },
+    {
+      "id": "g2",
+      "type": "open",
+      "transfers": [
+        { "from": "P2", "to": "P3", "give": { "wood": 2 } },
+        { "from": "P3", "to": "P1", "give": { "gems": 2 } }
+      ],
+      "card": {
+        "asker": "P3",
+        "answerer": "P2",
+        "prompt": "Talk about your favorite food. Why do you like it? Then ask your partners about theirs.",
+        "minSentences": 3
+      },
+      "teacher": {
+        "code": "1964",
+        "accepted": [
+          "Everyone at the gate says at least one full sentence.",
+          "A reason with 'because': I like curry because it is spicy.",
+          "Bonus gem: a longer answer, or a follow-up question to a partner."
+        ],
+        "hints": [
+          "Say what you like, and why.",
+          "Use 'My favorite food is ... because ...'",
+          "My favorite food is pizza because I love cheese. How about you?"
+        ]
+      }
+    }
+  ]
+}

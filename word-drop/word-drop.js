@@ -12,8 +12,9 @@ let S = {...DEFAULTS};
 try { Object.assign(S, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch {}
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch {} };
 
-const views = {hub:$('#view-hub'), setup:$('#view-setup'), game:$('#view-game')};
+const views = {setup:$('#view-setup'), game:$('#view-game')};
 function show(name){
+  if (name === 'hub') { location.href = '../index.html'; return; }
   for (const k in views) views[k].hidden = k !== name;
   if (name !== 'game') releaseWake();
   window.scrollTo(0,0);
@@ -59,9 +60,7 @@ document.querySelectorAll('[data-sample]').forEach(b => b.addEventListener('clic
 }));
 updateCounts();
 
-$('#open-drop').addEventListener('click', () => show('setup'));
 $('#back-hub').addEventListener('click', () => show('hub'));
-if (location.hash === '#word-drop') show('setup');
 
 /* ---------- Sound ---------- */
 let ac;

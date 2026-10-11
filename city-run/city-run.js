@@ -53,8 +53,9 @@ try { Object.assign(S, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch {
 if (!(S.mission >= 0 && S.mission <= MIX)) S.mission = 0;
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch {} };
 
-const views = {hub:$('#view-hub'), setup:$('#view-city-setup'), game:$('#view-city-game')};
+const views = {setup:$('#view-city-setup'), game:$('#view-city-game')};
 function show(name){
+  if (name === 'hub') { location.href = '../index.html'; return; }
   for (const k in views) views[k].hidden = k !== name;
   if (name !== 'game') releaseWake();
   window.scrollTo(0,0);
@@ -93,9 +94,7 @@ teamsEl.addEventListener('input', () => { S.teams = teamsEl.value; save(); updat
 $('#cr-sound').addEventListener('change', e => { S.sound = e.target.checked; save(); });
 updateSetup();
 
-$('#open-city').addEventListener('click', () => show('setup'));
 $('#cr-back-hub').addEventListener('click', () => show('hub'));
-if (location.hash === '#city-run') show('setup');
 
 /* ---------- Sound ---------- */
 let ac;

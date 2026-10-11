@@ -7,14 +7,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;700&family=Zen+Kaku+Gothic+New:wght@500;700&display=swap">
-<link rel="stylesheet" href="css/styles.css">
-<link rel="stylesheet" href="css/city-run.css">
+<link rel="stylesheet" href="shared/styles.css">
+<link rel="stylesheet" href="shared/hub.css">
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
     <symbol id="plus" viewBox="0 0 40 40"><g transform="rotate(12 20 20)"><line x1="20" y1="6" x2="20" y2="34" stroke="#E8483B" stroke-width="8.5" stroke-linecap="round"/><line x1="6" y1="20" x2="34" y2="20" stroke="#E8483B" stroke-width="8.5" stroke-linecap="round"/></g></symbol>
-    <symbol id="heart" viewBox="0 0 24 24"><path d="M12 20.6 4.3 13.2a4.9 4.9 0 0 1 7-6.9l.7.7.7-.7a4.9 4.9 0 0 1 7 6.9z"/></symbol>
   </defs>
 </svg>
 
@@ -37,7 +36,7 @@
           <h2>Word Drop</h2>
           <p>Words fall from the top. Students shout the answer, you tap the word, it disappears. Let one hit the floor and your team loses a life.</p>
           <div class="tags"><span class="tag">Vocabulary</span><span class="tag">Teams</span><span class="tag">Any language</span></div>
-          <button class="btn btn-primary" id="open-drop" type="button">Play Word Drop</button>
+          <a class="btn btn-primary" href="word-drop/index.html">Play Word Drop</a>
         </div>
       </article>
       <article class="game-card">
@@ -54,7 +53,30 @@
           <h2>City Run</h2>
           <p>The driver can't see the screen. The navigator can, and gives directions in English to get across the city, stop at the right places and reach B.</p>
           <div class="tags"><span class="tag">Speaking</span><span class="tag">Directions</span><span class="tag">Pairs or teams</span></div>
-          <button class="btn btn-primary" id="open-city" type="button">Play City Run</button>
+          <a class="btn btn-primary" href="city-run/index.html">Play City Run</a>
+        </div>
+      </article>
+      <article class="game-card">
+        <div class="game-art" aria-hidden="true">
+          <svg class="tg-art" viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
+            <path class="tg-art-floor" d="M0 150H320"/>
+            <path class="tg-art-gate" d="M124 150V86a36 36 0 0 1 72 0V150"/>
+            <path class="tg-art-route" d="M84 118H236"/>
+            <rect class="tg-art-p1" x="44" y="98" width="40" height="40" rx="8"/>
+            <rect class="tg-art-p2" x="236" y="98" width="40" height="40" rx="8"/>
+            <circle class="tg-art-coin" cx="160" cy="118" r="11"/>
+            <g class="tg-art-code"><rect x="118" y="6" width="84" height="28" rx="8"/><text x="162" y="26">4821</text></g>
+          </svg>
+        </div>
+        <div class="game-body">
+          <h2>Trade Gate</h2>
+          <p>Nobody can finish alone. Players meet at a gate, answer a question out loud in English, and you give them the code that lets them trade and escape together.</p>
+          <div class="tags"><span class="tag">Speaking</span><span class="tag">Co-op</span><span class="tag">2 to 4 players</span><span class="tag">Keyboard or controllers</span></div>
+          <p class="tg-note" id="tg-file-note" hidden>This game needs a local server. Open this page with Live Server, or run <b>python3 -m http.server</b> in the Games folder and go to <b>http://localhost:8000</b>.</p>
+          <div class="game-actions">
+            <a class="btn btn-primary" href="trade-gate/index.html">Play Trade Gate</a>
+            <a class="btn btn-ghost" href="trade-gate/teacher-sheet.html" target="_blank" rel="noopener">Teacher sheet</a>
+          </div>
         </div>
       </article>
       <div class="soon">More games are on the way.</div>
@@ -62,154 +84,9 @@
   </div>
 </section>
 
-<!-- SETUP -->
-<section id="view-setup" hidden>
-  <div class="wrap">
-    <button class="link-back" id="back-hub" type="button">← All games</button>
-    <div class="setup-head">
-      <div><span class="eyebrow">Game setup</span><h1>Word Drop</h1></div>
-      <div class="logo" aria-label="Speak Plus">speak<svg><use href="#plus"/></svg></div>
-    </div>
-    <div class="setup">
-      <div class="panel">
-        <div class="field-group">
-          <div class="row-between"><label for="words">Words</label><span class="count" id="word-count"></span></div>
-          <p class="hint">Separate with commas (, or 、) or new lines. Words are shared out equally, so every team gets the same number and never sees another team's words.</p>
-          <textarea id="words" spellcheck="false"></textarea>
-        </div>
-        <div class="chips" aria-label="Example lists">
-          <button class="chip-btn" type="button" data-sample="jp">Example: Japanese → English</button>
-          <button class="chip-btn" type="button" data-sample="cap">Example: Countries → capitals</button>
-        </div>
-      </div>
-      <div class="panel">
-        <div class="field-group">
-          <div class="row-between"><label for="teams">Teams or students</label><span class="count" id="team-count"></span></div>
-          <p class="hint">Up to 8, one per line or separated by commas. One name plays solo survival.</p>
-          <p class="hint" id="split-note"></p>
-          <textarea id="teams" spellcheck="false"></textarea>
-        </div>
-        <fieldset><span class="legend">Lives</span><div class="seg" id="seg-lives"></div></fieldset>
-        <fieldset><span class="legend">Falling speed</span><div class="seg" id="seg-speed"></div><span class="speed-note" id="speed-note"></span></fieldset>
-        <fieldset><span class="legend">Words on screen at once</span><div class="seg" id="seg-max"></div><span class="hint">If students take long, extra words keep dropping up to this number.</span></fieldset>
-        <label class="switch"><input type="checkbox" id="sound"> Sound effects</label>
-        <div class="start-row">
-          <p class="error" id="setup-error" role="alert" hidden></p>
-          <button class="btn btn-primary btn-big" id="start" type="button">Start game</button>
-          <span class="keyhint"><kbd>Space</kbd> start / pause · tap a word when the answer is right</span>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- GAME -->
-<section id="view-game" hidden>
-  <div class="bar">
-    <div class="logo">speak<svg><use href="#plus"/></svg></div>
-    <span class="progress" id="progress"></span>
-    <span class="spacer"></span>
-    <button class="icon-btn" id="btn-full" type="button" aria-label="Full screen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
-    <button class="icon-btn" id="btn-pause" type="button" aria-label="Pause"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 5v14M15 5v14"/></svg></button>
-  </div>
-  <div class="board" id="board"></div>
-  <div class="field" id="field">
-    <div class="floor" id="floor"></div>
-    <div class="overlay" id="overlay" hidden><div class="card" id="card"></div></div>
-  </div>
-</section>
-
-<!-- CITY RUN: SETUP -->
-<section id="view-city-setup" hidden>
-  <div class="wrap">
-    <button class="link-back" id="cr-back-hub" type="button">← All games</button>
-    <div class="setup-head">
-      <div><span class="eyebrow">Game setup</span><h1>City Run</h1></div>
-      <div class="logo" aria-label="Speak Plus">speak<svg><use href="#plus"/></svg></div>
-    </div>
-    <div class="setup">
-      <div class="panel">
-        <div class="field-group">
-          <span class="legend">How it works</span>
-          <ol class="cr-steps">
-            <li>The <b>driver</b> sits with their back to the screen and holds the keyboard.</li>
-            <li>The <b>navigator</b> watches the screen and gives directions in English. No pointing.</li>
-            <li>One key press is one step: <kbd>↑</kbd> one step forward, <kbd>←</kbd> <kbd>→</kbd> turn on the spot, <kbd>Space</kbd> stop at a door.</li>
-            <li>Finish the mission, then reach <b>B</b>. The fastest total time wins.</li>
-          </ol>
-        </div>
-        <div class="field-group">
-          <span class="legend">Time penalties</span>
-          <div class="tags"><span class="tag">Bump into a wall +3 s</span><span class="tag">Red light +5 s</span><span class="tag">Wrong letter +2 s</span><span class="tag">Wrong place +3 s (Mystery)</span><span class="tag">Train +5 s</span><span class="tag">Not English +5 s (you tap it)</span></div>
-        </div>
-        <div class="field-group">
-          <span class="legend">Useful language</span>
-          <div class="tags"><span class="tag">Go straight three steps</span><span class="tag">Turn left / right</span><span class="tag">Stop!</span><span class="tag">Wait… go!</span><span class="tag">One more step</span><span class="tag">Turn around</span><span class="tag">Go back</span><span class="tag">Wait for the train</span><span class="tag">It's closed</span></div>
-        </div>
-        <p class="hint">Every team drives the same city, mirrored, so nobody can copy the route. On a laptop, use a separate keyboard or extend the display so the driver's screen doesn't show the map.</p>
-      </div>
-      <div class="panel">
-        <div class="field-group">
-          <div class="row-between"><label for="cr-teams">Teams or pairs</label><span class="count" id="cr-team-count"></span></div>
-          <p class="hint">Up to 4, one per line or separated by commas.</p>
-          <textarea id="cr-teams" spellcheck="false"></textarea>
-        </div>
-        <fieldset><span class="legend">Level</span><div class="seg" id="cr-seg-level"></div><span class="hint" id="cr-level-note"></span></fieldset>
-        <fieldset><span class="legend">Mission</span><div class="seg" id="cr-seg-mission"></div><span class="hint" id="cr-mission-note"></span></fieldset>
-        <fieldset><span class="legend">Rounds</span><div class="seg" id="cr-seg-rounds"></div><span class="hint">A new city each round. Swap driver and navigator between rounds.</span></fieldset>
-        <fieldset><span class="legend">Time limit per run</span><div class="seg" id="cr-seg-limit"></div></fieldset>
-        <label class="switch"><input type="checkbox" id="cr-sound"> Sound effects</label>
-        <div class="start-row">
-          <p class="error" id="cr-setup-error" role="alert" hidden></p>
-          <button class="btn btn-primary btn-big" id="cr-start" type="button">Start game</button>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- CITY RUN: GAME -->
-<section id="view-city-game" hidden>
-  <div class="bar">
-    <div class="logo">speak<svg><use href="#plus"/></svg></div>
-    <span class="progress" id="cr-progress"></span>
-    <span class="spacer"></span>
-    <button class="icon-btn" id="cr-btn-full" type="button" aria-label="Full screen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
-    <button class="icon-btn" id="cr-btn-pause" type="button" aria-label="Pause"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 5v14M15 5v14"/></svg></button>
-  </div>
-  <div class="board" id="cr-board"></div>
-  <div class="cr-main">
-    <div class="cr-stage" id="cr-stage">
-      <svg class="cr-map" id="cr-map" viewBox="0 0 1300 1000" role="img" aria-label="City map"></svg>
-      <div class="cr-toast" id="cr-toast" hidden></div>
-      <div class="cr-code" id="cr-code" hidden></div>
-      <div class="overlay" id="cr-overlay" hidden><div class="card" id="cr-card"></div></div>
-    </div>
-    <aside class="cr-side">
-      <div class="cr-box">
-        <span class="eyebrow">Driving now</span>
-        <div class="cr-team" id="cr-team"></div>
-        <div class="cr-time" id="cr-time">0:00.0</div>
-        <div class="cr-pen" id="cr-pen"></div>
-        <div class="cr-fuel" id="cr-fuel" hidden></div>
-      </div>
-      <div class="cr-box">
-        <span class="eyebrow">To do</span>
-        <ul class="cr-tasks" id="cr-tasks"></ul>
-      </div>
-      <button class="btn btn-ghost" id="cr-teacher" type="button">+5 s · Not English</button>
-      <div class="cr-pad" aria-label="Driver controls">
-        <button class="icon-btn" type="button" data-key="left" aria-label="Turn left">←</button>
-        <button class="icon-btn" type="button" data-key="up" aria-label="One step forward">↑</button>
-        <button class="icon-btn" type="button" data-key="right" aria-label="Turn right">→</button>
-        <button class="icon-btn cr-pad-wide" type="button" data-key="act">Stop at door</button>
-      </div>
-      <span class="keyhint"><kbd>↑</kbd> step · <kbd>←</kbd> <kbd>→</kbd> turn · <kbd>Space</kbd> door · <kbd>Esc</kbd> pause</span>
-    </aside>
-  </div>
-</section>
-
-<script src="js/word-drop.js"></script>
-<script src="js/city-run.js"></script>
+<script>
+// Trade Gate loads JSON and ES modules, so it needs a server.
+if (location.protocol === 'file:') document.querySelector('#tg-file-note').hidden = false;
+</script>
 </body>
 </html>

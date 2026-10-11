@@ -1,0 +1,50 @@
+{
+  "id": "level-1",
+  "name": "The Old Workshop",
+  "description": "Tutorial. One trade, one gate.",
+  "players": 2,
+
+  "map": [
+    "########################",
+    "#......o.......#.......#",
+    "#.p............#.......#",
+    "#.p.....1......#..EEE..#",
+    "#..............#..EEE..#",
+    "#.p..o.........X..EEE..#",
+    "#.p............#.......#",
+    "#.......C......#.......#",
+    "#..o......o....#.......#",
+    "#..............#.......#",
+    "########################"
+  ],
+
+  "goal": { "chest": { "gold": 3 } },
+
+  "gates": [
+    {
+      "id": "g1",
+      "type": "question",
+      "from": "P1",
+      "to": "P2",
+      "give": { "gold": 3 },
+      "card": {
+        "asker": "P2",
+        "answerer": "P1",
+        "question": "What did you do yesterday?",
+        "minSentences": 2
+      },
+      "teacher": {
+        "code": "4821",
+        "accepted": [
+          "Two full sentences in the past tense.",
+          "Yesterday, I played soccer. Then I ate dinner with my family."
+        ],
+        "hints": [
+          "Think about the past tense.",
+          "Start with 'Yesterday, I ...'",
+          "Yesterday, I played soccer."
+        ]
+      }
+    }
+  ]
+}

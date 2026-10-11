@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Trade Gate</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- The game draws on this canvas. #stage can be any size: the game fits itself inside. -->
+  <div id="stage"><canvas id="game"></canvas></div>
+
+  <!-- Teacher panel: press T, or open index.html?teacher=1 in a second window. -->
+  <aside id="teacher" hidden></aside>
+
+  <div id="error" hidden></div>
+
+  <!-- Back to the Speak Plus Games hub. Shown in the lobby only. -->
+  <a id="hub-link" href="../index.html">&larr; All games</a>
+
+  <script>
+    // Browsers do not let a page opened as a file load its data files.
+    if (location.protocol === 'file:') {
+      var box = document.getElementById('error');
+      box.hidden = false;
+      box.innerHTML = 'This game needs a small local server.<br><br>Open a terminal in this folder and run:<br><b>python3 -m http.server</b><br><br>Then open <b>http://localhost:8000</b>';
+    }
+  </script>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

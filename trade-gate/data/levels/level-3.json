@@ -1,0 +1,112 @@
+{
+  "id": "level-3",
+  "name": "The Crystal Factory",
+  "description": "The full circle, three gates and a secret card.",
+  "players": 4,
+
+  "map": [
+    "########################",
+    "#.o...o.#....d..#......#",
+    "#.p.....#.2.....#.EEE..#",
+    "#.p..1..#....d..#.EEE..#",
+    "#....o..........#.EEE..#",
+    "#.p.........C...X......#",
+    "#.p.....#...M...#......#",
+    "#..w....#.S...S.########",
+    "#....w..#.......B..k...#",
+    "#.w.....#.d.3...#...k.k#",
+    "########################"
+  ],
+
+  "goal": {
+    "chest": { "gold": 2, "gems": 2 },
+    "machine": { "wood": 2, "gears": 2 }
+  },
+
+  "gates": [
+    {
+      "id": "g1",
+      "type": "question",
+      "from": "P1",
+      "to": "P2",
+      "give": { "gold": 2 },
+      "card": {
+        "asker": "P2",
+        "answerer": "P1",
+        "question": "Have you ever been to another country? Tell us about it.",
+        "minSentences": 2
+      },
+      "teacher": {
+        "code": "2648",
+        "accepted": [
+          "Yes, I have. / No, I haven't. plus one more full sentence.",
+          "Yes, I have. I went to Korea last year.",
+          "No, I haven't, but I want to go to Canada."
+        ],
+        "hints": [
+          "Answer yes or no first.",
+          "Start with 'Yes, I have.' or 'No, I haven't.'",
+          "No, I haven't, but I want to visit Australia."
+        ]
+      }
+    },
+    {
+      "id": "g2",
+      "type": "open",
+      "transfers": [
+        { "from": "P2", "to": "P3", "give": { "wood": 2 } },
+        { "from": "P3", "to": "P4", "give": { "gems": 2 } }
+      ],
+      "card": {
+        "asker": "P4",
+        "answerer": "P3",
+        "prompt": "Plan a perfect day together. Where do you go? What do you do? Everyone adds one idea.",
+        "minSentences": 3
+      },
+      "teacher": {
+        "code": "5173",
+        "accepted": [
+          "Everyone at the gate adds at least one idea in a full sentence.",
+          "Suggestions: Let's go to ... / How about ...? / We could ...",
+          "Bonus gem: they agree or disagree politely (Good idea! / I'd rather ...)."
+        ],
+        "hints": [
+          "Make suggestions to each other.",
+          "Use 'Let's ...' or 'How about ...?'",
+          "Let's go to the beach in the morning. How about lunch at a ramen shop?"
+        ]
+      }
+    },
+    {
+      "id": "g3",
+      "type": "describe",
+      "from": "P4",
+      "to": "P1",
+      "give": { "gears": 2 },
+      "card": {
+        "describer": "P4",
+        "picker": "P1",
+        "options": [
+          { "shape": "star", "color": "blue", "count": 3 },
+          { "shape": "star", "color": "red", "count": 3 },
+          { "shape": "circle", "color": "blue", "count": 3 },
+          { "shape": "star", "color": "blue", "count": 2 }
+        ],
+        "target": 0
+      },
+      "teacher": {
+        "code": "9036",
+        "accepted": [
+          "The describer says the number, the color and the shape in English.",
+          "There are three blue stars.",
+          "The partner asks at least one question: How many? / What color?"
+        ],
+        "hints": [
+          "Say how many, what color and what shape.",
+          "Start with 'There are ...'",
+          "There are three blue ..."
+        ]
+      }
+    }
+  ]
+}

@@ -5,6 +5,7 @@ Hub de juegos para profesores de inglés de Speak Plus, una eikaiwa en Japón. L
 ## Stack
 
 - HTML, CSS y JavaScript sin frameworks ni build. Se abre `index.html` directamente.
+- Una carpeta por juego (`word-drop/`, `city-run/`, `trade-gate/`), cada una con su propio `index.html`. El `index.html` de la raíz es solo el menú y enlaza a cada juego. Lo común está en `shared/`: `styles.css` (marca y piezas de interfaz compartidas) y `hub.css` (solo el menú).
 - Fuentes de Google Fonts: Lexend (latín) y Zen Kaku Gothic New (japonés).
 - Interfaz en inglés. El contenido de las palabras puede estar en cualquier idioma.
 
@@ -17,11 +18,11 @@ Hub de juegos para profesores de inglés de Speak Plus, una eikaiwa en Japón. L
 | Vermilion | `#E8483B` | Acento y el "+" del logo     |
 | Sky       | `#9DB4E0` | Detalles secundarios, foco   |
 
-- Logo "Exponente": la palabra `speak` en Lexend Bold minúscula + un "+" bermellón con puntas redondas, girado 12° y elevado como exponente. Está como `<symbol id="plus">` en `index.html`. El "+" nunca debe parecer una cruz médica (nada de "+" recto y cuadrado).
+- Logo "Exponente": la palabra `speak` en Lexend Bold minúscula + un "+" bermellón con puntas redondas, girado 12° y elevado como exponente. Está como `<symbol id="plus">` al principio de cada `index.html`. El "+" nunca debe parecer una cruz médica (nada de "+" recto y cuadrado).
 - El bermellón no se usa para texto pequeño de cuerpo.
 - Todos los colores van como variables CSS en `:root`, con versión para modo oscuro.
 
-## Word Drop: reglas implementadas (`js/word-drop.js`)
+## Word Drop: reglas implementadas (`word-drop/word-drop.js`)
 
 - Palabras repartidas por igual entre equipos (`floor(total / equipos)`); cada equipo tiene su propio `deck`. Máximo 8 equipos (`MAX_TEAMS`).
 - Turnos: un equipo juega hasta que una palabra toca el suelo → pierde una vida → turno al siguiente equipo vivo con palabras.
@@ -31,7 +32,7 @@ Hub de juegos para profesores de inglés de Speak Plus, una eikaiwa en Japón. L
 - Pantalla final: clasificación, "Nobody answered" (feedback para el profesor) y "Answered on the bonus".
 - Estado del juego en el objeto `G`; ajustes del profesor en `S`, guardados en localStorage con la clave `sp-worddrop-v1`.
 
-## City Run: reglas implementadas (`js/city-run.js`, `css/city-run.css`)
+## City Run: reglas implementadas (`city-run/city-run.js`, `city-run/city-run.css`)
 
 - Juego de hablar por parejas o equipos (máximo 4, `MAX_TEAMS`): el conductor no ve la pantalla y usa el teclado; un solo navegador ve el mapa y da instrucciones en inglés.
 - Una tecla = un paso: `↑` avanza una casilla, `←` `→` giran 90° sin moverse, `Espacio` abre la puerta de una parada. Los controles son relativos al vehículo, nunca al mapa.
@@ -49,8 +50,16 @@ Hub de juegos para profesores de inglés de Speak Plus, una eikaiwa en Japón. L
 - Estado de la partida en `G`, de la carrera actual en `R`; ajustes en `S`, guardados en localStorage con la clave `sp-cityrun-v1`.
 - Pendiente (ideas): estrellas por carrera, palabras y preguntas editables por el profesor, peatones.
 
+## Trade Gate (carpeta `trade-gate/`)
+
+- Juego cooperativo en pixel art para 2 a 4 jugadores en una pantalla (teclado o mandos). Es una página aparte, con su propio `index.html`, `css/`, `js/` (módulos ES), `data/` (JSON) y tests (`node tests/run.mjs`). Su documentación completa está en `trade-gate/README.md`.
+- Por dentro no se parece a los otros dos (canvas, varios módulos, datos en JSON). En el menú tiene una tarjeta con enlaces al juego y a la hoja del profesor. El juego vuelve al hub con el enlace "← All games" (`#hub-link`), visible solo en el lobby.
+- Necesita servidor (carga JSON y módulos): no funciona con `file://`. La tarjeta del hub lo avisa en ese caso.
+- Su estética es pixel art con paleta propia dentro del canvas; la marca Speak Plus solo se aplica a la tarjeta del hub.
+
 ## Al añadir juegos nuevos
 
-- Añadir una tarjeta en la sección `#view-hub` de `index.html`.
-- Poner la lógica en su propio archivo en `js/` y sus estilos en `css/`.
+- Crear una carpeta en minúsculas con guiones (`mi-juego/`) con su `index.html`, su JS y su CSS. Enlazar `../shared/styles.css` y copiar la cabecera (fuentes y `<symbol id="plus">`) de `word-drop/index.html`.
+- Añadir una tarjeta en la sección `#view-hub` del `index.html` de la raíz, con un enlace a `mi-juego/index.html`; el dibujo de la tarjeta va en `shared/hub.css`.
+- En el juego, "← All games" vuelve a `../index.html` (en Word Drop y City Run lo hace `show('hub')`).
 - Mantener la misma marca, botones grandes (mínimo 44 px) y que funcione con ratón y con táctil.
