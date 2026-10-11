@@ -1,0 +1,24 @@
+{
+  "id": "li-a2-03",
+  "type": "link",
+  "level": "A2",
+  "tags": [
+    "listening",
+    "link",
+    "speaking"
+  ],
+  "helper": "listening",
+  "link": "",
+  "prompt": "Watch the video your teacher sends with the Listening Helper. Then tell the teacher two things you saw or heard.",
+  "teacher": {
+    "code": "6150",
+    "accepted": [
+      "Two true things about the video, in full sentences"
+    ],
+    "hints": [
+      "Start with 'In the video, ...'",
+      "Who was in it? Where were they?",
+      "In the video, a man was cooking. He made curry."
+    ]
+  }
+}

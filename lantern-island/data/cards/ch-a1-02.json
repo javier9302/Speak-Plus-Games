@@ -1,0 +1,20 @@
+{
+  "id": "ch-a1-02",
+  "type": "choice",
+  "level": "A1",
+  "tags": [
+    "colours"
+  ],
+  "prompt": "What colour is a banana?",
+  "options": {
+    "A": "Red",
+    "B": "Yellow",
+    "C": "Blue"
+  },
+  "answer": "B",
+  "hints": [
+    "Think of the fruit.",
+    "It is the colour of the sun.",
+    "It starts with Y."
+  ]
+}

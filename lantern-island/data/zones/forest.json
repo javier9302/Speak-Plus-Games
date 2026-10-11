@@ -1,0 +1,91 @@
+{
+  "id": "forest",
+  "name": "Whisper Forest",
+  "unlock": {
+    "landmarks": 2
+  },
+  "unlockHelp": "This zone opens for a group when it has restored this many landmarks.",
+  "legend": {
+    "~": "water (blocks)",
+    ",": "grass",
+    ".": "sand",
+    "#": "path",
+    "=": "bridge",
+    "T": "tree (blocks)",
+    "R": "rock (blocks)",
+    "p": "player start (grass). Keep 6."
+  },
+  "goal": {
+    "label": "Crystals",
+    "items": {
+      "crystal": 3
+    },
+    "deliver": "ranger",
+    "story": "Find three crystals and bring them to the forest ranger."
+  },
+  "rows": [
+    "TTTTTTTTTTTTTTTTTTT~~TTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTT~~TTTTTTTTTTTTTTTTTTT",
+    "TT,TTT,,,,,,,,,,,,,~~,,,T,,,,,,,,,T,,,TT",
+    "TT,T,T,,,TT,,,,,,,,~~,,,,T,,,,,,,,,,,TTT",
+    "TTTT,T,T,T,,,,,,,,,~~,,,,,,,,TTT,,,,,,TT",
+    "TTT,,,,,R,,,,,,,,,,~~,,,,,,T,T,T,,,T,,TT",
+    "TT,,,,,,,,,TT,,,,T,~~,,,,,T,,T,T,T,,,,TT",
+    "TT,,,,,,,,,,,,,,RT,~~,,,,,,,,,,,,,,,,,TT",
+    "TT,,,,,,,,,,,,T,,,,~~,,,,,,,,,,,,,,,,,TT",
+    "TTT,,,,,,,,,,,,,,,,~~,,,,,,,,,,,,,,,,,TT",
+    "TT,,,,,,,,,,,,,,,,,~~,,,,,,,,,,,,,,,,,TT",
+    "TT,################==################,TT",
+    "TT,,,,,,,p,p,p,,,,,~~,,,,,,,,,,,,,,,,,TT",
+    "TT,R,,,,,p,p,p,,,,R~~,T,,,,,,,,,,,,,T,TT",
+    "TT,,T,R,,,,,,,,,,,,~~,T,,,,,,,,,,,,T,,TT",
+    "TT,T,,,,,,,,,,,,,,,~~,,RR,,,,,,,,,,,,,TT",
+    "TT,,,~~~.~~~,,,,,,,~~T,,R,,,,,,,T,T,,,TT",
+    "TT,,,~~~.~~~,,,,,,,~~,,,,,,,,,,,T,T,T,TT",
+    "TT,,,~~~..~~,,,,,,T~~,,,,T,,,,,,TTT,,,TT",
+    "TT,T,~~~~~~~,,,,,,,~~,,,,,,,,,,,T,,,,,TT",
+    "TT,,T~~~~~~~,,,,,,T~~RT,,,,,,,,,T,,,,,TT",
+    "TT,,,,,,,,T,,,,,,,,~~,,,,,,,,,,,RT,,T,TT",
+    "TTTTTTTTTTTTTTTTTTT~~TTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTT~~TTTTTTTTTTTTTTTTTTT"
+  ],
+  "places": [
+    {"id":"clearing","name":"the clearing","x":11,"y":13},
+    {"id":"rope-bridge","name":"the rope bridge","x":17,"y":12},
+    {"id":"pond","name":"the pond","x":8,"y":14},
+    {"id":"big-rock","name":"the big rock","x":6,"y":5},
+    {"id":"owl","name":"the stone owl","x":27,"y":9},
+    {"id":"cabin","name":"the ranger's cabin","x":34,"y":12},
+    {"id":"bell","name":"the old bell","x":26,"y":16},
+    {"id":"yard","name":"the yard","x":30,"y":9}
+  ],
+  "landmarks": [
+    {"id":"forest-cabin","name":"the ranger's cabin","art":"post-office","x":36,"y":8,"w":1,"h":1,"solid":true},
+    {"id":"forest-well","name":"the old well","art":"fountain","x":24,"y":13,"w":1,"h":1,"solid":true},
+    {"id":"forest-mill","name":"the forest mill","art":"windmill","x":15,"y":3,"w":1,"h":2,"solid":true},
+    {"id":"forest-flowers","name":"the wild flowers","art":"flower-garden","x":22,"y":5,"w":3,"h":1,"solid":false},
+    {"id":"forest-camp","name":"the camp","art":"campfire","x":12,"y":8,"w":1,"h":1,"solid":false},
+    {"id":"forest-stall","name":"the honey stall","art":"market","x":28,"y":18,"w":1,"h":1,"solid":true}
+  ],
+  "objects": [
+    {"id":"trail-sign","kind":"sign","name":"Trail sign","x":10,"y":10,"clues":{"read":"WHISPER FOREST. The ranger needs three crystals. The yard gate across the river has a code. Its first number is {d1}."}},
+    {"id":"owl","kind":"statue","name":"Stone owl","x":27,"y":8,"clues":{"look":"A stone owl with big eyes. Somebody scratched a number under its feet: {d2}. It is the second number of a code.","read":"\"Those who share, arrive.\""}},
+    {"id":"bell","kind":"bell","name":"Old bell","x":26,"y":15,"clues":{"listen":"The wind moves the bell. A voice in the sound says: \"The last number is {d3}.\"","look":"An old bell on a post. It is green with age."}},
+    {"id":"bridge-sign","kind":"sign","name":"Bridge sign","x":17,"y":10,"clues":{"read":"ROPE BRIDGE. It is broken: somebody must jump, and stand on the flat stone on the other side so the others can cross."}},
+    {"id":"dam-sign","kind":"sign","name":"Dam sign","x":13,"y":14,"clues":{"read":"OLD DAM. Close it and the pond goes down, so you can walk to the little island. It is broken: fix it with a plank."}},
+    {"id":"stump","kind":"stump","name":"Old stump","x":7,"y":7,"clues":{"look":"A very old tree stump. Somebody carved: \"The key is behind the big rock in the north-west.\""}},
+    {"id":"ranger","kind":"npc","name":"Forest ranger","x":35,"y":10,"clues":{"talk":"\"Hello, friends! I am the forest ranger. Please bring me three crystals. One of you must carry all three.\""},"lines":["Hello! What is your name?","How many crystals do you have?","Where did you find them?","Was it difficult to cross the river?","Thank you! You are a great team."]},
+    {"id":"boulder","kind":"boulder","name":"Big rock","x":4,"y":4,"to":{"x":5,"y":5},"clues":{"look":"A very big rock between the trees. There is something behind it."}},
+    {"id":"chest","kind":"chest","name":"Old chest","x":4,"y":3,"holds":"key"},
+    {"id":"gap","kind":"gap","name":"Rope bridge","x":19,"y":11},
+    {"id":"plate","kind":"plate","name":"Flat stone","x":21,"y":11,"target":"gap"},
+    {"id":"yard-gate","kind":"gate","name":"Yard gate","x":30,"y":7,"locked":true,"code":3},
+    {"id":"cabin-gate","kind":"gate","name":"Cabin gate","x":33,"y":15,"locked":true,"key":"key"},
+    {"id":"dam","kind":"sluice","name":"Old dam","x":12,"y":17,"needs":"plank","floods":[{"x":8,"y":16},{"x":8,"y":17}]},
+    {"id":"f-tablet-1","kind":"station","name":"Path tablet","x":14,"y":6,"by":"use","card":{"type":"choice","level":"group"},"reward":{"item":"crystal"}},
+    {"id":"f-tablet-2","kind":"station","name":"Pond tablet","x":9,"y":18,"by":"use","card":{"type":"typed","level":"group"},"reward":{"item":"crystal"}},
+    {"id":"f-tablet-3","kind":"station","name":"Yard tablet","x":30,"y":5,"by":"use","card":{"type":"spelling","level":"group"},"reward":{"item":"plank"}},
+    {"id":"f-tablet-4","kind":"station","name":"Cabin tablet","x":33,"y":17,"by":"use","card":{"type":"code","level":"group"},"reward":{"item":"crystal"}},
+    {"id":"f-tablet-5","kind":"station","name":"South tablet","x":15,"y":18,"by":"use","card":{"type":"choice","level":"group"},"reward":{"item":"crystal"}}
+  ]
+}

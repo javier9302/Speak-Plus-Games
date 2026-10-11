@@ -28,6 +28,7 @@ Games/
 │   ├── index.html          Configuración y juego
 │   ├── city-run.js         Toda la lógica de City Run
 │   └── city-run.css        Estilos de City Run
+├── lantern-island/         Lantern Island: juego con servidor Node, con su propio README
 ├── trade-gate/             Trade Gate: juego aparte, con su propio README, css/, js/, data/ y tests/
 ├── CLAUDE.md               Contexto del proyecto para Claude Code
 └── README.md
@@ -68,3 +69,7 @@ La configuración se guarda en el navegador (localStorage).
 ## Trade Gate
 
 Juego cooperativo para 2 a 4 alumnos en una pantalla. Cada jugador recoge un recurso que no puede usar, así que tienen que encontrarse en una **Trade Gate**, responder una pregunta en inglés y pedir el código al profesor. Reglas, controles, panel del profesor y cómo editar preguntas y niveles: ver `trade-gate/README.md`.
+
+## Lantern Island
+
+Aventura cooperativa en pixel art: los alumnos entran desde el móvil con un código QR y mueven su personaje por una isla que se ve en la pantalla de clase. Necesita Node.js y se arranca con `npm start` dentro de `lantern-island/`, así que no tiene tarjeta en el menú. Ver `lantern-island/README.md`.

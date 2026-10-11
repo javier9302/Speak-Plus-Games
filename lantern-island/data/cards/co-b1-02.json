@@ -1,0 +1,21 @@
+{
+  "id": "co-b1-02",
+  "type": "code",
+  "level": "B1",
+  "tags": [
+    "speaking"
+  ],
+  "prompt": "Explain the rules of your favourite sport or game to the teacher. Your team can help you prepare.",
+  "teacher": {
+    "code": "9031",
+    "accepted": [
+      "At least three rules, clear enough to play",
+      "'You have to...', 'You can't...'"
+    ],
+    "hints": [
+      "How many players?",
+      "Use 'You have to...' and 'You can't...'.",
+      "In football there are eleven players. You can't touch the ball with your hands."
+    ]
+  }
+}

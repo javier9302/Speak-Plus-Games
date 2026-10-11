@@ -1,0 +1,19 @@
+{
+  "id": "ty-a2-02",
+  "type": "typed",
+  "level": "A2",
+  "tags": [
+    "grammar",
+    "past"
+  ],
+  "prompt": "Write the past tense of 'buy'.",
+  "accepted": [
+    "bought"
+  ],
+  "allowTypos": false,
+  "hints": [
+    "It is irregular.",
+    "It ends in '-ought'.",
+    "b-o-u-g-h-t"
+  ]
+}

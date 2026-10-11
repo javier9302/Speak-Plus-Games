@@ -1,0 +1,16 @@
+{
+  "id": "sp-b1-01",
+  "type": "spelling",
+  "level": "B1",
+  "tags": [
+    "spelling"
+  ],
+  "prompt": "Listen and spell the word.",
+  "word": "necessary",
+  "describe": "Something you need.",
+  "hints": [
+    "One C, two S.",
+    "It starts with 'nec'.",
+    "n-e-c-e-s-s-..."
+  ]
+}

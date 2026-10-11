@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lantern Island · Teacher</title>
+<link rel="stylesheet" href="../shared/base.css">
+<link rel="stylesheet" href="../shared/card.css">
+<link rel="stylesheet" href="teacher.css">
+</head>
+<body>
+<main>
+  <header class="top">
+    <div class="logo">speak<svg viewBox="0 0 40 40" aria-hidden="true"><g transform="rotate(12 20 20)"><line x1="20" y1="6" x2="20" y2="34" stroke="#E8483B" stroke-width="8.5" stroke-linecap="round"/><line x1="6" y1="20" x2="34" y2="20" stroke="#E8483B" stroke-width="8.5" stroke-linecap="round"/></g></svg></div>
+    <h1>Teacher panel</h1>
+    <nav class="tabs" role="tablist">
+      <button class="tab" role="tab" data-tab="live" type="button">Live game</button>
+      <button class="tab" role="tab" data-tab="cards" type="button">Cards</button>
+      <button class="tab" role="tab" data-tab="groups" type="button">Groups</button>
+    </nav>
+  </header>
+  <p class="error" id="error" role="alert" hidden></p>
+
+  <!-- ===== LIVE: watch and steer the game that is running. Keep this screen away from students. ===== -->
+  <section id="tab-live" hidden>
+    <form id="watch" class="row panel slim">
+      <strong>Room</strong>
+      <input class="field code" id="watch-room" maxlength="4" placeholder="ABCD" aria-label="Room code" autocapitalize="characters">
+      <button class="btn btn-small" type="submit">Watch</button>
+      <span class="muted small grow" id="live-status">Type the room code from the host screen.</span>
+    </form>
+
+    <div id="live-body" hidden>
+      <div class="live-grid">
+        <div class="col">
+          <div class="panel slim">
+            <canvas id="live-map" aria-label="Live map"></canvas>
+            <p class="muted small" id="map-hint">Names under the objects are shown here only.</p>
+          </div>
+
+          <div class="panel slim">
+            <h2>Game</h2>
+            <div class="row">
+              <button class="btn btn-small" data-cmd="pause" type="button" id="btn-pause">Pause</button>
+              <button class="btn btn-small" data-cmd="shuffle" type="button">Reshuffle abilities</button>
+              <button class="btn btn-small" data-cmd="mix" type="button" id="btn-mix">Random mix: off</button>
+              <button class="btn btn-small" data-cmd="star" type="button">+ Team star</button>
+            </div>
+            <div class="row">
+              <button class="btn btn-small btn-danger" data-cmd="reset" type="button">Reset zone</button>
+              <button class="btn btn-small btn-danger" data-cmd="end" type="button">End mission</button>
+              <button class="btn btn-small" data-cmd="lobby" type="button">Back to lobby</button>
+            </div>
+            <div class="row">
+              <label class="inline">Level <select class="field" id="set-level"></select></label>
+              <label class="inline">Phones see <select class="field" id="set-view"></select></label>
+            </div>
+            <div class="row">
+              <label class="check"><input type="checkbox" data-set="phrases"> Phrase help on phones</label>
+              <label class="check"><input type="checkbox" data-set="hostDetails"> Object names on the host screen</label>
+              <label class="check"><input type="checkbox" data-set="timer"> Timer on the host screen</label>
+              <label class="check"><input type="checkbox" data-set="hintCost"> A hint costs 30 seconds on the clock</label>
+            </div>
+            <p class="muted small" id="live-stats"></p>
+          </div>
+
+          <div class="panel slim">
+            <h2>Chat and helpers</h2>
+            <p class="muted small">Students cannot write back: they talk. A shareable message stays locked on the student's phone until you press Unlock, when somebody has asked for it in English.</p>
+            <div class="row">
+              <label class="inline">Listening Helper <select class="field" data-helper="listening"></select></label>
+              <label class="inline">Reading Helper <select class="field" data-helper="reading"></select></label>
+            </div>
+            <form id="chat" class="chat">
+              <div class="row">
+                <label class="inline">To <select class="field" id="chat-to"></select></label>
+                <label class="inline">Send <select class="field" id="chat-kind">
+                  <option value="text">Text</option><option value="link">Link (video, article, web page)</option><option value="audio">Sound</option><option value="image">Picture</option>
+                </select></label>
+              </div>
+              <input class="field" id="chat-text" maxlength="400" placeholder="Message" aria-label="Message">
+              <div class="row" id="chat-url-row" hidden>
+                <input class="field grow" id="chat-url" maxlength="500" placeholder="https://…" aria-label="Address">
+                <button class="btn btn-small" id="chat-upload" type="button" hidden>Upload…</button>
+              </div>
+              <div class="row">
+                <label class="check"><input type="checkbox" id="chat-share"> Shareable (locked until I unlock it)</label>
+                <span class="grow"></span>
+                <button class="btn btn-primary btn-small" type="submit">Send</button>
+              </div>
+            </form>
+            <div id="chat-list"></div>
+          </div>
+
+          <div class="panel slim">
+            <h2>Start a mission</h2>
+            <div class="row">
+              <label class="inline grow">Mission <select class="field grow" id="m-template"></select></label>
+              <label class="inline">Minutes <input class="field num" id="m-minutes" type="number" min="5" max="90" value="25"></label>
+              <label class="inline">Monster <select class="field" id="m-monster"><option value="group-setting">The group's setting</option><option value="off">Off</option><option value="gentle">Gentle</option><option value="normal">Normal</option><option value="hard">Hard</option></select></label>
+            </div>
+            <p class="muted small" id="m-story"></p>
+            <div id="m-stations"></div>
+            <div class="row">
+              <button class="btn btn-primary" id="m-start" type="button">Start this mission</button>
+              <button class="btn" id="m-quick" type="button">Quick mission</button>
+              <span class="grow"></span>
+              <button class="btn btn-small" id="m-save" type="button">Save as a new template…</button>
+              <button class="btn btn-small btn-danger" id="m-delete" type="button">Delete template</button>
+            </div>
+            <p class="muted small">Cards are chosen for the group's level when the mission starts. Quick mission picks the card types by itself.</p>
+          </div>
+        </div>
+
+        <div class="col">
+          <div class="panel slim" id="talks-box" hidden>
+            <h2>Talking to a character</h2>
+            <div id="talks"></div>
+          </div>
+          <div class="panel slim" id="monster-box">
+            <h2>The monster <span class="muted small" id="mon-status"></span></h2>
+            <p class="muted small">A team clock, not a punishment: nobody loses. Only the Seer's phone shows it. You always see it on your map.</p>
+            <div class="row">
+              <span class="small">Anger</span>
+              <div class="meter"><div id="mon-anger"></div><span class="tick" style="left:35%"></span><span class="tick" style="left:70%"></span></div>
+              <span class="small" id="mon-phase"></span>
+            </div>
+            <div class="row">
+              <label class="inline">Difficulty <select class="field" id="mon-level"><option value="off">Off</option><option value="gentle">Gentle</option><option value="normal">Normal</option><option value="hard">Hard</option></select></label>
+              <label class="inline">It does <select class="field" id="mon-force"><option value="auto">what its anger says</option><option value="wander">wander only</option><option value="chase">chase</option><option value="shoot">shoot</option></select></label>
+              <label class="inline">Speed <select class="field" id="mon-speed"><option value="0.5">Slow</option><option value="1">Normal</option><option value="1.5">Fast</option></select></label>
+            </div>
+            <div class="row">
+              <button class="btn btn-small" type="button" data-mon="freeze" id="mon-freeze">Freeze</button>
+              <button class="btn btn-small" type="button" data-mon="calm">Calm it down</button>
+              <button class="btn btn-small" type="button" data-mon="spawn">Bring it in</button>
+              <button class="btn btn-small" type="button" data-mon="remove">Send it away</button>
+              <button class="btn btn-small btn-primary" type="button" data-mon="hit" id="mon-hit" hidden>Strike it (you are the Slayer)</button>
+            </div>
+            <div class="row">
+              <label class="inline">Seer <select class="field" data-role="seer"></select></label>
+              <label class="inline">Healer <select class="field" data-role="healer"></select></label>
+              <label class="inline">Slayer <select class="field" data-role="slayer"></select></label>
+            </div>
+            <div class="row">
+              <button class="btn btn-small" type="button" data-cmd="rotate">Rotate roles now</button>
+              <label class="inline">Rotate by themselves <select class="field" id="set-rotate"><option value="0">Never</option><option value="3">Every 3 minutes</option><option value="5">Every 5 minutes</option><option value="8">Every 8 minutes</option></select></label>
+            </div>
+            <div class="row" id="stunned"></div>
+          </div>
+          <div class="panel slim">
+            <h2>Challenge tablets</h2>
+            <p id="gate-code" hidden></p>
+            <div id="stations"></div>
+            <div class="row">
+              <a class="btn btn-small" id="sheet-room" target="_blank" rel="noopener">Print this mission's sheet</a>
+              <a class="btn btn-small" id="sheet-zone" href="sheet.html?zone=beach" target="_blank" rel="noopener">Print the zone sheet</a>
+            </div>
+          </div>
+          <div class="panel slim">
+            <h2>Players</h2>
+            <div id="live-players"></div>
+          </div>
+          <div class="panel slim">
+            <h2>Rescue</h2>
+            <p class="muted small">If the class is stuck: open things yourself.</p>
+            <div class="row" id="rescue"></div>
+          </div>
+          <div class="panel slim">
+            <h2>Session notes</h2>
+            <textarea id="live-notes" placeholder="Errors you hear, things to review. Saved with the group."></textarea>
+            <span class="saved" id="notes-saved" hidden>Saved</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== CARDS: the library ===== -->
+  <section id="tab-cards" hidden>
+    <div class="panel slim">
+      <div class="row">
+        <input class="field grow" id="c-search" placeholder="Search cards" aria-label="Search cards">
+        <select class="field" id="c-level" aria-label="Level"></select>
+        <select class="field" id="c-type" aria-label="Type"></select>
+        <select class="field" id="c-tag" aria-label="Tag"></select>
+        <select class="field" id="c-used" aria-label="Used">
+          <option value="">Used any time</option>
+          <option value="recent">Used in the last 14 days</option>
+          <option value="fresh">Not used in the last 14 days</option>
+        </select>
+      </div>
+      <div class="row">
+        <button class="btn btn-primary btn-small" id="c-new" type="button">New card</button>
+        <button class="btn btn-small" id="c-import" type="button">Import CSV or JSON…</button>
+        <input id="c-import-file" type="file" accept=".csv,.json,text/csv,application/json" hidden>
+        <button class="btn btn-small" id="c-export-csv" type="button">Export CSV</button>
+        <button class="btn btn-small" id="c-export-json" type="button">Export JSON</button>
+        <span class="muted small grow" id="c-count"></span>
+      </div>
+      <p class="muted small" id="c-report" hidden></p>
+    </div>
+    <div class="cards-grid">
+      <div id="c-list"></div>
+      <div class="col sticky">
+        <form class="panel slim" id="c-form" hidden></form>
+        <div class="panel slim" id="c-preview-box" hidden>
+          <h2>As the student sees it</h2>
+          <div class="phone-frame"><div class="card-view" id="c-preview"></div></div>
+          <p class="small" id="c-teacher-side"></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== GROUPS: classes and their saved islands ===== -->
+  <section id="tab-groups" hidden>
+    <section class="panel tools">
+      <form id="new-group" class="row">
+        <input class="field grow" id="new-name" maxlength="40" placeholder="New group name" aria-label="New group name">
+        <button class="btn btn-primary" type="submit">Create group</button>
+      </form>
+      <div class="row">
+        <button class="btn" id="import" type="button">Import save…</button>
+        <input id="import-file" type="file" accept="application/json,.json" hidden>
+        <span class="muted small">Export a group to move it to another computer or keep a backup.</span>
+      </div>
+    </section>
+    <section id="groups"></section>
+    <p class="muted" id="empty" hidden>No groups yet. Create one for each class.</p>
+  </section>
+</main>
+<script type="module" src="teacher.js"></script>
+</body>
+</html>

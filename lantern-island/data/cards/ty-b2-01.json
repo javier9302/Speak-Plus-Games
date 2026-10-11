@@ -1,0 +1,18 @@
+{
+  "id": "ty-b2-01",
+  "type": "typed",
+  "level": "B2",
+  "tags": [
+    "vocabulary"
+  ],
+  "prompt": "One word: to make something smaller in size or amount. It starts with 'r'.",
+  "accepted": [
+    "reduce"
+  ],
+  "allowTypos": true,
+  "hints": [
+    "The opposite of 'increase'.",
+    "It has six letters.",
+    "red-..."
+  ]
+}

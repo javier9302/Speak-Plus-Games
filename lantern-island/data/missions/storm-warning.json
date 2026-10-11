@@ -1,0 +1,45 @@
+{
+  "id": "storm-warning",
+  "title": "Storm warning",
+  "story": "A storm is coming and the monster is angry. Work fast, listen to your Seer, and get the lanterns to the keeper before dark.",
+  "zone": "beach",
+  "minutes": 20,
+  "goal": {
+    "label": "Lanterns",
+    "items": {
+      "lantern": 3
+    },
+    "restore": "windmill"
+  },
+  "stations": [
+    {
+      "at": "tablet-5",
+      "filter": {
+        "type": "choice",
+        "level": "group"
+      }
+    },
+    {
+      "at": "tablet-2",
+      "filter": {
+        "type": "typed",
+        "level": "group"
+      }
+    },
+    {
+      "at": "tablet-3",
+      "filter": {
+        "type": "spelling",
+        "level": "group"
+      }
+    },
+    {
+      "at": "tablet-4",
+      "filter": {
+        "type": "code",
+        "level": "group"
+      }
+    }
+  ],
+  "monster": "hard"
+}

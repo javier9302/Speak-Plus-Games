@@ -1,0 +1,21 @@
+{
+  "id": "ch-b1-02",
+  "type": "choice",
+  "level": "B1",
+  "tags": [
+    "grammar"
+  ],
+  "prompt": "I've lived here ___ 2015.",
+  "options": {
+    "A": "for",
+    "B": "since",
+    "C": "from"
+  },
+  "answer": "B",
+  "hints": [
+    "2015 is a point in time, not a length of time.",
+    "'For' goes with 'five years'.",
+    "since + a point in time"
+  ],
+  "explanation": "since + a point in time (since 2015); for + a length of time (for ten years)."
+}

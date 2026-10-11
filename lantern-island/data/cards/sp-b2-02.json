@@ -1,0 +1,16 @@
+{
+  "id": "sp-b2-02",
+  "type": "spelling",
+  "level": "B2",
+  "tags": [
+    "spelling"
+  ],
+  "prompt": "Listen and spell the word.",
+  "word": "definitely",
+  "describe": "Without any doubt.",
+  "hints": [
+    "It means 'for sure'.",
+    "There is no A in it.",
+    "d-e-f-i-n-i-t-..."
+  ]
+}

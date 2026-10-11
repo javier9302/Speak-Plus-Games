@@ -1,0 +1,18 @@
+{
+  "id": "ty-a1-01",
+  "type": "typed",
+  "level": "A1",
+  "tags": [
+    "numbers"
+  ],
+  "prompt": "Write the number in English: 12",
+  "accepted": [
+    "twelve"
+  ],
+  "allowTypos": false,
+  "hints": [
+    "It comes after eleven.",
+    "It starts with 'tw'.",
+    "t-w-e-l-..."
+  ]
+}

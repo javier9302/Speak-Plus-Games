@@ -1,0 +1,86 @@
+/* Teacher panel. Outlines and bold text, no filled blocks, so any part of it also prints cleanly. */
+main { max-width: 1280px; margin: 0 auto; padding: 16px 20px 60px; display: flex; flex-direction: column; gap: 14px; font-size: 16px; }
+.top { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.top h1 { font-size: 26px; }
+.tabs { display: flex; gap: 6px; margin-left: auto; }
+.tab { min-height: 44px; padding: 0 18px; border-radius: 999px; border: 1.5px solid var(--line); background: var(--surface); font-weight: 700; }
+.tab[aria-selected="true"] { background: var(--indigo); color: var(--washi); border-color: var(--indigo); }
+section[id^="tab-"] { display: flex; flex-direction: column; gap: 14px; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.grow { flex: 1; }
+.small { font-size: 14px; }
+.panel.slim { padding: 14px; display: flex; flex-direction: column; gap: 10px; border-radius: 14px; }
+.panel h2 { font-size: 17px; }
+.tools { display: flex; flex-direction: column; gap: 12px; }
+.error { color: #b3261e; font-weight: 700; border: 2px solid #b3261e; border-radius: 12px; padding: 8px 12px; }
+.saved { color: #2E7D5B; font-size: 14px; font-weight: 700; }
+.code { width: 6.5em; text-transform: uppercase; letter-spacing: .15em; font-weight: 700; }
+.num { width: 5.5em; }
+.field { min-height: 44px; }
+textarea { width: 100%; min-height: 72px; padding: 8px 12px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--bg); resize: vertical; }
+label.inline { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 14px; }
+label.check { display: flex; align-items: center; gap: 8px; min-height: 44px; font-size: 15px; }
+label.check input { width: 20px; height: 20px; accent-color: var(--indigo); }
+.btn-small { min-height: 40px; }
+
+/* Live */
+.live-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+@media (max-width: 900px) { .live-grid, .cards-grid { grid-template-columns: minmax(0, 1fr) !important; } }
+#live-map { width: 100%; aspect-ratio: 40 / 24; display: block; border-radius: 8px; background: #2f6fc0; }
+#live-map.aim { cursor: crosshair; outline: 3px solid var(--vermilion); }
+#stations, #talks, #live-players { display: flex; flex-direction: column; gap: 8px; }
+.station, .talk, .player { border: 2px solid var(--line); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px; }
+.station.waiting, .talk { border: 4px solid var(--vermilion); }
+.station.solved { opacity: .55; }
+.station h3, .talk h3, .player h3 { font-size: 16px; display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; }
+.badge { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: 1px 8px; border: 2px solid currentColor; border-radius: 999px; color: var(--muted); }
+.waiting .badge { color: var(--vermilion); }
+.station .q { font-size: 17px; font-weight: 700; }
+.big-code { font: 700 24px ui-monospace, Menlo, Consolas, monospace; letter-spacing: .15em; padding: 0 8px; border: 2px dashed var(--fg); border-radius: 8px; }
+.station ol, .station ul { margin: 2px 0; padding-left: 22px; }
+.station li.sent { font-weight: 700; }
+.station li.sent::after { content: "  ✓ on the phone"; font-weight: 400; color: #2E7D5B; }
+.player .dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid #1a1c2c; align-self: center; }
+.player.off { opacity: .55; }
+.pill { display: inline-flex; align-items: center; gap: 4px; padding: 0 4px 0 10px; min-height: 32px; border: 1.5px solid var(--line); border-radius: 999px; font-size: 14px; }
+.pill button { width: 28px; height: 28px; border: 0; background: none; border-radius: 50%; color: var(--muted); }
+.pill button:hover { color: #b3261e; }
+.m-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 4px 0; border-top: 1px solid var(--line); }
+.m-row label.check { min-width: 9em; font-weight: 700; }
+
+.chat { display: flex; flex-direction: column; gap: 8px; }
+#chat-list { display: flex; flex-direction: column; gap: 8px; }
+.msg { border: 2px solid var(--line); border-radius: 12px; padding: 8px 12px; display: flex; flex-direction: column; gap: 4px; }
+.msg.locked { border-style: dashed; border-color: var(--fg); }
+.msg a { overflow-wrap: anywhere; }
+.info { border-left: 4px solid var(--sky); padding-left: 10px; }
+
+.meter { position: relative; flex: 1; min-width: 120px; height: 16px; border: 2px solid var(--fg); border-radius: 999px; overflow: hidden; }
+#mon-anger { height: 100%; width: 0; background: var(--vermilion); transition: width .3s; }
+.meter .tick { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--fg); }
+
+/* Cards */
+.cards-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+.sticky { position: sticky; top: 8px; }
+#c-list { display: flex; flex-direction: column; gap: 6px; }
+.card-row { border: 1.5px solid var(--line); border-radius: 12px; padding: 8px 12px; background: var(--surface); display: flex; flex-direction: column; gap: 4px; }
+.card-row.sel { border: 3px solid var(--indigo); }
+.card-row .p { font-weight: 700; }
+.card-row .meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 13px; color: var(--muted); }
+#c-form label { display: flex; flex-direction: column; gap: 4px; font-size: 14px; font-weight: 700; }
+#c-form .two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+#c-form textarea { min-height: 60px; }
+#c-form fieldset { border: 1.5px solid var(--line); border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 8px; margin: 0; }
+#c-form legend { font-size: 13px; font-weight: 700; padding: 0 6px; color: var(--muted); }
+.phone-frame { max-width: 360px; border: 3px solid var(--fg); border-radius: 22px; padding: 16px; background: #F7F4EE; }
+.phone-frame button, .phone-frame input { pointer-events: none; }
+.rec { color: #b3261e; font-weight: 700; }
+
+/* Groups */
+#groups { display: flex; flex-direction: column; gap: 14px; }
+.group { display: flex; flex-direction: column; gap: 12px; }
+.group h2 { font-size: 22px; }
+.group label { display: flex; flex-direction: column; gap: 4px; font-size: 14px; font-weight: 700; }
+.stats { display: flex; flex-wrap: wrap; gap: 6px 18px; }
+form.panel.slim.row { flex-direction: row; }

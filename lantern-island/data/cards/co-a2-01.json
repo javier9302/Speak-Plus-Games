@@ -1,0 +1,31 @@
+{
+  "id": "co-a2-01",
+  "type": "code",
+  "level": "A2",
+  "tags": [
+    "speaking",
+    "past"
+  ],
+  "prompt": "Ask a teammate: \"What did you do last weekend?\" Then tell the teacher their answer.",
+  "hints": [
+    "Use the past tense.",
+    "Start with 'Last weekend he...' or 'she...'",
+    "Last weekend she went shopping and watched a film."
+  ],
+  "explanation": "",
+  "points": 1,
+  "media": {},
+  "teacher": {
+    "code": "4821",
+    "accepted": [
+      "Reported in the past tense, he/she + past verb",
+      "At least two sentences"
+    ],
+    "hints": [
+      "Use the past tense.",
+      "Start with 'Last weekend he...' or 'she...'",
+      "Last weekend she went shopping and watched a film."
+    ]
+  },
+  "lastUsed": "2026-10-11T10:43:18.956Z"
+}

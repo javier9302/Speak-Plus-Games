@@ -1,0 +1,10 @@
+{
+  "items": [
+    { "id": "lantern", "name": "Lantern" },
+    { "id": "key", "name": "Key" },
+    { "id": "plank", "name": "Plank" },
+    { "id": "letter", "name": "Letter" },
+    { "id": "crystal", "name": "Crystal" }
+  ],
+  "maxCarry": 4
+}

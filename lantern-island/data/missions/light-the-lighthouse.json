@@ -1,0 +1,45 @@
+{
+  "id": "light-the-lighthouse",
+  "title": "Light the lighthouse",
+  "story": "The lighthouse is dark and ships cannot find the island. Find three lanterns for the keeper.",
+  "zone": "beach",
+  "minutes": 25,
+  "goal": {
+    "label": "Lanterns",
+    "items": {
+      "lantern": 3
+    },
+    "restore": "lighthouse"
+  },
+  "stations": [
+    {
+      "at": "tablet-1",
+      "filter": {
+        "type": "choice",
+        "level": "group"
+      }
+    },
+    {
+      "at": "tablet-2",
+      "filter": {
+        "type": "typed",
+        "level": "group"
+      }
+    },
+    {
+      "at": "tablet-3",
+      "filter": {
+        "type": "spelling",
+        "level": "group"
+      }
+    },
+    {
+      "at": "tablet-4",
+      "filter": {
+        "type": "code",
+        "level": "group"
+      }
+    }
+  ],
+  "monster": "group-setting"
+}

@@ -1,0 +1,33 @@
+/* Shared look for the host lobby and the teacher panel: Speak Plus colours, large text for a classroom TV. */
+:root {
+  --washi: #F7F4EE; --indigo: #1F2F5C; --vermilion: #E8483B; --sky: #9DB4E0;
+  --bg: #F7F4EE; --surface: #FFFFFF; --fg: #1F2F5C; --muted: #4A5578; --line: #E4DFD4;
+  --night: #131a33;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; height: 100%; }
+body { background: var(--bg); color: var(--fg); font: 18px/1.45 system-ui, -apple-system, "Segoe UI", "Hiragino Sans", sans-serif; }
+h1, h2, h3, p { margin: 0; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--sky); outline-offset: 2px; }
+
+.logo { display: inline-flex; align-items: flex-start; font-weight: 700; letter-spacing: -.04em; line-height: 1; font-size: 24px; }
+.logo svg { width: .62em; height: .62em; flex: none; }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 22px;
+  border-radius: 999px; border: 1.5px solid var(--line); background: var(--surface); color: var(--fg); font-weight: 700; text-decoration: none; }
+.btn:hover { border-color: var(--muted); }
+.btn-primary { background: var(--indigo); border-color: var(--indigo); color: var(--washi); }
+.btn-primary:hover { filter: brightness(1.15); }
+.btn-big { min-height: 64px; font-size: 22px; padding: 0 36px; }
+.btn-small { min-height: 44px; padding: 0 14px; font-size: 15px; }
+.btn-danger { color: #b3261e; }
+.btn:disabled { opacity: .45; cursor: default; }
+
+.field { min-height: 48px; padding: 0 14px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--surface); min-width: 0; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 20px; }
+.eyebrow { font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.muted { color: var(--muted); }
+.warn { padding: 12px 16px; border-radius: 12px; border: 2px solid var(--vermilion); font-weight: 700; }

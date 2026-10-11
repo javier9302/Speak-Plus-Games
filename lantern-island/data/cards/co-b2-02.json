@@ -1,0 +1,21 @@
+{
+  "id": "co-b2-02",
+  "type": "code",
+  "level": "B2",
+  "tags": [
+    "speaking"
+  ],
+  "prompt": "Describe a problem in your town to the teacher, and suggest a solution.",
+  "teacher": {
+    "code": "8126",
+    "accepted": [
+      "A problem described clearly",
+      "A suggestion: 'They should...', 'It would be better if...'"
+    ],
+    "hints": [
+      "What annoys you in your town?",
+      "Use 'The problem is that...'",
+      "The problem is that there are too few buses. They should add a night bus."
+    ]
+  }
+}

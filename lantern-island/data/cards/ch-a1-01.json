@@ -1,0 +1,20 @@
+{
+  "id": "ch-a1-01",
+  "type": "choice",
+  "level": "A1",
+  "tags": [
+    "animals"
+  ],
+  "prompt": "Which animal can fly?",
+  "options": {
+    "A": "A dog",
+    "B": "A bird",
+    "C": "A fish"
+  },
+  "answer": "B",
+  "hints": [
+    "It has wings.",
+    "It sings in the morning.",
+    "It starts with B."
+  ]
+}

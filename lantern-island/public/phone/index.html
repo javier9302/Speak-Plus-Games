@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#131a33">
+<title>Lantern Island</title>
+<link rel="stylesheet" href="phone.css">
+<link rel="stylesheet" href="../shared/card.css">
+</head>
+<body>
+
+<!-- JOIN -->
+<form id="join" class="screen" autocomplete="off">
+  <h1>Lantern Island</h1>
+  <label>Room code
+    <input id="room" inputmode="text" autocapitalize="characters" maxlength="4" placeholder="ABCD" required>
+  </label>
+  <label>Your name
+    <input id="name" maxlength="12" placeholder="Name" required>
+  </label>
+  <p id="join-error" class="error" role="alert" hidden></p>
+  <button class="big" type="submit">Join</button>
+</form>
+
+<!-- WAIT: joined, the teacher has not started yet -->
+<section id="wait" class="screen" hidden>
+  <canvas id="avatar" width="16" height="16"></canvas>
+  <h1 id="wait-name"></h1>
+  <p id="wait-text">You are in! Look at the big screen.</p>
+  <p class="soft" id="wait-soft">The game starts soon.</p>
+</section>
+
+<!-- PLAY -->
+<section id="play" hidden>
+  <header>
+    <span class="dot" id="me-dot"></span><strong id="me-name"></strong>
+    <span class="grow"></span>
+    <button class="chip" id="open-phrases" type="button">Say</button>
+    <button class="chip" id="open-mail" type="button">Mail <b id="mail-count" hidden>0</b></button>
+    <button class="chip" id="open-notes" type="button">Clues <b id="notes-count" hidden>0</b></button>
+    <button class="chip" id="open-role" type="button">Role</button>
+  </header>
+  <div id="stage">
+    <canvas id="view"></canvas>
+    <div id="toast" hidden></div>
+    <div id="warn" hidden></div>
+    <div id="stunned" hidden></div>
+    <div id="paused" hidden>Paused. Listen to the teacher.</div>
+  </div>
+  <!-- What is next to me, and which ability it needs -->
+  <p id="prompt"></p>
+  <!-- What I carry -->
+  <div id="inv" aria-label="Your items"></div>
+  <!-- The three special roles. Mine are bright; the others are grey (tap to see who has them). -->
+  <div id="powers" aria-label="Special roles" hidden></div>
+  <div id="controls">
+    <div id="pad" aria-label="Joystick: touch and drag to walk">
+      <div id="stick"><div id="knob"></div></div>
+      <p class="soft" id="pad-hint">Drag to walk</p>
+    </div>
+    <div id="abilities" aria-label="Abilities"></div>
+  </div>
+</section>
+
+<!-- A card over the game: my role, a clue I found, or my list of clues -->
+<section id="sheet" hidden>
+  <div class="sheet-card">
+    <div id="sheet-body" class="card-view"></div>
+    <button class="big" id="sheet-ok" type="button">OK</button>
+  </div>
+</section>
+
+<!-- Messages that cover everything -->
+<section id="notice" class="screen" hidden>
+  <h1 id="notice-title"></h1>
+  <p id="notice-text"></p>
+  <button class="big" id="notice-btn" type="button">OK</button>
+</section>
+
+<div id="offline" hidden>Reconnecting…</div>
+
+<script type="module" src="phone.js"></script>
+</body>
+</html>

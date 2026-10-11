@@ -1,0 +1,19 @@
+{
+  "help": "The hidden monster. It is a team clock, not a punishment: there is no game over. Speeds are in tiles per second (players walk at 4.5). Times are in seconds. 'setback' is the chance (0 to 1) that a player hit by a shot drops an item. 'returns' says how the monster comes back after the Slayer chases it away: weaker, same or stronger.",
+
+  "levels": {
+    "gentle": { "speed": { "wander": 1.2, "chase": 1.8, "shoot": 1.0 }, "shotEvery": 14, "warn": 4.0, "stun": 5,  "angerPerMinute": 6,  "hits": 2, "away": 90, "returns": "weaker",   "setback": 0 },
+    "normal": { "speed": { "wander": 1.5, "chase": 2.4, "shoot": 1.2 }, "shotEvery": 10, "warn": 3.0, "stun": 8,  "angerPerMinute": 9,  "hits": 3, "away": 70, "returns": "same",     "setback": 0.3 },
+    "hard":   { "speed": { "wander": 1.8, "chase": 3.0, "shoot": 1.5 }, "shotEvery": 7,  "warn": 2.2, "stun": 11, "angerPerMinute": 13, "hits": 4, "away": 50, "returns": "stronger", "setback": 0.6 }
+  },
+
+  "anger": {
+    "help": "Anger goes from 0 to 100. Below 'chaseAt' the monster wanders; from there it chases; from 'shootAt' it shoots. The other numbers are added to the anger when that happens (negative = calmer). After 'idleAfter' seconds without anybody using an ability, anger grows twice as fast.",
+    "chaseAt": 35, "shootAt": 70,
+    "wrongAnswer": 8, "solved": -20, "clue": -5, "hit": -15, "idleAfter": 30
+  },
+
+  "touch": 0.8,
+  "heal": { "range": 2.0 },
+  "slay": { "range": 2.5, "cooldown": 6 }
+}

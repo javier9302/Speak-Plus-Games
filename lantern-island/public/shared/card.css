@@ -1,0 +1,26 @@
+/* How a challenge card looks (phone sheet, and the teacher's preview). The card sits on a light sheet. */
+/* Challenge card */
+.card-view .media { max-width: 100%; border-radius: 10px; }
+.card-view audio { width: 100%; }
+.play { font: inherit; font-size: 20px; font-weight: 700; min-height: 56px; border-radius: 14px; border: 2px solid #1F2F5C; background: #fff; color: #1F2F5C; }
+.opts { display: flex; flex-direction: column; gap: 8px; }
+.opt { font: inherit; font-size: 20px; text-align: left; min-height: 56px; padding: 8px 12px; display: flex; align-items: center; gap: 12px; border-radius: 14px; border: 2px solid #1F2F5C; background: #fff; color: #1F2F5C; }
+.opt b { width: 36px; height: 36px; flex: none; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: #1F2F5C; color: #F7F4EE; }
+.opt:active, .play:active { background: #e8ecf7; }
+.card-view form { display: flex; flex-direction: column; gap: 8px; }
+.card-view form input { border-color: #1F2F5C; background: #fff; }
+.call { font-size: 26px !important; font-weight: 800; color: #E8483B; }
+.result { font-weight: 700; color: #b3261e; border: 2px solid #b3261e; border-radius: 12px; padding: 8px 12px; }
+.good { color: #2E7D5B; }
+.why { border-left: 4px solid #9DB4E0; padding-left: 10px; }
+
+.card-view { display: flex; flex-direction: column; gap: 12px; text-align: left; color: #1F2F5C; }
+.card-view h2 { margin: 0; font-size: 24px; }
+.card-view h3 { margin: 0; font-size: 14px; letter-spacing: .1em; text-transform: uppercase; color: #4A5578; }
+.card-view p { margin: 0; font-size: 20px; }
+.card-view form input { font: inherit; font-size: 24px; font-weight: 700; color: #1F2F5C; min-height: 60px; padding: 0 16px; border-radius: 14px; border: 3px solid #1F2F5C; width: 100%; }
+.card-view .big { font: inherit; font-size: 24px; font-weight: 700; min-height: 64px; width: 100%; border: 0; border-radius: 999px; background: #E8483B; color: #fff; }
+.describe { font-style: italic; }
+.hints { border: 2px dashed #1F2F5C; border-radius: 12px; padding: 8px 12px; }
+.hints ol { margin: 4px 0 0; padding-left: 24px; font-size: 18px; }
+.note { border: 2px solid #1F2F5C; border-radius: 12px; padding: 8px 12px; font-size: 18px !important; font-weight: 700; }

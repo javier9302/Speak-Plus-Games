@@ -1,0 +1,19 @@
+{
+  "id": "ty-b2-02",
+  "type": "typed",
+  "level": "B2",
+  "tags": [
+    "grammar"
+  ],
+  "prompt": "Complete with the verb 'see': \"I'm looking forward to ___ you.\"",
+  "accepted": [
+    "seeing"
+  ],
+  "allowTypos": false,
+  "hints": [
+    "Here 'to' is a preposition.",
+    "After a preposition, use -ing.",
+    "see + ing"
+  ],
+  "explanation": "look forward to + -ing."
+}

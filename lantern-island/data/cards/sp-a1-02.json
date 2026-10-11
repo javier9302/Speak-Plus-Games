@@ -1,0 +1,16 @@
+{
+  "id": "sp-a1-02",
+  "type": "spelling",
+  "level": "A1",
+  "tags": [
+    "spelling"
+  ],
+  "prompt": "Listen and spell the word.",
+  "word": "school",
+  "describe": "Students go there every day.",
+  "hints": [
+    "You study there.",
+    "It has six letters.",
+    "s-c-h-..."
+  ]
+}

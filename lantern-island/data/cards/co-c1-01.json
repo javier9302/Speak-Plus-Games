@@ -1,0 +1,22 @@
+{
+  "id": "co-c1-01",
+  "type": "code",
+  "level": "C1",
+  "tags": [
+    "speaking",
+    "opinion"
+  ],
+  "prompt": "\"Working from home is better than working in an office.\" Argue for or against, to the teacher, for about one minute.",
+  "teacher": {
+    "code": "3395",
+    "accepted": [
+      "A clear position, developed for about a minute",
+      "At least one point against their own side, answered"
+    ],
+    "hints": [
+      "Choose one side and stay on it.",
+      "Mention what the other side would say.",
+      "While it's true that offices help people meet, I'd argue that..."
+    ]
+  }
+}

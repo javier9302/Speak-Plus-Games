@@ -1,0 +1,93 @@
+{
+  "id": "beach",
+  "name": "The Beach",
+  "legend": {
+    "~": "water (blocks)",
+    ",": "grass",
+    ".": "sand",
+    "#": "path",
+    "=": "bridge",
+    "T": "tree (blocks)",
+    "R": "rock (blocks)",
+    "p": "player start (grass). Keep 6."
+  },
+  "rows": [
+    "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+    "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+    "~~~~~~~~~~~~~~~...~~~~~~~~~~~~~~~~~~~~~~",
+    "~~~~~~~~~~~~~~~~.~~~~~~~~~~~~~~~~~~~~~~~",
+    "~~~~~~~~~~.............~~~~~~~~~~~~~~~~~",
+    "~~~~~~~~.................~~~~~~~~~~~~~~~",
+    "~~~~~~~.....T,,,,T,T,.....~~~~~~~..~~~~~",
+    "~~~~~.....,T,,,,,T,,,,,..R~~~~~......~~~",
+    "~~~~~....,,,,,T,,,,,,,,,.R~~~~~....R.~~~",
+    "~~~~...,,T,,,,,,,,,,,,,,..~~~~...,,.R.~~",
+    "~~~~...,,,,,,,,,,,,,,,,,..~~~~...,,...~~",
+    "~~~~..,,,,,,,,############====######..~~",
+    "~~~~..,,,,,,,p,p,p,,,,,,..~~~~...,,...~~",
+    "~~~~...,,T,,,p,p,p,,,,T,..~~~~...,T...~~",
+    "~~~~...,,,,,,,,,,,,TTTT,..~~~~~......~~~",
+    "~~~~~....,,,,,,,,,,T,T,,..~~~~~....R.~~~",
+    "~~~~~.....,,,,,,,,,T,T,...~~~~~~~..~~~~~",
+    "~~~~~~~.....,,,,T,,,,.RR..~~~~~~~~~~~~~~",
+    "~~~~~~~~..............R..~~~~~~~~~~~~~~~",
+    "~~~~~~~~~~...R....RR...~~~~~~~~~~~~~~~~~",
+    "~~~~~~~~~~~~~~~...~~~~~~~~~~~~~~~~~~~~~~",
+    "~~~~~~~~~~~~~~~~.~~~~~~~~~~~~~~~~~~~~~~~",
+    "~~~~~~~~~~~~~~~...~~~~~~~~~~~~~~~~~~~~~~",
+    "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+  ],
+  "objectsHelp": "Things on the map. x and y count tiles from the top left, starting at 0. See the README, 'The beach', for what each kind needs. 'clues' can be added to any object: only a player with that ability sees the text. In clue texts, {d1} {d2} {d3} become the digits of the garden gate's code, which is new in every mission. An npc's 'lines' are sentences the teacher can send from the teacher panel.",
+  "goal": {
+    "label": "Lanterns",
+    "items": {
+      "lantern": 3
+    },
+    "deliver": "keeper",
+    "story": "Find three lanterns and bring them to the lighthouse keeper."
+  },
+  "placesHelp": "Named places. Students use them to say where to meet (couriers). x and y are the middle of the place.",
+  "landmarksHelp": "What missions restore, in this order unless a mission names one. Each is drawn as a ruin until a mission restores it, then for ever. 'solid': players cannot walk through it. w and h are its size in tiles (x, y is the top left).",
+  "places": [
+    {"id":"meadow","name":"the meadow","x":15,"y":13},
+    {"id":"old-bridge","name":"the old bridge","x":24,"y":11},
+    {"id":"fisherman","name":"the stone fisherman","x":10,"y":10},
+    {"id":"big-rock","name":"the big rock","x":16,"y":5},
+    {"id":"south-beach","name":"the south beach","x":14,"y":18},
+    {"id":"small-island","name":"the small island","x":33,"y":11},
+    {"id":"garden","name":"the garden","x":20,"y":18},
+    {"id":"water-gate","name":"the water gate","x":11,"y":18}
+  ],
+  "landmarks": [
+    {"id":"lighthouse","name":"the lighthouse","x":31,"y":8,"w":1,"h":2,"solid":true},
+    {"id":"dock","name":"the boat dock","x":2,"y":11,"w":2,"h":1,"solid":false},
+    {"id":"flower-garden","name":"the flower garden","x":13,"y":15,"w":3,"h":1,"solid":false},
+    {"id":"post-office","name":"the post office","x":13,"y":7,"w":1,"h":1,"solid":true},
+    {"id":"windmill","name":"the windmill","x":22,"y":7,"w":1,"h":2,"solid":true},
+    {"id":"fountain","name":"the fountain","x":16,"y":10,"w":1,"h":1,"solid":true},
+    {"id":"market","name":"the market stall","x":8,"y":10,"w":1,"h":1,"solid":true},
+    {"id":"campfire","name":"the campfire","x":20,"y":19,"w":1,"h":1,"solid":false}
+  ],
+  "objects": [
+    {"id":"old-sign","kind":"sign","name":"Old sign","x":20,"y":10,"clues":{"read":"WELCOME TO LANTERN ISLAND. The lighthouse is dark! Find three lanterns in the stone tablets. The garden gate has a code. Its first number is {d1}."}},
+    {"id":"fisherman","kind":"statue","name":"Stone fisherman","x":10,"y":9,"clues":{"look":"A stone fisherman. Somebody painted a big number on his hat: {d2}. It is the second number of a code.","read":"\"Nobody lights the lighthouse alone.\""}},
+    {"id":"big-shell","kind":"shell","name":"Big shell","x":15,"y":19,"clues":{"listen":"A small voice inside: \"The last number of the code is {d3}.\"","look":"A big pink shell. It is beautiful."}},
+    {"id":"bridge-sign","kind":"sign","name":"Bridge sign","x":23,"y":10,"clues":{"read":"OLD BRIDGE. The gate is locked. The key is in the chest behind the big rock, in the north. The bridge is broken: somebody must jump, and stand on the stone on the other side."}},
+    {"id":"water-sign","kind":"sign","name":"Water sign","x":10,"y":19,"clues":{"read":"WATER GATE. Close it and the sea goes down, so you can walk to the sandbank. It is broken: fix it with a plank."}},
+    {"id":"bottle","kind":"bottle","name":"Bottle","x":33,"y":7,"clues":{"look":"A green bottle with a letter inside.","read":"\"The keeper takes the lanterns from one pair of hands. One of you must carry all three, and talk to him. - A friend\""}},
+    {"id":"small-shell","kind":"shell","name":"Small shell","x":34,"y":14,"clues":{"listen":"You hear the sea... and somebody singing an English song."}},
+    {"id":"keeper","kind":"npc","name":"Lighthouse keeper","x":34,"y":10,"clues":{"talk":"\"Hello! I am the lighthouse keeper. Please bring me three lanterns. One of you must carry all three.\""},"lines":["Hello! What is your name?","How many lanterns do you have?","Where did you find them?","Can you say that again, please?","Thank you! You are a great team."]},
+    {"id":"boulder","kind":"boulder","name":"Big rock","x":16,"y":3,"to":{"x":17,"y":4},"clues":{"look":"A very big rock. There is something behind it."}},
+    {"id":"chest","kind":"chest","name":"Old chest","x":16,"y":2,"holds":"key"},
+    {"id":"gate","kind":"gate","name":"Bridge gate","x":26,"y":11,"locked":true,"key":"key"},
+    {"id":"gap","kind":"gap","name":"Broken bridge","x":28,"y":11},
+    {"id":"plate","kind":"plate","name":"Flat stone","x":30,"y":11,"target":"gap"},
+    {"id":"garden-gate","kind":"gate","name":"Garden gate","x":20,"y":17,"locked":true,"code":3},
+    {"id":"sluice","kind":"sluice","name":"Water gate","x":12,"y":19,"needs":"plank","floods":[{"x":16,"y":21}]},
+    {"id":"tablet-1","kind":"station","name":"West tablet","x":8,"y":13,"by":"use","card":{"type":"choice","level":"group"},"reward":{"item":"lantern"}},
+    {"id":"tablet-2","kind":"station","name":"Sandbank tablet","x":17,"y":22,"by":"use","card":{"type":"typed","level":"group"},"reward":{"item":"lantern"}},
+    {"id":"tablet-3","kind":"station","name":"Garden tablet","x":20,"y":15,"by":"use","card":{"type":"spelling","level":"group"},"reward":{"item":"plank"}},
+    {"id":"tablet-4","kind":"station","name":"Island tablet","x":32,"y":13,"by":"use","card":{"type":"code","level":"group"},"reward":{"item":"lantern"}},
+    {"id":"tablet-5","kind":"station","name":"Beach tablet","x":23,"y":6,"by":"use","card":{"type":"choice","level":"group"},"reward":{"item":"lantern"}}
+  ]
+}

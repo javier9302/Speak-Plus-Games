@@ -1,0 +1,19 @@
+{
+  "id": "ty-b1-01",
+  "type": "typed",
+  "level": "B1",
+  "tags": [
+    "vocabulary"
+  ],
+  "prompt": "A person who writes for a newspaper is a ...",
+  "accepted": [
+    "journalist",
+    "reporter"
+  ],
+  "allowTypos": true,
+  "hints": [
+    "They write the news.",
+    "It starts with J or R.",
+    "journ-..."
+  ]
+}

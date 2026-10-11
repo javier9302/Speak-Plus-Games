@@ -1,0 +1,31 @@
+{
+  "abilities": [
+    { "id": "look",   "name": "Look",    "group": "Observe", "help": "examine objects" },
+    { "id": "read",   "name": "Read",    "group": "Observe", "help": "signs, notes, codes" },
+    { "id": "talk",   "name": "Talk",    "group": "Talk",    "help": "speak to people" },
+    { "id": "listen", "name": "Listen",  "group": "Talk",    "help": "hear hidden sounds and voices" },
+    { "id": "pickup", "name": "Pick up", "group": "Carry",   "help": "take items" },
+    { "id": "give",   "name": "Give",    "group": "Carry",   "help": "hand an item to a teammate" },
+    { "id": "open",   "name": "Open",    "group": "Doors",   "help": "open doors and boxes" },
+    { "id": "close",  "name": "Close",   "group": "Doors",   "help": "close doors and boxes" },
+    { "id": "jump",   "name": "Jump",    "group": "Move",    "help": "jump over gaps, climb" },
+    { "id": "push",   "name": "Push",    "group": "Move",    "help": "push and pull heavy things" },
+    { "id": "use",    "name": "Use",     "group": "Make",    "help": "use an item on an object" },
+    { "id": "fix",    "name": "Fix",     "group": "Make",    "help": "repair and combine things" }
+  ],
+
+  "assignments": {
+    "2": [["look", "read", "talk", "listen", "pickup", "give"], ["open", "close", "jump", "push", "use", "fix"]],
+    "3": [["look", "read", "talk", "listen"], ["pickup", "give", "open", "close"], ["jump", "push", "use", "fix"]],
+    "4": [["look", "read", "talk"], ["listen", "pickup", "give"], ["open", "close", "jump"], ["push", "use", "fix"]],
+    "5": [["look", "read", "talk"], ["listen", "pickup", "give"], ["open", "close"], ["jump", "push"], ["use", "fix"]],
+    "6": [["look", "read"], ["talk", "listen"], ["pickup", "give"], ["open", "close"], ["jump", "push"], ["use", "fix"]]
+  },
+
+  "random": {
+    "note": "Rules for the 'Random mix'. Each player gets as many abilities as in the table above. The abilities in each 'spread' list are shared out among as many different players as possible, so one player never holds all the clues or all the ways through.",
+    "spread": [["look", "read", "listen"], ["open", "jump", "push"], ["pickup", "use", "fix"]],
+    "together": [["pickup", "give"]],
+    "togetherNote": "Abilities in a 'together' list always go to the same player. Only the player who picks things up has them to give."
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "id": "cu-a2-01",
+  "type": "courier",
+  "level": "A2",
+  "tags": [
+    "courier",
+    "directions"
+  ],
+  "prompt": "A letter for a teammate!",
+  "hints": [],
+  "explanation": "",
+  "points": 1,
+  "media": {},
+  "meetAt": "old-bridge",
+  "recipient": "opener",
+  "then": {
+    "type": "choice"
+  },
+  "lastUsed": "2026-10-11T10:45:50.064Z"
+}

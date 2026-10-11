@@ -1,0 +1,26 @@
+{
+  "id": "sp-a2-02",
+  "type": "spelling",
+  "level": "A2",
+  "tags": [
+    "spelling"
+  ],
+  "prompt": "Listen and spell the word.",
+  "hints": [
+    "It means very pretty.",
+    "It starts with 'beau'.",
+    "b-e-a-u-t-i-..."
+  ],
+  "explanation": "",
+  "points": 1,
+  "media": {
+    "tts": "beautiful"
+  },
+  "word": "beautiful",
+  "describe": "Very pretty.",
+  "accepted": [
+    "beautiful"
+  ],
+  "allowTypos": false,
+  "lastUsed": "2026-10-11T11:10:25.119Z"
+}

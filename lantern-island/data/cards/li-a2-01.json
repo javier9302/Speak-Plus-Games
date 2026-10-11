@@ -1,0 +1,23 @@
+{
+  "id": "li-a2-01",
+  "type": "link",
+  "level": "A2",
+  "tags": [
+    "reading",
+    "link"
+  ],
+  "helper": "reading",
+  "link": "https://simple.wikipedia.org/wiki/Lighthouse",
+  "prompt": "Read the page with the Reading Helper. What is a lighthouse for?",
+  "options": {
+    "A": "To help ships find their way",
+    "B": "To catch fish",
+    "C": "To make electricity"
+  },
+  "answer": "A",
+  "hints": [
+    "Read the first two sentences.",
+    "Who needs to see the light at night?",
+    "Ships."
+  ]
+}

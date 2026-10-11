@@ -1,0 +1,16 @@
+{
+  "id": "sp-c1-01",
+  "type": "spelling",
+  "level": "C1",
+  "tags": [
+    "spelling"
+  ],
+  "prompt": "Listen and spell the word.",
+  "word": "conscientious",
+  "describe": "Careful to do your work well.",
+  "hints": [
+    "It starts with 'con'.",
+    "There is 'science' hiding inside, almost.",
+    "c-o-n-s-c-i-e-n-..."
+  ]
+}

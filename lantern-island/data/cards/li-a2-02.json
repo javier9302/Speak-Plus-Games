@@ -1,0 +1,34 @@
+{
+  "id": "li-a2-02",
+  "type": "link",
+  "level": "A2",
+  "tags": [
+    "reading",
+    "link",
+    "numbers"
+  ],
+  "prompt": "Read the page with the Reading Helper. How high is Mount Fuji, in metres?",
+  "hints": [
+    "Look for a number with 'm' after it.",
+    "It is between 3,000 and 4,000.",
+    "3,7.."
+  ],
+  "explanation": "",
+  "points": 1,
+  "media": {},
+  "link": "https://simple.wikipedia.org/wiki/Mount_Fuji",
+  "helper": "reading",
+  "answerType": "typed",
+  "accepted": [
+    "3776",
+    "3,776",
+    "3776 m",
+    "3776 metres",
+    "3776 meters",
+    "3,776 m",
+    "3,776 metres",
+    "3,776 meters"
+  ],
+  "allowTypos": false,
+  "lastUsed": "2026-10-11T10:45:50.064Z"
+}

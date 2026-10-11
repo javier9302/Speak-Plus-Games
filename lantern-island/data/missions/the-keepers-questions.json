@@ -1,0 +1,45 @@
+{
+  "id": "the-keepers-questions",
+  "title": "The keeper's questions",
+  "story": "The keeper wants to hear you speak! Every lantern needs a good answer, out loud, to the teacher.",
+  "zone": "beach",
+  "minutes": 25,
+  "goal": {
+    "label": "Lanterns",
+    "items": {
+      "lantern": 3
+    },
+    "restore": "old-bridge"
+  },
+  "stations": [
+    {
+      "at": "tablet-1",
+      "filter": {
+        "type": "code",
+        "level": "group"
+      }
+    },
+    {
+      "at": "tablet-2",
+      "filter": {
+        "type": "code",
+        "level": "group"
+      }
+    },
+    {
+      "at": "tablet-3",
+      "filter": {
+        "type": "choice",
+        "level": "group"
+      }
+    },
+    {
+      "at": "tablet-4",
+      "filter": {
+        "type": "code",
+        "level": "group"
+      }
+    }
+  ],
+  "monster": "group-setting"
+}

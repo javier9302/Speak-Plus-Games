@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lantern Island · Host</title>
+<link rel="stylesheet" href="../shared/base.css">
+<link rel="stylesheet" href="host.css">
+</head>
+<body>
+
+<!-- LOBBY: choose a group, show the QR code, wait for players -->
+<section id="lobby">
+  <header class="top">
+    <div class="logo">speak<svg viewBox="0 0 40 40" aria-hidden="true"><g transform="rotate(12 20 20)"><line x1="20" y1="6" x2="20" y2="34" stroke="#E8483B" stroke-width="8.5" stroke-linecap="round"/><line x1="6" y1="20" x2="34" y2="20" stroke="#E8483B" stroke-width="8.5" stroke-linecap="round"/></g></svg></div>
+    <h1>Lantern Island</h1>
+    <span class="spacer"></span>
+    <button class="btn btn-small mute" type="button">Sound: on</button>
+    <a class="btn btn-small" id="teacher-link" href="../teacher/" target="_blank" rel="noopener">Teacher panel</a>
+  </header>
+
+  <p class="warn" id="net-warn" hidden></p>
+
+  <div class="cols">
+    <div class="panel join">
+      <span class="eyebrow">Join with your phone</span>
+      <img id="qr" alt="QR code to join the game" width="320" height="320">
+      <div class="code-row"><span class="muted">Room code</span><strong id="code">····</strong></div>
+      <p class="muted small">No camera? Open this address and type the code:</p>
+      <p class="url" id="url"></p>
+    </div>
+
+    <div class="side">
+      <div class="panel">
+        <span class="eyebrow">Group</span>
+        <div class="row">
+          <select class="field grow" id="group" aria-label="Group"></select>
+        </div>
+        <form class="row" id="new-group">
+          <input class="field grow" id="new-name" maxlength="40" placeholder="New group name" aria-label="New group name">
+          <button class="btn btn-small" type="submit">Create</button>
+        </form>
+        <p class="muted small" id="group-info"></p>
+        <!-- The group's island: ruins, and what their missions have restored so far. -->
+        <canvas id="island" hidden aria-label="The group's island"></canvas>
+        <p class="island-note" id="island-note" hidden></p>
+      </div>
+
+      <div class="panel grow">
+        <div class="row between"><span class="eyebrow">Players</span><span class="muted" id="count"></span></div>
+        <ul class="players" id="players"></ul>
+        <p class="muted small" id="players-empty">Scan the code, type your name, and you appear here.</p>
+      </div>
+
+      <p class="error" id="error" role="alert" hidden></p>
+      <button class="btn btn-primary btn-big" id="start" type="button" disabled>Start</button>
+      <p class="muted small">Start plays a quick mission made for the group's level. To choose a mission, use the Teacher panel.</p>
+      <p class="muted small">No phones handy? <button class="link" id="test-player" type="button">Open a test player window</button> (move with the arrow keys).</p>
+    </div>
+  </div>
+</section>
+
+<!-- PLAY: the whole map -->
+<section id="play" hidden>
+  <header class="bar">
+    <div class="logo">speak<svg viewBox="0 0 40 40" aria-hidden="true"><g transform="rotate(12 20 20)"><line x1="20" y1="6" x2="20" y2="34" stroke="#E8483B" stroke-width="8.5" stroke-linecap="round"/><line x1="6" y1="20" x2="34" y2="20" stroke="#E8483B" stroke-width="8.5" stroke-linecap="round"/></g></svg></div>
+    <strong id="play-group"></strong>
+    <span class="mission" id="mission"></span>
+    <div class="goal" id="goal" aria-live="polite"><span id="goal-text"></span><div class="goal-bar"><div id="goal-fill"></div></div></div>
+    <span class="clock" id="clock"></span>
+    <span class="spacer"></span>
+    <span class="muted-light">Room <b id="play-code"></b></span>
+    <button class="btn btn-small" id="to-lobby" type="button">Lobby</button>
+    <button class="btn btn-small mute" type="button">Sound: on</button>
+    <button class="btn btn-small" id="full" type="button">Full screen</button>
+  </header>
+  <div class="map-wrap">
+    <canvas id="map"></canvas>
+    <div class="banner" id="paused" hidden>Paused</div>
+    <!-- Mission complete: what the team did together. Never a ranking of players. -->
+    <div class="done" id="done" hidden>
+      <strong id="done-title"></strong>
+      <span id="done-restore"></span>
+      <div class="stars" id="done-stars" aria-hidden="true"></div>
+      <dl id="done-stats"></dl>
+    </div>
+  </div>
+</section>
+
+<div class="offline" id="offline" hidden>Connection lost. Reconnecting…</div>
+
+<script type="module" src="host.js"></script>
+</body>
+</html>

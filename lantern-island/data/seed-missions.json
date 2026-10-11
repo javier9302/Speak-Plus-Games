@@ -1,0 +1,191 @@
+[
+  {
+    "id": "light-the-lighthouse",
+    "title": "Light the lighthouse",
+    "story": "The lighthouse is dark and ships cannot find the island. Find three lanterns for the keeper.",
+    "zone": "beach",
+    "minutes": 25,
+    "goal": {
+      "label": "Lanterns",
+      "items": {
+        "lantern": 3
+      },
+      "restore": "lighthouse"
+    },
+    "stations": [
+      { "at": "tablet-1", "filter": { "type": "choice", "level": "group" } },
+      { "at": "tablet-2", "filter": { "type": "typed", "level": "group" } },
+      { "at": "tablet-3", "filter": { "type": "spelling", "level": "group" } },
+      { "at": "tablet-4", "filter": { "type": "code", "level": "group" } }
+    ],
+    "monster": "group-setting"
+  },
+  {
+    "id": "the-keepers-questions",
+    "title": "The keeper's questions",
+    "story": "The keeper wants to hear you speak! Every lantern needs a good answer, out loud, to the teacher.",
+    "zone": "beach",
+    "minutes": 25,
+    "goal": {
+      "label": "Lanterns",
+      "items": {
+        "lantern": 3
+      },
+      "restore": "dock"
+    },
+    "stations": [
+      { "at": "tablet-1", "filter": { "type": "code", "level": "group" } },
+      { "at": "tablet-3", "filter": { "type": "choice", "level": "group" } },
+      { "at": "tablet-2", "filter": { "type": "code", "level": "group" } },
+      { "at": "tablet-4", "filter": { "type": "code", "level": "group" } }
+    ],
+    "monster": "group-setting"
+  },
+  {
+    "id": "word-hunt",
+    "title": "Word hunt",
+    "story": "The island's signs lost their words. Spell and write them back to earn the lanterns.",
+    "zone": "beach",
+    "minutes": 20,
+    "goal": {
+      "label": "Lanterns",
+      "items": {
+        "lantern": 3
+      },
+      "restore": "flower-garden"
+    },
+    "stations": [
+      { "at": "tablet-1", "filter": { "type": "spelling", "level": "group" } },
+      { "at": "tablet-2", "filter": { "type": "typed", "level": "group" } },
+      { "at": "tablet-3", "filter": { "type": "typed", "level": "group" } },
+      { "at": "tablet-5", "filter": { "type": "spelling", "level": "group" } }
+    ],
+    "monster": "group-setting"
+  },
+  {
+    "id": "letters-and-links",
+    "title": "Letters and links",
+    "story": "The island's post is late! Carry the letters to the right people, and read what the keeper sends you.",
+    "zone": "beach",
+    "minutes": 25,
+    "goal": {
+      "label": "Lanterns",
+      "items": {
+        "lantern": 3
+      },
+      "restore": "post-office"
+    },
+    "stations": [
+      { "at": "tablet-1", "filter": { "type": "courier", "level": "group" } },
+      { "at": "tablet-2", "filter": { "type": "link", "level": "group" } },
+      { "at": "tablet-3", "filter": { "type": "spelling", "level": "group" } },
+      { "at": "tablet-4", "filter": { "type": "courier", "level": "group" } }
+    ],
+    "monster": "group-setting"
+  },
+  {
+    "id": "storm-warning",
+    "title": "Storm warning",
+    "story": "A storm is coming and the monster is angry. Work fast, listen to your Seer, and get the lanterns to the keeper before dark.",
+    "zone": "beach",
+    "minutes": 20,
+    "goal": {
+      "label": "Lanterns",
+      "items": {
+        "lantern": 3
+      },
+      "restore": "windmill"
+    },
+    "stations": [
+      { "at": "tablet-5", "filter": { "type": "choice", "level": "group" } },
+      { "at": "tablet-2", "filter": { "type": "typed", "level": "group" } },
+      { "at": "tablet-3", "filter": { "type": "spelling", "level": "group" } },
+      { "at": "tablet-4", "filter": { "type": "code", "level": "group" } }
+    ],
+    "monster": "hard"
+  },
+  {
+    "id": "a-quiet-morning",
+    "title": "A quiet morning",
+    "story": "The sea is calm and the monster is asleep. A good day to learn the island and practise asking each other for help.",
+    "zone": "beach",
+    "minutes": 20,
+    "goal": {
+      "label": "Lanterns",
+      "items": {
+        "lantern": 3
+      },
+      "restore": "fountain"
+    },
+    "stations": [
+      { "at": "tablet-1", "filter": { "type": "choice", "level": "group" } },
+      { "at": "tablet-3", "filter": { "type": "spelling", "level": "group" } },
+      { "at": "tablet-2", "filter": { "type": "typed", "level": "group" } },
+      { "at": "tablet-5", "filter": { "type": "choice", "level": "group" } }
+    ],
+    "monster": "off"
+  },
+  {
+    "id": "the-lost-crystals",
+    "title": "The lost crystals",
+    "story": "The forest lost its light. Three crystals are hidden among the trees: find them for the ranger.",
+    "zone": "forest",
+    "minutes": 25,
+    "goal": {
+      "label": "Crystals",
+      "items": {
+        "crystal": 3
+      },
+      "restore": "forest-cabin"
+    },
+    "stations": [
+      { "at": "f-tablet-1", "filter": { "type": "choice", "level": "group" } },
+      { "at": "f-tablet-2", "filter": { "type": "typed", "level": "group" } },
+      { "at": "f-tablet-3", "filter": { "type": "spelling", "level": "group" } },
+      { "at": "f-tablet-4", "filter": { "type": "code", "level": "group" } }
+    ],
+    "monster": "group-setting"
+  },
+  {
+    "id": "forest-post",
+    "title": "Forest post",
+    "story": "Letters for the forest people! Carry them to the right hands, and read what the ranger sends.",
+    "zone": "forest",
+    "minutes": 25,
+    "goal": {
+      "label": "Crystals",
+      "items": {
+        "crystal": 3
+      },
+      "restore": "forest-well"
+    },
+    "stations": [
+      { "at": "f-tablet-1", "filter": { "type": "courier", "level": "group" } },
+      { "at": "f-tablet-2", "filter": { "type": "typed", "level": "group" } },
+      { "at": "f-tablet-3", "filter": { "type": "spelling", "level": "group" } },
+      { "at": "f-tablet-5", "filter": { "type": "link", "level": "group" } }
+    ],
+    "monster": "group-setting"
+  },
+  {
+    "id": "the-rangers-test",
+    "title": "The ranger's test",
+    "story": "The ranger wants to hear you speak before giving up the crystals. Answer out loud, to the teacher.",
+    "zone": "forest",
+    "minutes": 25,
+    "goal": {
+      "label": "Crystals",
+      "items": {
+        "crystal": 3
+      },
+      "restore": "forest-mill"
+    },
+    "stations": [
+      { "at": "f-tablet-5", "filter": { "type": "code", "level": "group" } },
+      { "at": "f-tablet-2", "filter": { "type": "code", "level": "group" } },
+      { "at": "f-tablet-3", "filter": { "type": "choice", "level": "group" } },
+      { "at": "f-tablet-4", "filter": { "type": "code", "level": "group" } }
+    ],
+    "monster": "group-setting"
+  }
+]

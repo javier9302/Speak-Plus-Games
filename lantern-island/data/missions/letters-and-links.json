@@ -1,0 +1,45 @@
+{
+  "id": "letters-and-links",
+  "title": "Letters and links",
+  "story": "The island's post is late! Carry the letters to the right people, and read what the keeper sends you.",
+  "zone": "beach",
+  "minutes": 25,
+  "goal": {
+    "label": "Lanterns",
+    "items": {
+      "lantern": 3
+    },
+    "restore": "post-office"
+  },
+  "stations": [
+    {
+      "at": "tablet-1",
+      "filter": {
+        "type": "courier",
+        "level": "group"
+      }
+    },
+    {
+      "at": "tablet-2",
+      "filter": {
+        "type": "link",
+        "level": "group"
+      }
+    },
+    {
+      "at": "tablet-3",
+      "filter": {
+        "type": "spelling",
+        "level": "group"
+      }
+    },
+    {
+      "at": "tablet-4",
+      "filter": {
+        "type": "courier",
+        "level": "group"
+      }
+    }
+  ],
+  "monster": "group-setting"
+}
