@@ -12,18 +12,19 @@
 // the way, what it needs). A new kind needs nothing here.
 import { buildThings } from './things.js';
 import { kindOf, abilityOf, progressOf } from './kinds/index.js';
+import { goalOf } from './goals/index.js';
 
 const TERRAIN_SOLID = new Set(['~', 'T', 'R']);
 const NAMES = { look: 'Look', read: 'Read', talk: 'Talk', listen: 'Listen', pickup: 'Pick up', give: 'Give', open: 'Open', close: 'Close', jump: 'Jump', push: 'Push', use: 'Use', fix: 'Fix' };
 
 // sets: one list of abilities per player. without: abilities to pretend nobody has.
-export function solve(zone, mission, sets, { without = [] } = {}) {
+// explore: keep going after the goal is reached, to see everything a team can get to (npm run check).
+export function solve(zone, mission, sets, { without = [], explore = false } = {}) {
   const n = sets.length;
   const has = (i, a) => sets[i].includes(a) && !without.includes(a);
   const owners = (a) => sets.map((s, i) => i).filter((i) => has(i, a));
   const things = buildThings(zone, mission.stations.map((s) => s.at));
   const byId = Object.fromEntries(things.map((t) => [t.id, t]));
-  const [goalItem, need] = Object.entries(mission.goal.items)[0];
   const pool = [];                       // items picked up: { item, holder }
   const clues = new Set();               // "thing:ability" found
   const used = new Set(), log = [];
@@ -84,8 +85,14 @@ export function solve(zone, mission, sets, { without = [] } = {}) {
   };
   const codeKnown = (t) => Array.from({ length: t.def.code }, (_, d) => d + 1).every((d) => things.some((c) => Object.entries(c.def.clues || {}).some(([a, text]) => text.includes(`{d${d}}`) && clues.has(`${c.id}:${a}`))));
 
+  // What a goal type's solver part may use (server/goals/<type>.js, "solver").
+  const s = { mission, things, byId, pool, used, log, clues, owners, has, canGet, take, key, zone, regs: null, regions,
+    reach: (i, t) => reach(s.regs, i, t) };
+  const goal = goalOf(mission.goal).solver(s);
+
   for (let turn = 0; turn < 400 && !done; turn++) {
     const regs = regions();
+    s.regs = regs;
     let progress = false;
     // The owner of ability `a` does something to thing `t`, if they can get to it (and `ok` agrees).
     const act = (a, t, what, effect, ok = () => true) => {
@@ -111,17 +118,9 @@ export function solve(zone, mission, sets, { without = [] } = {}) {
     // Abilities used just by walking somewhere (jumping over a gap).
     for (const t of things) for (const a of kindOf(t).markUsed?.(t, { owners, regs }) || []) used.add(a);
 
-    // The goal: enough items, and (if the zone asks for it) one player carries them all to a character.
-    if (pool.filter((it) => it.item === goalItem).length >= need) {
-      const npc = byId[mission.goal.deliver];
-      if (!npc) done = true;
-      else for (const i of owners('talk')) {
-        if (!reach(regs, i, npc) || !pool.filter((it) => it.item === goalItem).every((it) => it.holder === i || has(it.holder, 'give'))) continue;
-        if (pool.some((it) => it.item === goalItem && it.holder !== i)) used.add('give');
-        used.add('talk'); log.push(`Talk: the ${npc.name.toLowerCase()}, with the ${goalItem}s`); done = true;
-        break;
-      }
-    }
+    // The goal type's own steps (delivering, escorting...), then: is it reached?
+    if (goal.step?.()) progress = true;
+    if (!explore && goal.done()) done = true;
     if (!progress && !done) break;
   }
 
@@ -146,9 +145,8 @@ export function solve(zone, mission, sets, { without = [] } = {}) {
       const w = why(a, t) || extra;
       if (w) problems.push(`${name}: ${w}`);
     }
-    const have = pool.filter((it) => it.item === goalItem).length;
-    if (have >= need) problems.push(`the ${goalItem}s cannot be carried to the ${byId[mission.goal.deliver]?.name.toLowerCase()}: ${!owners('talk').length ? 'nobody has Talk' : !owners('give').length ? 'the player with Talk is not the one who picks them up, and nobody has Give' : 'the player with Talk cannot get there'}`);
-    else if (!problems.length) problems.push(`only ${have} of ${need} ${goalItem}s can be collected`);
+    s.regs = regions();
+    problems.push(...goal.why(problems));
   }
   return { ok: done, used, log, problems, things, clues };
 }

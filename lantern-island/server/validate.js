@@ -5,6 +5,7 @@ import { KINDS } from './kinds/index.js';
 import { checkObject } from './things.js';
 import { TILES, SOLID_TILES } from './world.js';
 import { didYouMean } from './words.js';
+import { normalizeGoal } from './missions.js';
 
 export { didYouMean };
 
@@ -102,21 +103,12 @@ export function zoneProblems(raw, { items, abilities }) {
   };
   named(raw.places, 'places', []);
   named(raw.landmarks, 'landmarks', ['art', 'w', 'h', 'solid']);
-  const goal = raw.goal;
-  if (!goal || typeof goal !== 'object') out.push('"goal" is missing: { "label", "items": { "<item>": <how many> }, "deliver"?, "story" }');
+  // The map's goal (the default for its missions), checked by its goal type (server/goals/).
+  if (!raw.goal || typeof raw.goal !== 'object') out.push('"goal" is missing: what the team must do, for example { "type": "collect", "items": { "lantern": 3 }, "story": "..." }');
   else {
-    unknownFields(goal, ['label', 'items', 'deliver', 'story', 'restore'], 'goal', out);
-    const entries = Object.entries(goal.items || {});
-    if (!entries.length) out.push('goal: "items" must name an item and how many, for example { "lantern": 3 }');
-    for (const [item, n] of entries) {
-      if (!items.includes(item)) out.push(`goal: "${item}" is not an item.${didYouMean(item, items)} Items: ${items.join(', ')}`);
-      if (!(isInt(n) && n >= 1)) out.push(`goal: the number of ${item}s must be 1 or more`);
-    }
-    if (goal.deliver !== undefined) {
-      const o = ids.get(goal.deliver);
-      if (!o) out.push(`goal: "deliver" is "${goal.deliver}", which is not an object of this map.${didYouMean(goal.deliver, [...ids.keys()])}`);
-      else if (!KINDS[o.kind]?.character) out.push(`goal: "deliver" must be a character (kind "npc"), but "${goal.deliver}" is a ${o.kind}`);
-    }
+    const fail = (why) => out.push(why);
+    fail.problems = out;
+    normalizeGoal(raw.goal, { zone: { ...raw, objects, landmarks: Array.isArray(raw.landmarks) ? raw.landmarks : [], goal: null }, items: { byId: Object.fromEntries(items.map((i) => [i, { id: i, name: i }])) }, stations: null, fail });
   }
   return out;
 }

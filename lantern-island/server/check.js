@@ -10,6 +10,7 @@ import { loadAbilities, dealPreset } from './abilities.js';
 import { normalizeMission } from './missions.js';
 import { inspect, zoneRules, solve } from './solver.js';
 import { KINDS, progressOf, abilityOf } from './kinds/index.js';
+import { goalOf } from './goals/index.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -39,21 +40,21 @@ export async function runCheck(contentDir = path.join(root, 'data'), dataDir = c
     say(`PACK ${zone.pack}, MAP: ${zone.name}  (${zone.objects.length} objects, ${zone.landmarks.length} landmarks)`);
 
     // Reachability: two players who have every ability must be able to read every clue and finish every object.
-    const reach = solve(zone, normalizeMission({ id: 'reach', zone: zone.id, goal: { items: Object.fromEntries(Object.keys(zone.goal.items).map((k) => [k, 99])) }, stations: zone.objects.filter((o) => KINDS[o.kind].card).map((o) => ({ at: o.id })) }, zones, items), [abilities.ids, abilities.ids]);
+    const reach = solve(zone, normalizeMission({ id: 'reach', zone: zone.id, goal: goalOf(zone.goal).wholeZone(zone.goal), stations: zone.objects.filter((o) => KINDS[o.kind].card).map((o) => ({ at: o.id })) }, zones, items), [abilities.ids, abilities.ids], { explore: true });
     for (const t of reach.things) {
       for (const a of Object.keys(t.def.clues || {})) if (!reach.clues.has(`${t.id}:${a}`)) fail(`${zone.id}: object "${t.id}" (at ${t.x},${t.y}): its ${name(a)} clue can never be reached`);
       const step = progressOf(t);
       if (step) fail(`${zone.id}: object "${t.id}" (at ${t.x},${t.y}): the team can never ${name(abilityOf(step, t))} it (it cannot be reached, or what it needs never turns up)`);
     }
 
-    const all = normalizeMission({ id: 'whole-zone', title: `Whole zone: every tablet of ${zone.name}`, zone: zone.id, goal: { ...zone.goal, items: Object.fromEntries(Object.keys(zone.goal.items).map((k) => [k, 99])) }, stations: zone.objects.filter((o) => KINDS[o.kind].card).map((o) => ({ at: o.id })) }, zones, items);
+    const all = normalizeMission({ id: 'whole-zone', title: `Whole zone: every tablet of ${zone.name}`, zone: zone.id, goal: goalOf(zone.goal).wholeZone(zone.goal), stations: zone.objects.filter((o) => KINDS[o.kind].card).map((o) => ({ at: o.id })) }, zones, items);
     const missions = [all];
     for (const t of templates.filter((m) => (m.zone || Object.keys(zones)[0]) === zone.id)) { try { missions.push(normalizeMission(t, zones, items)); } catch (e) { fail(`${t.file || 'data/missions/' + t.id + '.json'}: ${e.message}`); } }
 
     for (const mission of missions) {
       for (const s of mission.stations) if (s.card && !cardIds.has(s.card)) fail(`${mission.title}: tablet "${s.at}" asks for the card "${s.card}", which does not exist`);
       say();
-      say(`  ${mission.title}  (${mission.stations.length} tablets, goal: ${Object.values(mission.goal.items)[0]} ${Object.keys(mission.goal.items)[0]}s)`);
+      say(`  ${mission.title}  (${mission.stations.length} tablets, goal: ${goalOf(mission.goal).describe(mission.goal)})`);
       for (let n = 2; n <= 6; n++) {
         const sets = dealPreset(abilities, n);
         const r = inspect(zone, mission, sets, abilities.ids);

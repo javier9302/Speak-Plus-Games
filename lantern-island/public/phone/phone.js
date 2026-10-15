@@ -84,7 +84,7 @@ const socket = connect({
       viewTiles = m.settings.view;
       $('#open-phrases').hidden = !m.settings.phrases;
       $('#paused').hidden = !(m.phase === 'play' && m.paused);
-      $('#wait-text').textContent = m.phase === 'done' ? (m.result?.completed ? 'Mission complete! Great teamwork.' : 'The mission is over.') : 'You are in! Look at the big screen.';
+      $('#wait-text').textContent = m.phase === 'done' ? (m.result?.completed ? 'Mission complete! Great teamwork.' : m.result?.timeUp ? 'Time is up! The mission is over.' : 'The mission is over.') : 'You are in! Look at the big screen.';
       $('#wait-soft').textContent = m.phase === 'done' ? 'Look at the big screen.' : 'The game starts soon.';
       if (m.phase !== 'play') { $('#sheet').hidden = true; card = null; }
       else $('#picker').hidden = true;

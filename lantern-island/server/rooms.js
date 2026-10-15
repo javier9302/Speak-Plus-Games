@@ -36,6 +36,8 @@ import { dealPreset, dealRandom } from './abilities.js';
 import { stepPlayer, solidAt, REACH } from './world.js';
 import { buildThings, blockSet, publicThings, useAbility, returnItems, pressPlates, completeAction, waitingAbility, canForce } from './things.js';
 import { kindOf } from './kinds/index.js';
+import { goalOf } from './goals/index.js';
+import { gameCtx } from './things.js';
 import { whyNot, inspect } from './solver.js';
 import { pickCard, innerCard, publicCard, teacherCard, checkAnswer } from './cards.js';
 import { createChat } from './chat.js';
@@ -106,7 +108,7 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
       t: 'roster', phase: room.phase, group: room.group, max: MAX_PLAYERS,
       deal: room.deal, dealMode: room.dealMode,
       progress: progress(room), settings: room.settings,
-      mission: m && { id: m.id, title: m.title, story: m.story, minutes: m.minutes },
+      mission: m && { id: m.id, title: m.title, story: m.story, minutes: m.minutes, timeLimit: m.timeLimit },
       clock: Math.round(room.clock), paused: room.paused, result: room.result, helpers: room.helpers,
       // The monster: who has which role, and its mood (-1 none, 0 wandering, 1 chasing, 2 shooting). Never where it is.
       roles: room.roles, monster: !!room.mon, mood: monster.mood(room),
@@ -122,15 +124,11 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
   const stateMsg = (room) => ({ t: 'state', p: room.players.map((p) => [p.id, Math.round(p.x * 100) / 100, Math.round(p.y * 100) / 100, p.dir, p.moving ? 1 : 0, p.stun > 0 ? 1 : 0]) });
   const thingsMsg = (room) => ({ t: 'things', list: publicThings(room.things) });
 
-  // The shared goal: the team holds enough of the goal items, counted over everybody's pockets.
-  // If the zone has somebody to bring them to, one player must then carry them all there and Talk.
+  // The shared goal, as its type (server/goals/) counts it: { label, have, need, ready?, bringTo?, done }.
   function progress(room) {
     const goal = room.mission?.goal;
-    const [item, need] = Object.entries(goal?.items || {})[0] || [];
-    if (!item) return null;
-    const have = room.players.reduce((n, p) => n + p.items.filter((it) => it.item === item).length, 0);
-    const to = goal.deliver && room.things.find((t) => t.id === goal.deliver);
-    return { label: goal.label, have: Math.min(have, need), need, ready: have >= need, bringTo: to ? to.name : null, done: have >= need && !to };
+    if (!goal || !room.goalState) return null;
+    return { label: goal.label, ...goalOf(goal).progress(room, goal) };
   }
 
   // Something on the map changed: new walls, new picture, maybe new progress. Reaching the goal ends the mission.
@@ -224,8 +222,9 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
     room.talks = [];
     room.messages = [];
     room.stats = { solved: 0, wrong: 0, hints: 0, acts: 0, stuns: 0, slays: 0 };
-    room.clock = 0; room.paused = false; room.result = null;
+    room.clock = 0; room.paused = false; room.result = null; room.timeUp = false;
     room.things = buildThings(room.zone, mission.stations.map((s) => s.at));
+    room.goalState = goalOf(mission.goal).start(room, mission.goal);
     const drawn = await drawCards(room);
     cards.touch(drawn).catch(console.error);
     room.block = blockSet(room.things);
@@ -259,7 +258,7 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
     // What the mission restores on the island: the landmark it names, or the next one still in ruins.
     const done = room.group.island.landmarks, marks = room.zone.landmarks;
     const mark = !completed ? null : marks.find((l) => l.id === m.goal.restore && !done.includes(l.id)) || marks.find((l) => !done.includes(l.id)) || null;
-    room.result = { completed, title: m.title, restore: mark ? mark.name : null, restoreId: mark ? mark.id : null, stars, seconds, solved: s.solved, hints: s.hints, acts: s.acts, clues: room.found.size, monster: !!room.mon, slays: s.slays, stuns: s.stuns };
+    room.result = { completed, timeUp: !completed && !!room.timeUp, title: m.title, restore: mark ? mark.name : null, restoreId: mark ? mark.id : null, stars, seconds, solved: s.solved, hints: s.hints, acts: s.acts, clues: room.found.size, monster: !!room.mon, slays: s.slays, stuns: s.stuns };
     // Enough landmarks open the next zone.
     const count = done.length + (mark ? 1 : 0);
     const opened = Object.values(zones).filter((z) => !room.group.island.zones.includes(z.id) && count >= z.unlock);
@@ -293,16 +292,8 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
       if (!room.found.has(r.clue.key)) { room.found.add(r.clue.key); monster.event(room, 'clue'); sendRoster(room); }
       // Talking to a character: the teacher sees it and can answer as that character.
       const t = room.things.find((x) => x.id === r.clue.o);
-      // Bringing the goal items to their character: one player must carry them all.
-      const pr = progress(room);
-      if (ability.id === 'talk' && t.id === room.mission.goal.deliver && pr.ready) {
-        const item = Object.keys(room.mission.goal.items)[0], mine = p.items.filter((it) => it.item === item).length;
-        if (mine >= pr.need) {
-          send(p.ws, { t: 'npc', name: t.name, text: 'You brought them all! Thank you, thank you!', good: true });
-          return endMission(room, true);
-        }
-        send(p.ws, { t: 'npc', name: t.name, text: `You have ${mine}. I need all ${pr.need} from one pair of hands. Ask your team to give them to you!` });
-      }
+      // The goal may care (bringing the items to their character...).
+      if (goalAct(room, p, t, ability.id)) return;
       if (kindOf(t).character && ability.id === 'talk') {
         room.talks = room.talks.filter((k) => !(k.p === p.id && k.o === t.id));
         room.talks.push({ id: `k${++room.seq}`, p: p.id, who: p.name, o: t.id, npc: t.name });
@@ -328,8 +319,18 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
     } else if (r.changed) {
       if (r.say) send(p.ws, { t: 'say', msg: r.say });
       if (r.tell) send(r.tell[0].ws, { t: 'say', msg: r.tell[1] });
+      if (r.thing && goalAct(room, p, r.thing, ability.id)) return;
       changed(room);
     }
+  }
+  // The goal's reaction to an ability used on thing t. Returns true if the mission ended.
+  function goalAct(room, p, t, ability) {
+    const out = goalOf(room.mission.goal).afterAct?.(room, p, t, ability, gameCtx(room, items, p));
+    if (!out) return false;
+    if (out.npc) send(p.ws, { t: 'npc', ...out.npc });
+    if (out.say) send(p.ws, { t: 'say', msg: out.say });
+    if (out.changed) changed(room);
+    return room.phase !== 'play';
   }
 
   // Shows a tablet's card on one phone. For a link card, the link itself goes to a helper.
@@ -612,8 +613,11 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
     for (const room of rooms.values()) {
       if (room.phase !== 'play' || room.paused) continue;
       room.clock += dt;
+      // A time limit (some missions have one): when the time is up, the mission ends, not finished.
+      if (room.mission?.timeLimit && room.clock >= room.mission.timeLimit * 60) { room.timeUp = true; endMission(room, false); continue; }
       for (const p of room.players) { if (p.stun > 0) p.moving = false; else stepPlayer(room.zone, p, dt, room.block); }
       if (pressPlates(room)) changed(room);                       // somebody stepped on, or off, a flat stone
+      if (room.mission && goalOf(room.mission.goal).tick?.(room, dt, gameCtx(room, items))) changed(room);
       monster.tick(room, dt);
       broadcast(room, stateMsg(room));
     }

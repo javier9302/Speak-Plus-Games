@@ -229,6 +229,7 @@ server/world.js          the map, objects, what blocks the way, movement speed
 server/abilities.js      sharing out the 12 abilities
 server/things.js         runs the object rules in the game (what an ability does to the nearest object)
 server/kinds/            one file per kind of object: its states, actions, checks (read by the game and the solver)
+server/goals/            one file per goal type: what finishes a mission (read by the game and the solver)
 server/cards.js          challenge cards: choosing one, checking answers
 server/groups.js         groups and their saves
 server/net.js            finding the laptop's address

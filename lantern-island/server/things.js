@@ -104,7 +104,7 @@ export function pressPlates(room) {
 // Returns one of:
 //   { nope: message }                          nothing happened
 //   { clue: { key, o, a, name, text } }        private text for this player
-//   { changed: true, say: message }            the world changed (say = short private message)
+//   { changed: true, say: message, thing }     the world changed (say = short private message; thing = what it acted on)
 //   { card: thing }                            show this thing's card to the player
 //   { keypad: thing }                          ask the player for this thing's code
 export function useAbility(room, p, ability, items, msg = {}) {
@@ -151,7 +151,7 @@ export function useAbility(room, p, ability, items, msg = {}) {
   const act = actionFor(t, ability.id);
   if (!act) return { nope: `${ability.name} does nothing on the ${t.name.toLowerCase()}.` };
   const ctx = gameCtx(room, items, p);
-  if (act.run) return act.run(t, ctx);
+  if (act.run) return { ...act.run(t, ctx), thing: t };
   const why = act.guard?.(t, ctx);
   if (why) return { nope: why };
   if (act.needs?.code) return { keypad: t };
@@ -161,7 +161,7 @@ export function useAbility(room, p, ability, items, msg = {}) {
     const item = t.holds;
     p.items.push({ item, from: t.id });
     act.do(t, ctx);
-    return { changed: true, say: `You have the ${itemName(item)}.` };
+    return { changed: true, say: `You have the ${itemName(item)}.`, thing: t };
   }
   if (act.needs?.item) {
     const id = act.needs.item(t), i = p.items.findIndex((it) => it.item === id);
@@ -169,7 +169,7 @@ export function useAbility(room, p, ability, items, msg = {}) {
     if (!act.needs.keep) t.used = p.items.splice(i, 1)[0];       // the item is now part of the thing
   }
   act.do(t, ctx);
-  return { changed: true, say: act.say?.(t, ctx) };
+  return { changed: true, say: act.say?.(t, ctx), thing: t };
 }
 
 // A code or a card was answered right: the action that waited for it happens. Returns false if nothing waited.

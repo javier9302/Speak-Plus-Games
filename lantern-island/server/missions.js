@@ -4,8 +4,26 @@
 import { CARD_TYPES } from './cards.js';
 import { KINDS } from './kinds/index.js';
 import { didYouMean } from './words.js';
+import { GOALS } from './goals/index.js';
 
-export const MISSION_FIELDS = ['id', 'title', 'story', 'zone', 'minutes', 'goal', 'stations', 'monster'];
+export const MISSION_FIELDS = ['id', 'title', 'story', 'zone', 'minutes', 'timeLimit', 'goal', 'stations', 'monster'];
+export const GOAL_FIELDS = ['type', 'label', 'restore', 'story'];       // every goal type has these; the rest is in its file
+
+// The clean goal of a mission (or of a map, with stations = null). Mistakes go to `fail`.
+export function normalizeGoal(raw, { zone, items, stations, fail }) {
+  raw = raw && typeof raw === 'object' ? raw : {};
+  const base = zone.goal && (zone.goal.type || 'collect') === (raw.type || zone.goal.type || 'collect') ? zone.goal : {};
+  const type = raw.type || base.type || 'collect';
+  const g = GOALS[type];
+  if (!g) { fail(`goal: unknown type "${type}".${didYouMean(type, Object.keys(GOALS))} Types: ${Object.keys(GOALS).join(', ')}`); return null; }
+  extra(raw, [...GOAL_FIELDS, ...Object.keys(g.fields)], 'goal: ', fail.problems);
+  const objectsOf = (want) => zone.objects.filter((o) => KINDS[o.kind] && want(KINDS[o.kind], o));
+  const own = g.normalize(raw, { zone, items, stations, base, fail, objectsOf, didYouMean });
+  const restore = text(raw.restore, 40) || null;
+  if (restore && zone.landmarks && !zone.landmarks.some((l) => l.id === restore)) fail(`goal: "restore" is "${restore}", which is not a landmark of ${zone.name}.${didYouMean(restore, zone.landmarks.map((l) => l.id))} Landmarks: ${zone.landmarks.map((l) => l.id).join(', ')}`);
+  if (!own) return null;
+  return { type, ...own, label: text(own.label, 30) || g.label, restore };
+}
 const MONSTERS = ['off', 'gentle', 'normal', 'hard', 'group-setting'];
 // Fields a record may have; "...Help" fields are notes for authors.
 const extra = (rec, allowed, where, problems) => {
@@ -18,11 +36,11 @@ const text = (v, max) => String(v ?? '').trim().slice(0, max);
 export function normalizeMission(raw, zones, items) {
   const problems = [];
   const fail = (why) => problems.push(why);
+  fail.problems = problems;
   const stop = () => { if (problems.length) throw Object.assign(new Error(`Mission "${raw?.title || raw?.id || '?'}": ${problems.join('; ')}.`), { status: 400 }); };
   const zone = zones[raw?.zone || Object.keys(zones)[0]];
   if (!zone) { fail(`unknown zone "${raw?.zone}".${didYouMean(raw?.zone, Object.keys(zones))}`); stop(); }
   extra(raw, [...MISSION_FIELDS, 'pack', 'file'], '', problems);
-  extra(raw.goal, ['label', 'items', 'restore', 'deliver', 'story'], 'goal: ', problems);
   const tablets = zone.objects.filter((o) => KINDS[o.kind].card);
   const stations = [];
   for (const s of Array.isArray(raw.stations) ? raw.stations : []) {
@@ -38,22 +56,16 @@ export function normalizeMission(raw, zones, items) {
     }
   }
   if (!stations.length && !problems.length) fail('needs at least one tablet');
-  const [item, wanted] = Object.entries(raw.goal?.items || zone.goal?.items || {})[0] || [];
-  if (!item || !items.byId[item]) fail(item ? `the goal item "${item}" is not an item.${didYouMean(item, Object.keys(items.byId))}` : 'needs a goal item');
-  const restore = raw.goal?.restore;
-  if (restore && !zone.landmarks.some((l) => l.id === restore)) fail(`goal: "restore" is "${restore}", which is not a landmark of ${zone.name}.${didYouMean(restore, zone.landmarks.map((l) => l.id))} Landmarks: ${zone.landmarks.map((l) => l.id).join(', ')}`);
+  const goal = normalizeGoal(raw.goal, { zone, items, stations, fail });
   if (raw.monster !== undefined && !MONSTERS.includes(raw.monster)) fail(`"monster" must be one of ${MONSTERS.join(', ')}`);
+  if (raw.timeLimit != null && !(Number.isInteger(raw.timeLimit) && raw.timeLimit >= 1 && raw.timeLimit <= 90)) fail('"timeLimit" is a number of minutes, 1 to 90: the mission ends when the time is up');
   stop();
-  // Never ask for more than the chosen tablets can give.
-  const can = stations.filter((s) => tablets.find((t) => t.id === s.at).reward?.item === item).length;
-  const need = Math.max(1, Math.min(Number(wanted) || 1, can || 1));
   return {
     id: /^[a-z0-9][a-z0-9-]{0,63}$/.test(raw.id || '') ? raw.id : 'custom',
     title: text(raw.title, 60) || 'Mission', story: text(raw.story, 400), zone: zone.id,
     minutes: Math.max(5, Math.min(90, Math.round(Number(raw.minutes) || 25))),
-    goal: { label: text(raw.goal?.label, 30) || items.byId[item].name, items: { [item]: need }, restore: text(raw.goal?.restore, 40) || null,
-      // Some zones want the items carried to a character (the keeper) by one player.
-      deliver: zone.objects.some((o) => o.id === (raw.goal?.deliver ?? zone.goal?.deliver) && KINDS[o.kind].character) ? (raw.goal?.deliver ?? zone.goal.deliver) : null },
+    timeLimit: raw.timeLimit || null,      // minutes; when the time is up the mission ends (not finished)
+    goal,
     stations, monster: ['off', 'gentle', 'normal', 'hard'].includes(raw.monster) ? raw.monster : 'group-setting',
     pack: raw.pack || null,                // the scenario pack it comes from; null for the teacher's own templates
   };

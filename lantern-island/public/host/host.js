@@ -154,7 +154,7 @@ function renderDone() {
   const r = roster.phase === 'done' ? roster.result : null;
   $('#done').hidden = !r;
   if (!r) return;
-  $('#done-title').textContent = r.completed ? 'Mission complete!' : 'Mission over';
+  $('#done-title').textContent = r.completed ? 'Mission complete!' : r.timeUp ? 'Time is up!' : 'Mission over';
   $('#done-restore').textContent = r.completed ? (r.restore ? `You restored ${r.restore}. Look at the island!` : 'The island is complete. You did it together!') : `"${r.title}" was stopped. Try again next time!`;
   if (r.completed && r.opened?.length) $('#done-restore').textContent += ` A new place has opened: ${r.opened.join(', ')}!`;
   $('#done-stars').innerHTML = r.completed ? '★'.repeat(r.stars) + `<span class="off">${'★'.repeat(3 - r.stars)}</span>` : '';
@@ -309,10 +309,11 @@ function frame(now) {
     // The mission clock runs on between messages from the server. It turns yellow after the target time; nothing else happens.
     const running = roster.phase === 'play' && !roster.paused;
     const secs = (roster.phase === 'done' ? roster.result?.seconds : roster.clock + (running ? (now - rosterAt) / 1000 : 0)) || 0;
-    const target = (roster.mission?.minutes || 0) * 60;
-    $('#clock').hidden = !roster.settings?.timer;
-    $('#clock').textContent = `${mmss(secs)} / ${mmss(target)}`;
-    $('#clock').classList.toggle('late', secs > target);
+    const target = (roster.mission?.minutes || 0) * 60, limit = (roster.mission?.timeLimit || 0) * 60;
+    // With a time limit the clock counts down (always shown: the team must see it); otherwise it counts up to the target time.
+    $('#clock').hidden = !roster.settings?.timer && !limit;
+    $('#clock').textContent = limit ? `${mmss(Math.max(0, limit - secs))} left` : `${mmss(secs)} / ${mmss(target)}`;
+    $('#clock').classList.toggle('late', limit ? limit - secs < 60 : secs > target);
   }
   // In the lobby: the group's island, with what they have restored.
   const isle = $('#island');

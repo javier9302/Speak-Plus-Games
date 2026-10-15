@@ -4,6 +4,7 @@ import { dealPreset } from './abilities.js';
 import { fillCode } from './things.js';
 import { solve } from './solver.js';
 import { KINDS } from './kinds/index.js';
+import { goalOf } from './goals/index.js';
 
 // What each kind of object asks of the team, in plain words (from its kind file).
 const how = (o, itemName) => KINDS[o.kind].how(o, itemName);
@@ -21,7 +22,7 @@ export function createSheets({ zones, abilities, items, missions, rooms }) {
     async zone(id) {
       const zone = zones[id];
       if (!zone) return null;
-      const whole = missions.normalize({ title: 'whole zone', zone: id, goal: { ...zone.goal, items: Object.fromEntries(Object.keys(zone.goal.items).map((k) => [k, 99])) }, stations: zone.objects.filter((o) => o.kind === 'station').map((o) => ({ at: o.id })) });
+      const whole = missions.normalize({ title: 'whole zone', zone: id, goal: goalOf(zone.goal).wholeZone(zone.goal), stations: zone.objects.filter((o) => KINDS[o.kind].card).map((o) => ({ at: o.id })) });
       return {
         kind: 'zone', title: zone.name, goal: zone.goal?.story || '',
         puzzles: puzzles(zone, null),
@@ -39,7 +40,7 @@ export function createSheets({ zones, abilities, items, missions, rooms }) {
       const roleOf = (p) => [...['seer', 'healer', 'slayer'].filter((r) => room.mon && room.roles[r] === p.id), ...Object.keys(room.helpers).filter((h) => room.helpers[h] === p.id).map((h) => `${h} helper`)];
       return {
         kind: 'mission', title: m.title, story: m.story, minutes: m.minutes, group: room.group.name, level: room.group.level, room: room.code,
-        goal: `${Object.values(m.goal.items)[0]} ${room.zone.goal?.label?.toLowerCase() || 'items'}${m.goal.deliver ? `, carried by one player to the ${room.things.find((t) => t.id === m.goal.deliver)?.name.toLowerCase()}` : ''}`,
+        goal: goalOf(m.goal).sheet(m.goal, { itemName, name: (id) => room.things.find((t) => t.id === id)?.name.toLowerCase() || id }),
         gateCode: gate ? { name: gate.name, code: room.gateCode.slice(0, gate.def.code) } : null,
         monster: room.mon ? room.mon.level : 'off',
         teacherRoles: ['seer', 'healer', 'slayer'].filter((r) => room.mon && room.roles[r] === 'teacher'),

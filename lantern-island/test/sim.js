@@ -523,6 +523,15 @@ async function main() {
   tcmd('end');
   await h3.next('roster', (m) => m.phase === 'done');
   check('the teacher ends a mission: no stars, nothing restored', h3.last.roster.result.completed === false && h3.last.roster.result.stars === 0 && h3.last.roster.result.restore === null);
+  // A time limit: when the time is up, the mission ends, not finished.
+  tcmd('mission', { mission: { ...lib.missions.find((m) => m.id === 'light-the-lighthouse'), timeLimit: 2 } });
+  await h3.next('roster', (m) => m.phase === 'play' && m.mission.timeLimit === 2);
+  app.rooms.rooms.get(room3.code).clock = 119;
+  await sleep(100);
+  check('before the time limit the mission goes on', h3.last.roster.phase === 'play');
+  app.rooms.rooms.get(room3.code).clock = 120.5;
+  const timeUp = await h3.next('roster', (m) => m.phase === 'done');
+  check('when the time limit is up, the mission ends, not finished', timeUp.result.completed === false && timeUp.result.timeUp === true);
   h3.send({ t: 'kick', id: A.me.id });
   await sleep(200);
   delete h3.last.error;
