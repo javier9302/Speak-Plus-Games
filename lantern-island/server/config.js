@@ -19,7 +19,7 @@ export function loadConfig(over = {}) {
     publicUrl,
     hosted: !!publicUrl,                       // hosted mode = PUBLIC_URL is set
     publicDir: path.join(root, 'public'),
-    contentDir: path.join(root, 'data'),       // zones and other content shipped with the game
+    contentDir: over.contentDir ?? path.join(root, 'data'),   // scenario packs and other content shipped with the game
     dataDir: over.dataDir ?? env.DATA_DIR ?? path.join(root, 'data'),
     storage: over.storage ?? env.STORAGE ?? 'file',
     supabaseUrl: over.supabaseUrl ?? env.SUPABASE_URL ?? '',

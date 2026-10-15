@@ -44,7 +44,7 @@ async function readJson(req) {
   catch { throw Object.assign(new Error('This is not a valid JSON file.'), { status: 400 }); }
 }
 
-export function createHttpHandler({ config, groups, cards, missions, storage, live }) {
+export function createHttpHandler({ config, groups, cards, missions, storage, live, content }) {
   async function api(req, res, url) {
     const parts = url.pathname.split('/').filter(Boolean).slice(1);   // after "api"
     const m = req.method;
@@ -75,6 +75,11 @@ export function createHttpHandler({ config, groups, cards, missions, storage, li
       if (id && m === 'PUT') return json(res, 200, await cards.put({ ...(await readJson(req)), id }));
       if (id && m === 'DELETE') { await cards.remove(id); return json(res, 200, { ok: true }); }
     }
+    // The scenario packs as the server has them now, and any mistakes in their files (shown on the teacher panel).
+    if (parts[0] === 'content' && m === 'GET') return json(res, 200, {
+      version: content.version || 0, errors: content.errors, kept: content.kept || [],
+      packs: Object.values(content.packs).map((p) => ({ id: p.id, name: p.name, zones: p.zones, missions: content.missions.filter((x) => x.pack === p.id).length })),
+    });
     // Mission templates, and what each zone offers the mission builder
     if (parts[0] === 'missions' && !parts[1] && m === 'GET') return json(res, 200, { missions: await missions.all(), zones: missions.zones() });
     if (parts[0] === 'missions' && parts[1] && m === 'PUT') return json(res, 200, await missions.put({ ...(await readJson(req)), id: parts[1] }));

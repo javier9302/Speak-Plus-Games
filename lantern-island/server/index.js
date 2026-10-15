@@ -13,7 +13,7 @@ import { createCards } from './cards.js';
 import { createMissions } from './missions.js';
 import { loadMonster } from './monster.js';
 import { createSheets } from './sheet.js';
-import { loadContent } from './content.js';
+import { loadContent, watchContent } from './content.js';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
@@ -25,14 +25,16 @@ export async function createApp(over = {}) {
   const abilities = await loadAbilities(config.contentDir);
   const itemFile = JSON.parse(await fs.readFile(path.join(config.contentDir, 'items.json'), 'utf8'));
   const items = { list: itemFile.items, byId: Object.fromEntries(itemFile.items.map((i) => [i.id, i])), maxCarry: itemFile.maxCarry || 4 };
-  // The scenario packs (data/scenarios). Stop at start-up, with the reasons, if one has a mistake.
+  // The scenario packs (data/scenarios). A pack with a mistake is left out (and reported); with no pack at all, stop.
   const content = await loadContent(config.contentDir, { abilities, items });
-  if (content.errors.length) throw Object.assign(new Error(`The scenario packs have mistakes:\n  - ${content.errors.join('\n  - ')}\nRun "npm run check" for details.`), { status: 400 });
+  const report = (c) => { if (c.errors.length && !config.quiet) console.warn(`\nScenario packs: ${c.errors.length} problem${c.errors.length > 1 ? 's' : ''}${c.kept?.length ? ` (the last good version of ${c.kept.join(', ')} is still used)` : ''}:\n  - ${c.errors.join('\n  - ')}\n`); };
+  if (!Object.keys(content.zones).length) throw Object.assign(new Error(`No scenario pack could be loaded:\n  - ${content.errors.join('\n  - ')}\nRun "npm run check" for details.`), { status: 400 });
+  report(content);
   const zones = content.zones;               // in pack order: the first pack's first map is where every group starts
   const cards = createCards(storage, config.contentDir, () => content.cards);
   const missions = createMissions(storage, zones, items, () => content.missions);
   const live = {};                         // filled in below, once the rooms exist
-  const server = http.createServer(createHttpHandler({ config, groups, cards, missions, storage, live }));
+  const server = http.createServer(createHttpHandler({ config, groups, cards, missions, storage, live, content }));
   const wss = new WebSocketServer({ noServer: true, maxPayload: 64 * 1024 });
   await new Promise((resolve, reject) => {
     server.once('error', reject);
@@ -44,6 +46,13 @@ export async function createApp(over = {}) {
 
   live.sheets = createSheets({ zones, abilities, items, missions, rooms });
 
+  // Edits to data/scenarios apply without a restart (the next mission uses them).
+  const watcher = over.watch === false ? null : watchContent(content, config.contentDir, { abilities, items }, (c) => {
+    if (!config.quiet) console.log(`Scenario packs reloaded: ${Object.keys(c.packs).join(', ')}`);
+    report(c);
+    rooms.contentChanged();
+  });
+
   server.on('upgrade', (req, socket, head) => {
     if (new URL(req.url, 'http://x').pathname !== '/ws') return socket.destroy();
     wss.handleUpgrade(req, socket, head, (ws) => rooms.connection(ws, req));
@@ -53,6 +62,7 @@ export async function createApp(over = {}) {
     config, port, network, groups, rooms, cards, missions, content,
     close() {
       rooms.close();
+      watcher?.close();
       for (const ws of wss.clients) ws.terminate();
       return new Promise((r) => server.close(r));
     },

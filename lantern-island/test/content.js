@@ -7,6 +7,8 @@ import { fileURLToPath } from 'node:url';
 import { loadContent } from '../server/content.js';
 import { loadAbilities } from '../server/abilities.js';
 import { runCheck } from '../server/check.js';
+import { createApp } from '../server/index.js';
+import { client } from './client.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 let passed = 0, failed = 0;
@@ -96,6 +98,42 @@ async function main() {
   check('a mission that names a card that does not exist', has(r.errors, 'no-such-card', 'does not exist'));
   r = await runCheck(path.join(root, 'data'), path.join(root, 'data'), 'forest');
   check('one pack can be checked alone', r.ok && r.report.includes('PACK forest') && !r.report.includes('PACK beach'));
+
+  console.log('\nEditing packs while the server runs');
+  dir = await copy();
+  const app = await createApp({ port: 0, contentDir: dir, dataDir: await fs.mkdtemp(path.join(os.tmpdir(), 'lantern-saves-')), publicUrl: '', pin: '2468', quiet: true });
+  const api = async (p) => (await fetch(`http://127.0.0.1:${app.port}/api${p}`)).json();
+  // Waits until `test` is true (the server noticed the change), for at most 5 seconds.
+  const until = async (test) => { for (let i = 0; i < 50; i++) { if (await test()) return true; await new Promise((r) => setTimeout(r, 100)); } return false; };
+  const host = client(app.port); await host.opened;
+  host.send({ t: 'host' });
+  await host.next('room');
+  const lobby = [...app.rooms.rooms.values()][0], firstZone = lobby.zone;
+  const busy = { ...lobby, code: 'BUSY', phase: 'play', hosts: new Set(), teachers: new Set(), players: [] };   // a room in the middle of a mission
+  app.rooms.rooms.set('BUSY', busy);
+  const hunt = await read(dir, 'beach/missions/word-hunt.json');
+  await write(dir, 'beach/missions/word-hunt.json', { ...hunt, title: 'Word hunt, new version' });
+  check('a changed mission file is used without a restart', await until(async () => (await api('/missions')).missions.some((x) => x.title === 'Word hunt, new version')));
+  const beach = await read(dir, 'beach/zones/beach.json');
+  beach.rows[2] = beach.rows[2].replace('...', ',,,');
+  await write(dir, 'beach/zones/beach.json', beach);
+  check('a changed map reaches the host screen in the lobby', await until(() => host.last.world?.zone.rows[2].includes(',,,')));
+  check('a mission that is running keeps the map it started with', busy.zone === firstZone && lobby.zone !== firstZone);
+  await fs.writeFile(file(dir, 'beach/zones/beach.json'), '{ "id": "beach", oops');
+  check('a broken file is reported, and the last good version is kept', await until(async () => { const c = await api('/content'); return c.kept.includes('beach') && c.errors.some((e) => e.includes('beach/zones/beach.json') && e.includes('not valid JSON')); }));
+  check('while broken, the pack\'s maps and missions are still there', app.content.zones.beach && (await api('/missions')).missions.some((x) => x.id === 'word-hunt'));
+  await write(dir, 'beach/zones/beach.json', beach);
+  check('fixing the file clears the problem', await until(async () => !(await api('/content')).errors.length));
+  // A new pack, added while the server runs: a copy of the beach with its own ids.
+  const cove = JSON.parse(JSON.stringify(beach));
+  Object.assign(cove, { id: 'cove', name: 'The Cove' });
+  cove.landmarks.forEach((l) => { l.id = `cove-${l.id}`; });
+  await fs.mkdir(file(dir, 'cove/zones'), { recursive: true });
+  await write(dir, 'cove/zones/cove.json', cove);
+  await write(dir, 'cove/pack.json', { id: 'cove', name: 'The Cove', order: 3 });
+  check('a new pack folder appears by itself', await until(async () => (await api('/content')).packs.some((x) => x.id === 'cove') && (await api('/missions')).zones.some((z) => z.id === 'cove')));
+  await host.close();
+  await app.close();
 
   console.log(`\n${passed} passed, ${failed} failed`);
   process.exit(failed ? 1 : 0);

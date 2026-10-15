@@ -136,6 +136,20 @@ $('#import-file').addEventListener('change', (e) => {
 
 load();
 
+// ---------- scenario packs ----------
+// The files in data/scenarios are read again whenever they change. Their mistakes show here until they are fixed.
+async function contentStatus() {
+  let c;
+  try { c = await api('/content'); } catch { return; }
+  const box = $('#content-errors');
+  box.hidden = !c.errors.length;
+  if (!c.errors.length) return;
+  box.innerHTML = `<strong>The scenario pack files have ${c.errors.length} problem${c.errors.length > 1 ? 's' : ''}.</strong> ${c.kept.length ? `The last good version of ${esc(c.kept.join(', '))} is still used.` : 'A pack with a problem is left out.'} Fix the files (npm run check explains each one):
+    <ul>${c.errors.slice(0, 12).map((e) => `<li>${esc(e)}</li>`).join('')}${c.errors.length > 12 ? `<li>… and ${c.errors.length - 12} more</li>` : ''}</ul>`;
+}
+contentStatus();
+setInterval(contentStatus, 15000);
+
 // Stars and sessions change while a game runs: read the groups again when the tab opens.
 document.addEventListener('tab', (e) => { if (e.detail === 'groups') load(); });
 

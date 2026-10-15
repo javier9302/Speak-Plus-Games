@@ -648,8 +648,17 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
     };
   };
 
+  // The scenario packs were reloaded. Rooms in the lobby show the new version of their map; running missions keep theirs.
+  function contentChanged() {
+    for (const room of rooms.values()) {
+      if (room.phase !== 'lobby') continue;
+      room.zone = zones[room.zone.id] || Object.values(zones)[0];
+      broadcast(room, worldMsg(room));
+    }
+  }
+
   return {
-    connection, rooms, sheetData, matches: M.matches, compete: cfg,
+    connection, rooms, sheetData, matches: M.matches, compete: cfg, contentChanged,
     close() { clearInterval(tick); clearInterval(slow); },
   };
 }

@@ -95,3 +95,7 @@ form.panel.slim.row { flex-direction: row; }
 .teams-table .btn-small { min-height: 44px; }
 .teams-table input { width: 4.5em; }
 .teams-table .score { font-size: 22px; font-weight: 800; }
+
+/* Mistakes in the scenario pack files */
+.content-errors { margin: 0 0 12px; font-weight: 400; }
+.content-errors ul { margin: 6px 0 0; padding-left: 20px; font-size: 15px; overflow-wrap: anywhere; }

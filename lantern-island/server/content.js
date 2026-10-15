@@ -9,6 +9,7 @@
 // change them; the teacher's own templates and cards stay in storage, as before.
 // A pack with a mistake is left out, and the mistake is reported with the file it is in.
 import fs from 'node:fs/promises';
+import { watch as watchFiles } from 'node:fs';
 import path from 'node:path';
 import { parseZone } from './world.js';
 import { validateCard } from './cards.js';
@@ -34,7 +35,7 @@ export async function loadContent(contentDir, { abilities, items }) {
   try { folders = (await fs.readdir(dir, { withFileTypes: true })).filter((d) => d.isDirectory() && !/^[._]/.test(d.name)).map((d) => d.name); }
   catch { errors.push(`scenarios: the folder ${dir} is missing`); }
 
-  const loaded = [];
+  const loaded = [], failed = new Set();
   for (const id of folders) {
     const where = (f) => `scenarios/${id}/${f}`;
     const problems = [];                               // every mistake in this pack, each with its file
@@ -72,13 +73,13 @@ export async function loadContent(contentDir, { abilities, items }) {
       else if (raw.id !== f.slice(0, -5)) problems.push(`${where(`cards/${f}`)}: "id" must be "${f.slice(0, -5)}", the name of the file`);
       else cards.push({ ...r.card, pack: id });
     }
-    if (problems.length) errors.push(...problems);
+    if (problems.length) { errors.push(...problems); failed.add(id); }
     else loaded.push({ pack, zones, missions, cards });
   }
 
   // Ids that the game keys on must be unique across packs: maps, missions, cards and landmarks
   // (a group's saved island lists the landmarks it restored by id).
-  const out = { packs: {}, zones: {}, missions: [], cards: [], errors };
+  const out = { packs: {}, zones: {}, missions: [], cards: [], errors, failed };
   const seen = { zone: new Map(), mission: new Map(), card: new Map(), landmark: new Map() };
   const clash = (kind, key, pack) => {
     const other = seen[kind].get(key);
@@ -89,7 +90,7 @@ export async function loadContent(contentDir, { abilities, items }) {
   for (const { pack, zones, missions, cards } of loaded.sort((a, b) => a.pack.order - b.pack.order || a.pack.id.localeCompare(b.pack.id))) {
     const bad = [...zones.map((z) => clash('zone', z.id, pack.id)), ...zones.flatMap((z) => z.landmarks.map((l) => clash('landmark', l.id, pack.id))),
       ...missions.map((m) => clash('mission', m.id, pack.id)), ...cards.map((c) => clash('card', c.id, pack.id))];
-    if (bad.some(Boolean)) continue;
+    if (bad.some(Boolean)) { failed.add(pack.id); continue; }
     out.packs[pack.id] = pack;
     for (const z of zones) out.zones[z.id] = z;
     out.missions.push(...missions);
@@ -97,4 +98,57 @@ export async function loadContent(contentDir, { abilities, items }) {
   }
   if (!Object.keys(out.zones).length && !errors.length) errors.push('scenarios: no pack found');
   return out;
+}
+
+// Reads the packs again and updates `content` in place, so everything that holds it sees the new version.
+// A pack that now has a mistake keeps its last good version (its mistakes are in content.errors and its id
+// in content.kept). Missions that are running keep the maps they started with.
+export async function reloadContent(content, contentDir, deps) {
+  const next = await loadContent(contentDir, deps);
+  const kept = [];
+  for (const id of next.failed) {
+    if (!content.packs[id] || next.packs[id]) continue;
+    kept.push(id);
+    next.packs[id] = content.packs[id];
+    for (const z of Object.values(content.zones)) if (z.pack === id) next.zones[z.id] = z;
+    next.missions.push(...content.missions.filter((m) => m.pack === id));
+    next.cards.push(...content.cards.filter((c) => c.pack === id));
+  }
+  // Maps in pack order: the first pack's first map is where every group starts.
+  const order = Object.values(next.packs).sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));
+  const zones = order.flatMap((p) => p.zones.map((id) => next.zones[id]).filter(Boolean));
+  for (const k of Object.keys(content.zones)) delete content.zones[k];
+  for (const z of zones) content.zones[z.id] = z;
+  for (const k of Object.keys(content.packs)) delete content.packs[k];
+  for (const p of order) content.packs[p.id] = p;
+  content.missions.splice(0, content.missions.length, ...next.missions);
+  content.cards.splice(0, content.cards.length, ...next.cards);
+  content.errors = next.errors;
+  content.kept = kept;
+  content.version = (content.version || 0) + 1;
+  return content;
+}
+
+// Watches data/scenarios and reloads after a change (a short pause first: editors save in several steps).
+// Where the system cannot watch a folder tree, it looks every 2 seconds instead. Returns { close }.
+export function watchContent(content, contentDir, deps, onReload) {
+  const dir = path.join(contentDir, 'scenarios');
+  let timer = null, closed = false, busy = Promise.resolve();
+  const changed = () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => { busy = busy.then(async () => { if (!closed) onReload(await reloadContent(content, contentDir, deps)); }).catch(console.error); }, 300);
+  };
+  let watcher = null, poll = null;
+  try { watcher = watchFiles(dir, { recursive: true }, changed); watcher.on('error', () => {}); }
+  catch {
+    let last = '';
+    const stamp = async () => {
+      const files = await fs.readdir(dir, { recursive: true }).catch(() => []);
+      const parts = await Promise.all(files.map(async (f) => { const s = await fs.stat(path.join(dir, f)).catch(() => null); return s ? `${f}:${s.mtimeMs}:${s.size}` : ''; }));
+      return parts.sort().join('|');
+    };
+    stamp().then((s) => { last = s; });
+    poll = setInterval(async () => { const s = await stamp(); if (s !== last) { last = s; changed(); } }, 2000);
+  }
+  return { close() { closed = true; clearTimeout(timer); watcher?.close(); clearInterval(poll); } };
 }
