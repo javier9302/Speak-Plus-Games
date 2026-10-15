@@ -1,8 +1,9 @@
 // Draws the map and the characters. Used by the host screen and the phones.
-import { TILE, PLAYER_COLORS, charSprite, drawTile, thingSprite, iconCanvas, monsterSprite, landmarkSprite } from './pixel.js';
+import { TILE, PLAYER_COLORS, charSprite, drawTile, thingSprite, iconCanvas, monsterSprite, landmarkSprite, setKindArt } from './pixel.js';
 
 // Pre-draws the whole zone once (two frames, for the water).
 export function createScene(zone) {
+  setKindArt(zone.art);                  // pictures of kinds that bring their own
   const make = (frame) => {
     const c = document.createElement('canvas');
     c.width = zone.w * TILE; c.height = zone.h * TILE;

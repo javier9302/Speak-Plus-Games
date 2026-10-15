@@ -35,7 +35,7 @@ import { isTeacher } from './http.js';
 import { dealPreset, dealRandom } from './abilities.js';
 import { stepPlayer, solidAt, REACH } from './world.js';
 import { buildThings, blockSet, publicThings, useAbility, returnItems, pressPlates, completeAction, waitingAbility, canForce } from './things.js';
-import { kindOf } from './kinds/index.js';
+import { kindOf, KIND_ART } from './kinds/index.js';
 import { goalOf } from './goals/index.js';
 import { gameCtx } from './things.js';
 import { whyNot, inspect } from './solver.js';
@@ -119,7 +119,7 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
   }
   const worldMsg = (room) => ({
     t: 'world', reach: REACH,
-    zone: { id: room.zone.id, name: room.zone.name, w: room.zone.w, h: room.zone.h, rows: room.zone.rows, places: room.zone.places, landmarks: room.zone.landmarks },
+    zone: { id: room.zone.id, name: room.zone.name, w: room.zone.w, h: room.zone.h, rows: room.zone.rows, places: room.zone.places, landmarks: room.zone.landmarks, art: KIND_ART },
   });
   const stateMsg = (room) => ({ t: 'state', p: room.players.map((p) => [p.id, Math.round(p.x * 100) / 100, Math.round(p.y * 100) / 100, p.dir, p.moving ? 1 : 0, p.stun > 0 ? 1 : 0]) });
   const thingsMsg = (room) => ({ t: 'things', list: publicThings(room.things) });
@@ -617,7 +617,7 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
       if (room.mission?.timeLimit && room.clock >= room.mission.timeLimit * 60) { room.timeUp = true; endMission(room, false); continue; }
       for (const p of room.players) { if (p.stun > 0) p.moving = false; else stepPlayer(room.zone, p, dt, room.block); }
       if (pressPlates(room)) changed(room);                       // somebody stepped on, or off, a flat stone
-      if (room.mission && goalOf(room.mission.goal).tick?.(room, dt, gameCtx(room, items))) changed(room);
+      if (room.mission && goalOf(room.mission.goal).tick?.(room, dt, { ...gameCtx(room, items), tell: (p, msg) => send(p.ws, { t: 'say', msg }) })) changed(room);
       monster.tick(room, dt);
       broadcast(room, stateMsg(room));
     }

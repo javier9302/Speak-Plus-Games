@@ -248,6 +248,7 @@ data/groups/             saves (made when you create a group)
 test/sim.js              the simulated class
 test/compete.js          the simulated match (4 rooms, 24 phones)
 test/content.js          scenario packs: loading, and the mistakes npm run check finds
+test/goals.js            every goal type on a test map: solved, and played in a real room
 ```
 
 Things you may want to change: walking speed is `SPEED` in `server/world.js`; how much of the map a phone sees is `DEFAULT_VIEW` in `server/rooms.js`; player colours are `PLAYER_COLORS` in `public/shared/pixel.js`. The map can be edited in `data/scenarios/beach/zones/beach.json`: keep every row the same length and keep six `p` start tiles (the `legend` in the file lists the characters).

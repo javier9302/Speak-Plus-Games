@@ -85,8 +85,33 @@ export function solve(zone, mission, sets, { without = [], explore = false } = {
   };
   const codeKnown = (t) => Array.from({ length: t.def.code }, (_, d) => d + 1).every((d) => things.some((c) => Object.entries(c.def.clues || {}).some(([a, text]) => text.includes(`{d${d}}`) && clues.has(`${c.id}:${a}`))));
 
+  // Where something with no abilities can walk from `tiles` (a character that follows a player): it cannot
+  // jump or swim, but a plate that any player stands on lets it through. Its own tile counts as free.
+  function walkFrom(tiles) {
+    const at = new Map(things.map((t) => [key(t.x, t.y), t]));
+    const flooded = new Set(things.flatMap((t) => (kindOf(t).floods?.(t) || []).map((f) => key(f.x, f.y))));
+    const held = (t) => things.some((p) => kindOf(p).holdsOpen?.(p) === t.id && (s.regs || []).some((r) => r.has(key(p.x, p.y))));
+    const ns = { has: () => false, held: (i, t) => held(t) };
+    const start = new Set(tiles.map(([x, y]) => key(x, y)));
+    const free = (x, y) => {
+      if (start.has(key(x, y))) return true;
+      if (!ground(x, y) || flooded.has(key(x, y))) return false;
+      const t = at.get(key(x, y));
+      if (!t) return true;
+      const k = kindOf(t);
+      return k.pass ? k.pass(t, -1, ns) : !k.solid(t) || (!!k.holdable && held(t));
+    };
+    const seen = new Set(), todo = tiles.map((p) => [...p]);
+    while (todo.length) {
+      const [x, y] = todo.pop();
+      if (seen.has(key(x, y)) || !free(x, y)) continue;
+      seen.add(key(x, y));
+      todo.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
+    }
+    return seen;
+  }
   // What a goal type's solver part may use (server/goals/<type>.js, "solver").
-  const s = { mission, things, byId, pool, used, log, clues, owners, has, canGet, take, key, zone, regs: null, regions,
+  const s = { mission, things, byId, pool, used, log, clues, owners, has, canGet, take, key, zone, regs: null, regions, walkFrom,
     reach: (i, t) => reach(s.regs, i, t) };
   const goal = goalOf(mission.goal).solver(s);
 

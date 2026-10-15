@@ -270,10 +270,26 @@ export function monsterSprite() {
 const things = new Map();
 // The picture of a thing in its current state: { kind, st, holds }.
 export function thingSprite(t) {
+  if (kindArt[t.kind]) return artSprite(t.kind, t.st);
   const flags = (t.held ? 'h' : '') + (t.keypad ? 'k' : '');
   const key = `${t.kind}/${t.st}/${t.holds || ''}/${flags}`;
   if (!things.has(key)) things.set(key, paint(t.kind, t.st, t.holds, flags));
   return things.get(key);
+}
+// Kinds that bring their own pictures (server/kinds/<kind>.js "art"), sent with the map:
+// { kind: { pal, states: { st: 16 rows of 16 letters, default } } }. "k" is the outline, "." is clear.
+let kindArt = {};
+const arts = new Map();
+export function setKindArt(art) { if (JSON.stringify(art || {}) !== JSON.stringify(kindArt)) { kindArt = art || {}; arts.clear(); } }
+function artSprite(kind, st) {
+  const a = kindArt[kind], rows = a.states[st] || a.states.default, key = `${kind}/${a.states[st] ? st : 'default'}`;
+  if (arts.has(key)) return arts.get(key);
+  const c = document.createElement('canvas');
+  c.width = c.height = TILE;
+  const g = c.getContext('2d');
+  rows.forEach((row, y) => { for (let x = 0; x < TILE; x++) { const ch = row[x]; if (ch !== '.') { g.fillStyle = ch === 'k' ? OUTLINE : a.pal[ch]; g.fillRect(x, y, 1, 1); } } });
+  arts.set(key, c);
+  return c;
 }
 // ---------- landmarks ----------
 // What missions restore on the island. Each one is drawn as a ruin until a mission restores it.

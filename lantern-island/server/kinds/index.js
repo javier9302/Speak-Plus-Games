@@ -21,6 +21,9 @@
 //   how(o, itemName)    what it asks of the team, in plain words (the teacher's sheet)
 //   card / character    true for a tablet that holds a challenge card / for a character the teacher plays
 //   tick(t, ctx)        runs 20 times a second in a mission; returns true if it changed something
+//   art       its pictures, if public/shared/pixel.js does not draw this kind: { pal: { letter: '#rrggbb' },
+//             states: { <st>: [16 rows of 16 letters], default: [...] } }. "." is clear and "k" the dark outline.
+//             The state's picture is used, or "default". Sent to every screen with the map.
 //   returned(t)         an item a leaving player carried came back to it
 //   markUsed(t, s)      for the solver: abilities used just by being able to walk somewhere (a jump)
 //   stuck(t, s)         for the solver's report: extra reasons the team is stuck at it
@@ -51,6 +54,7 @@ export const KINDS = {};
 for (const f of fs.readdirSync(dir).filter((n) => n.endsWith('.js') && n !== 'index.js' && !n.startsWith('_')).sort()) {
   const k = (await import(pathToFileURL(path.join(dir, f)).href)).default;
   if (!k || k.kind !== f.slice(0, -3)) throw new Error(`server/kinds/${f}: it must export default { kind: "${f.slice(0, -3)}", ... }`);
+  for (const problem of artProblems(k.art)) throw new Error(`server/kinds/${f}, art: ${problem}`);
   KINDS[k.kind] = {
     start: () => ({ st: 'x' }), solid: () => true, how: () => '', about: '', fields: {},
     ...k,
@@ -58,7 +62,20 @@ for (const f of fs.readdirSync(dir).filter((n) => n.endsWith('.js') && n !== 'in
   };
 }
 
+// The pictures of the kinds that bring their own (for the screens).
+export const KIND_ART = Object.fromEntries(Object.values(KINDS).filter((k) => k.art).map((k) => [k.kind, k.art]));
 export const kindOf = (t) => KINDS[t.kind];
+
+function artProblems(art) {
+  if (!art) return [];
+  const out = [];
+  if (!art.states?.default) out.push('needs states.default (the picture used when its state has none)');
+  for (const [st, rows] of Object.entries(art.states || {})) {
+    if (!Array.isArray(rows) || rows.length !== 16 || rows.some((r) => typeof r !== 'string' || r.length !== 16)) { out.push(`state "${st}" must be 16 rows of 16 letters`); continue; }
+    for (const ch of new Set(rows.join(''))) if (ch !== '.' && ch !== 'k' && !art.pal?.[ch]) out.push(`state "${st}" uses "${ch}", which is not in pal`);
+  }
+  return out;
+}
 export const abilityOf = (act, t) => (typeof act.ability === 'function' ? act.ability(t) : act.ability);
 // The action `ability` does on `t` right now, or null.
 export const actionFor = (t, ability) => kindOf(t).actions.find((a) => abilityOf(a, t) === ability && a.when(t)) || null;
