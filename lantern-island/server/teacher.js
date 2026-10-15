@@ -10,6 +10,7 @@
 //   helper {role, p} | courier {o, to? | deliver?}            (see chat.js)
 //   monster {do} | monsterSet {phase | speed | level} | role {role, p} | rotate | heal {p}   (see monster.js)
 import { buildThings, blockSet, forceThing, returnItems } from './things.js';
+import { kindOf } from './kinds/index.js';
 import { cleanName, HINT_COST_SECONDS } from './rooms.js';
 
 const SETTINGS = {
@@ -37,7 +38,7 @@ export function createTeacherCommands(G) {
       if (!playing(room)) return;
       const old = new Map(room.things.map((t) => [t.id, t]));
       room.things = buildThings(room.zone, room.mission.stations.map((s) => s.at));
-      for (const t of room.things) if (t.kind === 'station') { const o = old.get(t.id); t.card = o?.card || null; t.inner = o?.inner || null; if (!t.card) { t.st = 'solved'; } }
+      for (const t of room.things) if (kindOf(t).card) { const o = old.get(t.id); t.card = o?.card || null; t.inner = o?.inner || null; if (!t.card) { t.st = 'solved'; } }
       room.messages = [];
       room.players.forEach((p) => { p.items = []; p.stun = 0; p.lost = null; G.toSpawn(room, p); });
       room.talks = [];
@@ -62,7 +63,7 @@ export function createTeacherCommands(G) {
     // ----- tablets and other things -----
     // The hint ladder: each press shows the next hint on the phones that can open this tablet.
     hint(room, m) {
-      const t = room.things.find((x) => x.id === m.o && x.kind === 'station');
+      const t = room.things.find((x) => x.id === m.o && kindOf(x).card);
       const card = t?.inner || t?.card;
       if (!playing(room) || !card || t.st === 'solved' || t.hints >= card.hints.length) return;
       t.hints++; room.stats.hints++;
@@ -74,7 +75,7 @@ export function createTeacherCommands(G) {
     },
     // Rescue: solve a tablet without an answer. Its reward appears as usual.
     solve(room, m) {
-      const t = room.things.find((x) => x.id === m.o && x.kind === 'station');
+      const t = room.things.find((x) => x.id === m.o && kindOf(x).card);
       if (!playing(room) || !t || t.st === 'solved') return;
       G.solveStation(room, t);
       changed(room);

@@ -8,8 +8,10 @@
 // Used by `npm run check` (every zone and mission template, 2 to 6 players), and by the
 // server before a mission starts and before abilities are reshuffled.
 //
-// It follows the same rules as things.js. If you add a kind of object there, add it here.
+// It follows the same rules as the game: each kind's file in server/kinds/ (its actions, what blocks
+// the way, what it needs). A new kind needs nothing here.
 import { buildThings } from './things.js';
+import { kindOf, abilityOf, progressOf } from './kinds/index.js';
 
 const TERRAIN_SOLID = new Set(['~', 'T', 'R']);
 const NAMES = { look: 'Look', read: 'Read', talk: 'Talk', listen: 'Listen', pickup: 'Pick up', give: 'Give', open: 'Open', close: 'Close', jump: 'Jump', push: 'Push', use: 'Use', fix: 'Fix' };
@@ -37,16 +39,16 @@ export function solve(zone, mission, sets, { without = [] } = {}) {
     let regs = sets.map(() => new Set());
     for (let round = 0; round < 6; round++) {
       const at = new Map(things.map((t) => [key(t.x, t.y), t]));
-      const flooded = new Set(things.filter((t) => t.kind === 'sluice' && t.st !== 'closed').flatMap((t) => t.def.floods.map((f) => key(f.x, f.y))));
-      const held = (i, t) => things.some((p) => p.kind === 'plate' && p.def.target === t.id && regs.some((r, j) => j !== i && r.has(key(p.x, p.y))));
+      const flooded = new Set(things.flatMap((t) => (kindOf(t).floods?.(t) || []).map((f) => key(f.x, f.y))));
+      // Held open: somebody else stands on a plate (any kind with holdsOpen) that targets it.
+      const held = (i, t) => things.some((p) => kindOf(p).holdsOpen?.(p) === t.id && regs.some((r, j) => j !== i && r.has(key(p.x, p.y))));
+      const s = { has, held };
       const free = (i, x, y) => {
         if (!ground(x, y) || flooded.has(key(x, y))) return false;
         const t = at.get(key(x, y));
-        if (!t || t.kind === 'plate') return true;
-        if ((t.kind === 'item' && t.st === 'gone') || (t.kind === 'gate' && t.st === 'open') || (t.kind === 'gap' && t.st === 'fixed')) return true;
-        if (t.kind === 'gap') return has(i, 'jump') || held(i, t);
-        if (t.kind === 'gate') return held(i, t);
-        return false;
+        if (!t) return true;
+        const k = kindOf(t);
+        return k.pass ? k.pass(t, i, s) : !k.solid(t) || (!!k.holdable && held(i, t));
       };
       const next = sets.map((s, i) => {
         const seen = new Set(), todo = starts.map((p) => [...p]);
@@ -69,6 +71,17 @@ export function solve(zone, mission, sets, { without = [] } = {}) {
   // An item is in the pocket of whoever picked it up. It gets to another player only if the holder has Give.
   const canGet = (i, item) => pool.some((it) => it.item === item && (it.holder === i || has(it.holder, 'give')));
   const take = (i, item) => { const k = pool.findIndex((it) => it.item === item && (it.holder === i || has(it.holder, 'give'))); if (pool[k].holder !== i) used.add('give'); return pool.splice(k, 1)[0]; };
+  const ctx = { byId: (id) => byId[id] || null, itemName: (id) => id };
+  // What an action needs, besides a player with its ability who can get there.
+  const allowed = (step, t, i) => {
+    if (step.needs?.item) return canGet(i, step.needs.item(t));
+    if (step.needs?.code) return codeKnown(t);
+    if (step.needs?.card) {
+      const courier = mission.stations.find((s) => s.at === t.id)?.filter?.type === 'courier';   // a letter needs somebody to carry it, and a second player
+      return !courier || (owners('give').length > 0 && n >= 2);
+    }
+    return true;
+  };
   const codeKnown = (t) => Array.from({ length: t.def.code }, (_, d) => d + 1).every((d) => things.some((c) => Object.entries(c.def.clues || {}).some(([a, text]) => text.includes(`{d${d}}`) && clues.has(`${c.id}:${a}`))));
 
   for (let turn = 0; turn < 400 && !done; turn++) {
@@ -83,29 +96,20 @@ export function solve(zone, mission, sets, { without = [] } = {}) {
       }
       return false;
     };
-    const pickup = (t) => act('pickup', t, `the ${t.holds} from the ${t.name.toLowerCase()}`, (i) => { pool.push({ item: t.holds, holder: i }); t.holds = null; if (t.kind === 'item') t.st = 'gone'; });
-
     for (const t of things) {
       for (const a of Object.keys(t.def.clues || {})) if (!clues.has(`${t.id}:${a}`)) act(a, t, `clue on the ${t.name.toLowerCase()}`, () => clues.add(`${t.id}:${a}`));
-      const name = t.name.toLowerCase();
-      if (t.kind === 'item' && t.st === 'here') pickup(t);
-      else if (t.kind === 'boulder' && t.st === 'a') act('push', t, `the ${name}`, () => { t.st = 'b'; t.x = t.def.to.x; t.y = t.def.to.y; });
-      else if (t.kind === 'chest') { if (t.st === 'closed') act('open', t, `the ${name}`, () => { t.st = 'open'; }); else if (t.holds) pickup(t); }
-      else if (t.kind === 'gate' && t.st === 'locked') {
-        if (t.def.code) act('use', t, `the code of the ${name}`, () => { t.st = 'closed'; }, () => codeKnown(t));
-        else act('use', t, `the ${t.def.key || 'key'} on the ${name}`, (i) => { const it = take(i, t.def.key || 'key'); pool.push({ ...it, holder: i }); t.st = 'closed'; }, (i) => canGet(i, t.def.key || 'key'));
-      } else if (t.kind === 'gate' && t.st === 'closed') act('open', t, `the ${name}`, () => { t.st = 'open'; });
-      else if (t.kind === 'sluice' && t.st === 'broken') act('fix', t, `the ${name}`, (i) => { take(i, t.def.needs); t.st = 'open'; }, (i) => canGet(i, t.def.needs));
-      else if (t.kind === 'sluice' && t.st === 'open') act('close', t, `the ${name}`, () => { t.st = 'closed'; });
-      else if (t.kind === 'gap' && t.st === 'broken' && t.def.needs) act('fix', t, `the ${name}`, (i) => { take(i, t.def.needs); t.st = 'fixed'; }, (i) => canGet(i, t.def.needs));
-      else if (t.kind === 'station' && t.st !== 'solved') {
-        const entry = mission.stations.find((s) => s.at === t.id);
-        const courier = entry?.filter?.type === 'courier';              // a letter needs somebody to carry it, and a second player
-        act(t.def.by || 'use', t, `the ${name}`, () => { t.st = 'solved'; t.holds = t.def.reward?.item || null; if (t.def.reward?.open && byId[t.def.reward.open]) byId[t.def.reward.open].st = 'open'; }, () => !courier || (owners('give').length > 0 && n >= 2));
-      } else if (t.kind === 'station' && t.holds) pickup(t);
+      // The kind's next step forward, done the way the game does it.
+      const step = progressOf(t);
+      if (!step) continue;
+      const what = step.log ? step.log(t) : step.gives ? `the ${t.holds} from the ${t.name.toLowerCase()}` : `the ${t.name.toLowerCase()}`;
+      act(abilityOf(step, t), t, what, (i) => {
+        if (step.gives) pool.push({ item: t.holds, holder: i });
+        if (step.needs?.item) { const it = take(i, step.needs.item(t)); if (step.needs.keep) pool.push({ ...it, holder: i }); }
+        step.do(t, ctx);
+      }, (i) => allowed(step, t, i));
     }
-    // Jumping over a gap, and standing on a plate for the others, count as using Jump.
-    for (const t of things) if (t.kind === 'gap' && t.st === 'broken') for (const i of owners('jump')) if (regs[i].has(key(t.x, t.y))) used.add('jump');
+    // Abilities used just by walking somewhere (jumping over a gap).
+    for (const t of things) for (const a of kindOf(t).markUsed?.(t, { owners, regs }) || []) used.add(a);
 
     // The goal: enough items, and (if the zone asks for it) one player carries them all to a character.
     if (pool.filter((it) => it.item === goalItem).length >= need) {
@@ -132,16 +136,15 @@ export function solve(zone, mission, sets, { without = [] } = {}) {
     };
     for (const t of things) {
       const name = `the ${t.name.toLowerCase()}`;
-      const say = (a, extra) => { const w = why(a, t) || extra; if (w) problems.push(`${name}: ${w}`); };
-      if (t.kind === 'boulder' && t.st === 'a') say('push');
-      if (t.kind === 'chest' && t.st === 'closed') say('open');
-      if (t.kind === 'gate' && t.st === 'locked') say('use', t.def.code ? 'the numbers of its code were not all found' : `the ${t.def.key || 'key'} cannot get to the player with Use`);
-      if (t.kind === 'gate' && t.st === 'closed') say('open');
-      if (t.kind === 'sluice' && t.st === 'broken') say('fix', `the ${t.def.needs} cannot get to the player with Fix`);
-      if (t.kind === 'sluice' && t.st === 'open') say('close');
-      if (t.kind === 'gap' && t.st === 'broken' && !owners('jump').length) problems.push(`${name}: nobody has Jump`);
-      if (t.kind === 'station' && t.st !== 'solved') say(t.def.by || 'use', 'it needs a player with Give to carry its letter');
-      if ((t.kind === 'station' || t.kind === 'chest' || t.kind === 'item') && t.holds && (t.kind !== 'chest' || t.st === 'open') && (t.kind !== 'station' || t.st === 'solved')) say('pickup');
+      for (const w of kindOf(t).stuck?.(t, { owners, regs }) || []) problems.push(`${name}: ${w}`);
+      const step = progressOf(t);
+      if (!step || !step.explain) continue;
+      const a = abilityOf(step, t);
+      const extra = step.needs?.item ? `the ${step.needs.item(t)} cannot get to the player with ${NAMES[a]}`
+        : step.needs?.code ? 'the numbers of its code were not all found'
+        : step.needs?.card ? 'it needs a player with Give to carry its letter' : null;
+      const w = why(a, t) || extra;
+      if (w) problems.push(`${name}: ${w}`);
     }
     const have = pool.filter((it) => it.item === goalItem).length;
     if (have >= need) problems.push(`the ${goalItem}s cannot be carried to the ${byId[mission.goal.deliver]?.name.toLowerCase()}: ${!owners('talk').length ? 'nobody has Talk' : !owners('give').length ? 'the player with Talk is not the one who picks them up, and nobody has Give' : 'the player with Talk cannot get there'}`);
@@ -178,11 +181,12 @@ export function inspect(zone, mission, sets, abilityIds) {
 export function zoneRules(zone, mission, sets, abilityIds) {
   const out = [];
   const owner = (a) => sets.findIndex((s) => s.includes(a));
-  const passed = (t) => ({ chest: t.st === 'open' && !t.holds, gate: t.st === 'open', sluice: t.st === 'closed', station: t.st === 'solved' && !t.holds }[t.kind]);
+  const passed = (t) => kindOf(t).passed?.(t);
   const base = solve(zone, mission, sets);
   const without = Object.fromEntries(abilityIds.map((a) => [a, solve(zone, mission, sets, { without: [a] }).things]));
   for (const t of base.things) {
-    if (t.kind === 'gap' && !t.def.needs && !base.things.some((p) => p.kind === 'plate' && p.def.target === t.id)) out.push(`${t.name}: only a jumper can cross, and there is no plate that lets the others follow`);
+    const rule = kindOf(t).rules?.(t, base.things);
+    if (rule) out.push(rule);
     if (passed(t) === undefined) continue;
     if (!passed(t)) { out.push(`${t.name}: the team never gets past it`); continue; }
     const needs = abilityIds.filter((a) => !passed(without[a].find((x) => x.id === t.id)));

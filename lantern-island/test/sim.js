@@ -913,6 +913,10 @@ async function main() {
   const { runCheck } = await import('../server/check.js');
   const checked = await runCheck(app.config.contentDir, dataDir);
   check('npm run check: every zone and mission can be finished with 2 to 6 players, and everybody is needed', checked.ok, checked.errors.join(' | '));
+  const { solverAnswers, golden } = await import('./golden.js');
+  const answers = await solverAnswers(), expected = await golden();
+  const differ = Object.keys({ ...answers, ...expected }).filter((k) => JSON.stringify(answers[k]) !== JSON.stringify(expected[k]));
+  check('the solver solves every pack mission exactly as before (test/solver-golden.json)', !differ.length, differ.slice(0, 5).join(', '));
   const { solve, whyNot } = await import('../server/solver.js');
   const zoneB = app.rooms.rooms.get(room3.code).zone, light = app.missions.normalize(lib.missions.find((m) => m.id === 'light-the-lighthouse'));
   check('the solver sees a dead end: nobody has Jump', !solve(zoneB, light, dealPreset(table, 3), { without: ['jump'] }).ok && whyNot(zoneB, light, [['look', 'read', 'talk', 'listen', 'pickup', 'give'], ['open', 'close', 'push', 'use', 'fix']]).includes('Jump'));

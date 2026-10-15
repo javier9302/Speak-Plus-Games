@@ -3,27 +3,15 @@
 import { dealPreset } from './abilities.js';
 import { fillCode } from './things.js';
 import { solve } from './solver.js';
+import { KINDS } from './kinds/index.js';
 
-// What each kind of object asks of the team, in plain words.
-function how(o, itemName) {
-  switch (o.kind) {
-    case 'chest': return `Open, then Pick up${o.holds ? ` (inside: ${itemName(o.holds)})` : ''}.`;
-    case 'gate': return o.code ? `Locked with a code of ${o.code} numbers. Use, type the code, then Open.` : o.locked ? `Locked. Use with the ${itemName(o.key || 'key')} in your pocket, then Open.` : 'Open. Close shuts it again.';
-    case 'gap': return o.needs ? `Jump across, or Fix with the ${itemName(o.needs)}.` : 'Jump across. It cannot be fixed.';
-    case 'plate': return 'No ability. While a player stands on it, everybody can cross the broken bridge.';
-    case 'sluice': return `Broken. Fix with the ${itemName(o.needs)}, then Close: the sea goes down and the way is dry.`;
-    case 'boulder': return 'Push rolls it aside.';
-    case 'station': return `Use shows its challenge card.${o.reward?.item ? ` Solved: a ${itemName(o.reward.item)} appears. Pick up.` : ''}`;
-    case 'item': return 'Pick up.';
-    case 'npc': return 'Talk. The teacher can answer as this character from the panel.';
-    default: return '';
-  }
-}
+// What each kind of object asks of the team, in plain words (from its kind file).
+const how = (o, itemName) => KINDS[o.kind].how(o, itemName);
 
 export function createSheets({ zones, abilities, items, missions, rooms }) {
   const itemName = (id) => (items.byId[id]?.name || id).toLowerCase();
   const ability = (id) => abilities.byId[id]?.name || id;
-  const puzzles = (zone, code, only) => zone.objects.filter((o) => o.kind !== 'station' || !only || only.includes(o.id)).map((o) => ({
+  const puzzles = (zone, code, only) => zone.objects.filter((o) => !KINDS[o.kind].card || !only || only.includes(o.id)).map((o) => ({
     name: o.name, kind: o.kind, how: how(o, itemName),
     clues: Object.entries(o.clues || {}).map(([a, text]) => ({ ability: ability(a), text: code ? fillCode(text, code) : text.replace(/\{d(\d)\}/g, (m, n) => `(number ${n} of the code)`) })),
   }));

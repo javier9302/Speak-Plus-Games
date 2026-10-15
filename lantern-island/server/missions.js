@@ -2,6 +2,7 @@
 // Templates come from two places: the scenario packs (data/scenarios/<pack>/missions, edited in the files only)
 // and the teacher's own templates (storage collection "missions", made in the mission builder).
 import { CARD_TYPES } from './cards.js';
+import { KINDS } from './kinds/index.js';
 
 const text = (v, max) => String(v ?? '').trim().slice(0, max);
 
@@ -10,7 +11,7 @@ export function normalizeMission(raw, zones, items) {
   const fail = (why) => { throw Object.assign(new Error(`Mission "${raw?.title || raw?.id || '?'}": ${why}.`), { status: 400 }); };
   const zone = zones[raw?.zone || 'beach'];
   if (!zone) fail(`unknown zone "${raw?.zone}"`);
-  const tablets = zone.objects.filter((o) => o.kind === 'station');
+  const tablets = zone.objects.filter((o) => KINDS[o.kind].card);
   const stations = [];
   for (const s of Array.isArray(raw.stations) ? raw.stations : []) {
     if (!tablets.some((t) => t.id === s.at)) fail(`"${s.at}" is not a tablet of ${zone.name}`);
@@ -34,7 +35,7 @@ export function normalizeMission(raw, zones, items) {
     minutes: Math.max(5, Math.min(90, Math.round(Number(raw.minutes) || 25))),
     goal: { label: text(raw.goal?.label, 30) || items.byId[item].name, items: { [item]: need }, restore: text(raw.goal?.restore, 40) || null,
       // Some zones want the items carried to a character (the keeper) by one player.
-      deliver: zone.objects.some((o) => o.id === (raw.goal?.deliver ?? zone.goal?.deliver) && o.kind === 'npc') ? (raw.goal?.deliver ?? zone.goal.deliver) : null },
+      deliver: zone.objects.some((o) => o.id === (raw.goal?.deliver ?? zone.goal?.deliver) && KINDS[o.kind].character) ? (raw.goal?.deliver ?? zone.goal.deliver) : null },
     stations, monster: ['off', 'gentle', 'normal', 'hard'].includes(raw.monster) ? raw.monster : 'group-setting',
     pack: raw.pack || null,                // the scenario pack it comes from; null for the teacher's own templates
   };

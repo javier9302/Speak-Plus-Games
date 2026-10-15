@@ -15,14 +15,7 @@
 //   sabotage:sent {id, target}          only the phone that sent it.
 import crypto from 'node:crypto';
 import { EFFECTS } from './sabotage.js';
-
-// When an obstacle counts as solved (once per mission, even if it is closed again later).
-const CLEARED = {
-  gate: (t) => !!t.def.locked && t.st !== 'locked',
-  gap: (t) => t.st === 'fixed',
-  sluice: (t) => t.st !== 'broken',
-  boulder: (t) => t.st === 'b',
-};
+import { kindOf } from './kinds/index.js';
 const intOr = (v, d) => (Number.isInteger(v) ? v : d);
 
 export function createMatches(G) {
@@ -71,7 +64,8 @@ export function createMatches(G) {
     s.solved = room.stats.solved;
     if (room.stats.slays > s.slays) room.score += (room.stats.slays - s.slays) * P.monster;
     s.slays = room.stats.slays;
-    for (const t of room.things) if (CLEARED[t.kind]?.(t) && !s.obstacles.has(t.id)) { s.obstacles.add(t.id); room.score += P.obstacle; }
+    // An obstacle counts once per mission, even if it is closed again later (each kind says when it is cleared).
+    for (const t of room.things) if (kindOf(t).cleared?.(t) && !s.obstacles.has(t.id)) { s.obstacles.add(t.id); room.score += P.obstacle; }
   }
   // A charge for every N new clues, up to the maximum a team can keep.
   function earn(room, clues) {

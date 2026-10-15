@@ -34,7 +34,8 @@ import QRCode from 'qrcode';
 import { isTeacher } from './http.js';
 import { dealPreset, dealRandom } from './abilities.js';
 import { stepPlayer, solidAt, REACH } from './world.js';
-import { buildThings, blockSet, publicThings, useAbility, returnItems, pressPlates } from './things.js';
+import { buildThings, blockSet, publicThings, useAbility, returnItems, pressPlates, completeAction, waitingAbility, canForce } from './things.js';
+import { kindOf } from './kinds/index.js';
 import { whyNot, inspect } from './solver.js';
 import { pickCard, innerCard, publicCard, teacherCard, checkAnswer } from './cards.js';
 import { createChat } from './chat.js';
@@ -146,7 +147,7 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
     if (!room.teachers.size) return;
     const msg = JSON.stringify({
       t: 'queue', room: room.code, phase: room.phase, stats: room.stats, found: room.found.size,
-      stations: room.things.filter((t) => t.kind === 'station' && t.card).map((t) => {
+      stations: room.things.filter((t) => kindOf(t).card && t.card).map((t) => {
         const card = t.inner || t.card, name = (id) => room.players.find((p) => p.id === id)?.name || null;
         return {
           o: t.id, name: t.name, st: t.st, wrong: t.wrong, by: t.by, byId: t.byId, hints: t.hints,
@@ -157,8 +158,8 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
       }),
       messages: chat.forTeacher(room),
       talks: room.talks, zone: room.zone.id, gateName: room.things.find((t) => t.def.code)?.name || null, gateCode: room.things.some((t) => t.def.code) ? room.gateCode.slice(0, room.things.find((t) => t.def.code).def.code) : null,
-      npcs: room.things.filter((t) => t.kind === 'npc').map((t) => ({ o: t.id, name: t.name, lines: t.def.lines || [] })),
-      things: room.things.filter((t) => ['gate', 'chest', 'gap', 'boulder', 'sluice'].includes(t.kind)).map((t) => ({ o: t.id, name: t.name, kind: t.kind, st: t.st })),
+      npcs: room.things.filter((t) => kindOf(t).character).map((t) => ({ o: t.id, name: t.name, lines: t.def.lines || [] })),
+      things: room.things.filter(canForce).map((t) => ({ o: t.id, name: t.name, kind: t.kind, st: t.st })),
     });
     for (const ws of room.teachers) if (ws.readyState === 1) ws.send(msg);
   }
@@ -190,7 +191,7 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
   // Gives a card to every tablet nobody has opened yet (mission start, or the level changed).
   async function drawCards(room) {
     const all = await cards.all(), used = new Set(room.things.filter((t) => t.card && t.st !== 'new').map((t) => t.card.id)), drawn = [];
-    for (const t of room.things.filter((x) => x.kind === 'station' && x.st === 'new')) {
+    for (const t of room.things.filter((x) => kindOf(x).card && x.st === 'new')) {
       const entry = room.mission.stations.find((s) => s.at === t.id);
       t.card = pickCard(all, entry?.card ? { id: entry.card } : entry?.filter, room.group.level, used);
       t.inner = null;
@@ -302,7 +303,7 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
         }
         send(p.ws, { t: 'npc', name: t.name, text: `You have ${mine}. I need all ${pr.need} from one pair of hands. Ask your team to give them to you!` });
       }
-      if (t.kind === 'npc' && ability.id === 'talk') {
+      if (kindOf(t).character && ability.id === 'talk') {
         room.talks = room.talks.filter((k) => !(k.p === p.id && k.o === t.id));
         room.talks.push({ id: `k${++room.seq}`, p: p.id, who: p.name, o: t.id, npc: t.name });
       }
@@ -351,19 +352,14 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
 
   // A tablet is solved (right answer, or the teacher's rescue button): its reward appears.
   function solveStation(room, t) {
-    t.st = 'solved';
+    completeAction(room, t, items, 'card');                      // its kind's rule: solved, the reward appears, a gate opens
     room.stats.solved++;
     monster.event(room, 'solved');
     for (const p of room.players) p.items = p.items.filter((it) => it.courier !== t.id);   // a letter still on its way is not needed now
     let reward = '';
-    if (t.def.reward?.item) {
-      t.holds = t.def.reward.item;
-      reward = `A ${(items.byId[t.holds]?.name || t.holds).toLowerCase()} appeared! Somebody must pick it up.`;
-    }
-    if (t.def.reward?.open) {
-      const gate = room.things.find((x) => x.id === t.def.reward.open && x.kind === 'gate');
-      if (gate) { gate.st = 'open'; reward = `The ${gate.name.toLowerCase()} is open!`; }
-    }
+    if (t.holds) reward = `A ${(items.byId[t.holds]?.name || t.holds).toLowerCase()} appeared! Somebody must pick it up.`;
+    const opened = t.def.reward?.open && room.things.find((x) => x.id === t.def.reward.open);
+    if (opened) reward = `The ${opened.name.toLowerCase()} is open!`;
     return reward;
   }
 
@@ -371,9 +367,9 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
   function onAnswer(room, p, m) {
     if (room.phase !== 'play') return;
     // A gate with a code: the digits are in clues around the island.
-    const gate = room.things.find((x) => x.id === m.o && x.kind === 'gate' && x.def.code && x.st === 'locked');
+    const gate = room.things.find((x) => x.id === m.o && x.def.code && waitingAbility(x, 'code'));
     if (gate) {
-      if (!p.abilities.includes('use') || p.stun > 0 || room.paused) return;
+      if (!p.abilities.includes(waitingAbility(gate, 'code')) || p.stun > 0 || room.paused) return;
       const now = Date.now();
       if (now - p.answerAt < ANSWER_GAP_MS) return send(p.ws, { t: 'result', o: gate.id, ok: false, msg: 'Wait a moment, then try again.' });
       p.answerAt = now;
@@ -381,11 +377,11 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
         monster.event(room, 'wrongAnswer');
         return send(p.ws, { t: 'result', o: gate.id, ok: false, msg: 'That is not the code. Find all its numbers: ask your team what they found.' });
       }
-      gate.st = 'closed';
+      completeAction(room, gate, items, 'code');
       send(p.ws, { t: 'result', o: gate.id, ok: true, msg: 'Unlocked! Now somebody can open it.' });
       return changed(room);
     }
-    const t = room.things.find((x) => x.id === m.o && x.kind === 'station');
+    const t = room.things.find((x) => x.id === m.o && kindOf(x).card);
     if (!t || !t.card || t.st !== 'open') return;
     if (room.paused) return send(p.ws, { t: 'result', o: t.id, ok: false, msg: 'The game is paused.' });
     if (p.stun > 0) return send(p.ws, { t: 'result', o: t.id, ok: false, msg: 'You are stunned! Call the Healer.' });
@@ -648,7 +644,7 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
     const room = rooms.get(String(code || '').toUpperCase());
     if (!room || !room.mission) return null;
     return {
-      room, stations: room.things.filter((t) => t.kind === 'station' && t.card).map((t) => ({ name: t.name, card: teacherCard(t.inner || t.card), courier: t.card.type === 'courier' ? room.zone.places.find((pl) => pl.id === t.card.meetAt)?.name || 'anywhere' : null, reward: t.def.reward?.item || null })),
+      room, stations: room.things.filter((t) => kindOf(t).card && t.card).map((t) => ({ name: t.name, card: teacherCard(t.inner || t.card), courier: t.card.type === 'courier' ? room.zone.places.find((pl) => pl.id === t.card.meetAt)?.name || 'anywhere' : null, reward: t.def.reward?.item || null })),
     };
   };
 
