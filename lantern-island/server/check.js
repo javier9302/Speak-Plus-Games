@@ -12,6 +12,7 @@ import { inspect, zoneRules, solve } from './solver.js';
 import { KINDS, progressOf, abilityOf } from './kinds/index.js';
 import { goalOf } from './goals/index.js';
 import { makeRun, isRandom } from './run.js';
+import { atlasFor } from './atlas.js';
 import { GOAL_PLACEHOLDERS } from './validate.js';
 
 const SEEDS = 30;                         // shuffled runs tried for each mission whose runs can differ
@@ -40,15 +41,19 @@ export async function runCheck(contentDir = path.join(root, 'data'), dataDir = c
   const readAll = async (dir) => { try { return Promise.all((await fs.readdir(dir)).filter((f) => f.endsWith('.json')).map(async (f) => JSON.parse(await fs.readFile(path.join(dir, f), 'utf8')))); } catch { return []; } };
   const templates = [...content.missions, ...(await readAll(path.join(dataDir, 'missions'))).filter((t) => !content.missions.some((m) => m.id === t.id))];
 
-  for (const zone of Object.values(zones).filter((z) => !only || z.pack === only)) {
-    say(`PACK ${zone.pack}, MAP: ${zone.name}  (${zone.objects.length} objects, ${zone.landmarks.length} landmarks)`);
+  // Maps with player starts are checked with every map their exits lead to (one atlas, atlas.js).
+  const reached = new Set();
+  for (const zone of Object.values(zones).filter((z) => (!only || z.pack === only) && z.spawns.length)) {
+    const atlas = atlasFor(zone, zones), tablets = atlas.objects.filter((o) => KINDS[o.kind].card).map((o) => ({ at: o.id }));
+    for (const r of atlas.regions || [zone]) reached.add(r.id);
+    say(`PACK ${zone.pack}, MAP: ${zone.name}${atlas.regions ? ` (with ${atlas.regions.slice(1).map((r) => r.name).join(', ')}, through exits)` : ''}  (${atlas.objects.length} objects, ${atlas.landmarks.length} landmarks)`);
 
     // Reachability: two players who have every ability must be able to read every clue and finish every object.
     // With slots or shuffles, every run is checked the same way (the seed in a message reproduces it).
-    const reachMission = normalizeMission({ id: 'reach', zone: zone.id, goal: goalOf(zone.goal).wholeZone(zone.goal), stations: zone.objects.filter((o) => KINDS[o.kind].card).map((o) => ({ at: o.id })) }, zones, items);
+    const reachMission = normalizeMission({ id: 'reach', zone: zone.id, goal: goalOf(zone.goal).wholeZone(zone.goal), stations: tablets }, zones, items);
     const unreached = new Set();
-    for (const seed of isRandom(zone, reachMission) ? [0, ...Array.from({ length: SEEDS }, (_, i) => i + 1)] : [0]) {
-      const run = makeRun(zone, reachMission, seed), at = seed ? ` with seed ${seed}` : '';
+    for (const seed of isRandom(atlas, reachMission) ? [0, ...Array.from({ length: SEEDS }, (_, i) => i + 1)] : [0]) {
+      const run = makeRun(atlas, reachMission, seed), at = seed ? ` with seed ${seed}` : '';
       const reach = solve(run.zone, run.mission, [abilities.ids, abilities.ids], { explore: true });
       for (const t of reach.things) {
         const say1 = (msg) => { if (!unreached.has(t.id)) { unreached.add(t.id); fail(msg); } };
@@ -58,7 +63,7 @@ export async function runCheck(contentDir = path.join(root, 'data'), dataDir = c
       }
     }
 
-    const all = normalizeMission({ id: 'whole-zone', title: `Whole zone: every tablet of ${zone.name}`, zone: zone.id, goal: goalOf(zone.goal).wholeZone(zone.goal), stations: zone.objects.filter((o) => KINDS[o.kind].card).map((o) => ({ at: o.id })) }, zones, items);
+    const all = normalizeMission({ id: 'whole-zone', title: `Whole zone: every tablet of ${zone.name}`, zone: zone.id, goal: goalOf(zone.goal).wholeZone(zone.goal), stations: tablets }, zones, items);
     const missions = [all];
     for (const t of templates.filter((m) => (m.zone || Object.keys(zones)[0]) === zone.id)) { try { missions.push(normalizeMission(t, zones, items)); } catch (e) { fail(`${t.file || 'data/missions/' + t.id + '.json'}: ${e.message}`); } }
 
@@ -80,7 +85,7 @@ export async function runCheck(contentDir = path.join(root, 'data'), dataDir = c
         if (r.idle.length) fail(`${mission.title}, ${n} players: player ${r.idle.map((i) => i + 1).join(' and ')} (${r.idle.map((i) => sets[i].map(name).join('/')).join('; ')}) is never needed`);
         if (mission === all && r.required.length < abilities.ids.length) fail(`${zone.name}, ${n} players: the zone can be finished without ${abilities.ids.filter((a) => !r.required.includes(a)).map(name).join(', ')}`);
         else if (r.required.length < abilities.ids.length) notes.push(`not needed here: ${abilities.ids.filter((a) => !r.required.includes(a)).map(name).join(', ')}`);
-        for (const rule of mission === all ? zoneRules(zone, all, sets, abilities.ids) : []) fail(`${zone.name}, ${n} players: ${rule}`);
+        for (const rule of mission === all ? zoneRules(atlas, all, sets, abilities.ids) : []) fail(`${zone.name}, ${n} players: ${rule}`);
         say(`    ok    ${n} players: can be finished in ${r.log.length} steps; every player is needed${notes.length ? '  (' + notes.join('; ') + ')' : ''}`);
       }
       // Every run must be finishable too (the server never starts one that is not, but a pack should not have them).
@@ -96,8 +101,11 @@ export async function runCheck(contentDir = path.join(root, 'data'), dataDir = c
     }
     say();
     say('  The shortest way through the whole zone, for 3 players:');
-    for (const step of inspect(zone, all, dealPreset(abilities, 3), abilities.ids).log) say(`    - ${step}`);
+    for (const step of inspect(atlas, all, dealPreset(abilities, 3), abilities.ids).log) say(`    - ${step}`);
     say();
+  }
+  for (const zone of Object.values(zones).filter((z) => (!only || z.pack === only) && !reached.has(z.id))) {
+    fail(`${zone.pack}/${zone.id}: this map has no player starts, and no exit from a map with starts leads to it. Nobody can ever get there.`);
   }
   say(errors.length ? `${errors.length} PROBLEM${errors.length > 1 ? 'S' : ''} FOUND` : `All packs (${Object.keys(content.packs).join(', ')}), maps and missions are fine for 2 to 6 players.`);
   return { ok: !errors.length, errors, report: lines.join('\n') };

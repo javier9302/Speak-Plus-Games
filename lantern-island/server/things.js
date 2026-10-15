@@ -115,9 +115,9 @@ export function gameCtx(room, items, player = null) {
 }
 
 // Every tick: kinds that react to players standing on them (plates). Returns true if something changed.
-export function pressPlates(room) {
+export function pressPlates(room, extra = {}) {
   let changed = false;
-  const ctx = gameCtx(room);
+  const ctx = { ...gameCtx(room), ...extra };
   for (const t of room.things) if (kindOf(t).tick?.(t, ctx)) changed = true;
   return changed;
 }

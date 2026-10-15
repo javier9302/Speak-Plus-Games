@@ -45,7 +45,7 @@ export function zoneProblems(raw, { items, abilities, tiles = tileSet(), themes 
     rows.forEach((r, y) => [...r].forEach((ch, x) => { if (!TILES.has(ch) && !bad.has(ch)) bad.set(ch, `${x},${y}`); }));
     for (const [ch, at] of bad) out.push(`rows: unknown tile "${ch}" (first at ${at}). Tiles: ${[...TILES].join(' ')}`);
     const starts = rows.join('').split('p').length - 1;
-    if (starts < 6) out.push(`rows: the map needs at least 6 player starts ("p"), it has ${starts}`);
+    if (starts && starts < 6) out.push(`rows: a map needs 6 or more player starts ("p"), or none (players then arrive through an exit), it has ${starts}`);
     mapOk = !odd.length && !bad.size;
   }
   const tile = (x, y) => (mapOk ? rows[y]?.[x] : undefined);
@@ -86,11 +86,11 @@ export function zoneProblems(raw, { items, abilities, tiles = tileSet(), themes 
     unknownFields(o, [...OBJECT_FIELDS, ...Object.keys(kind.fields)], where, out);
     if (o.slot !== undefined) {
       if (!slots?.[o.slot]) { out.push(`${where}: there is no slot "${o.slot}".${didYouMean(o.slot, Object.keys(slots || {}))}`); continue; }
-      if (o.to || o.floods) { out.push(`${where}: a ${o.kind} cannot use a slot (its "to" or "floods" tiles depend on where it stands)`); continue; }
+      if ((o.to && typeof o.to === 'object') || o.floods || kind.fixedPlace) { out.push(`${where}: a ${o.kind} cannot use a slot (other tiles depend on where it stands)`); continue; }
     } else if (!(isInt(o.x) && isInt(o.y))) out.push(`${where}: needs "x" and "y" (or a "slot")`);
     // Where it stands (and where a rock can be pushed to): free ground, one object per tile. A slot's tiles are checked above.
     for (const [at, label] of o.slot !== undefined ? [] : [[o, 'its place'], [o.to, '"to"']]) {
-      if (!at || (at === o.to && kind.kind !== 'boulder')) continue;
+      if (!at || typeof at !== 'object' || (at === o.to && kind.kind !== 'boulder')) continue;
       if (!inside(at.x, at.y)) { if (mapOk) out.push(`${where}: ${label} ${at.x},${at.y} is outside the map (${rows[0].length} x ${rows.length})`); continue; }
       if (!ground(at.x, at.y)) out.push(`${where}: ${label} ${at.x},${at.y} is "${tile(at.x, at.y)}", which blocks the way. Put it on ground.`);
       else if (tile(at.x, at.y) === 'p') out.push(`${where}: ${label} ${at.x},${at.y} is a player start. Move it, or move the start.`);
@@ -146,7 +146,10 @@ export function zoneProblems(raw, { items, abilities, tiles = tileSet(), themes 
   named(raw.places, 'places', []);
   named(raw.landmarks, 'landmarks', ['art', 'w', 'h', 'solid']);
   // The map's goal (the default for its missions), checked by its goal type (server/goals/).
-  if (!raw.goal || typeof raw.goal !== 'object') out.push('"goal" is missing: what the team must do, for example { "type": "collect", "items": { "lantern": 3 }, "story": "..." }');
+  // A map without player starts never begins a mission (players arrive through an exit), so it needs no goal.
+  const hasStarts = mapOk && rows.join('').includes('p');
+  if (!raw.goal && !hasStarts) { /* fine */ }
+  else if (!raw.goal || typeof raw.goal !== 'object') out.push('"goal" is missing: what the team must do, for example { "type": "collect", "items": { "lantern": 3 }, "story": "..." }');
   else {
     const fail = (why) => out.push(why);
     fail.problems = out;

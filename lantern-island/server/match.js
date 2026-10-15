@@ -207,7 +207,7 @@ export function createMatches(G) {
   // m.n: one room (its number); without it, every room.
   const pick = (match, m) => (Number.isInteger(m.n) ? [match.rooms[m.n]].filter(Boolean) : match.rooms);
   async function newMission(match) {
-    const zones = Object.values(G.zones), open = zones.filter((z) => match.group.island.zones.includes(z.id));
+    const zones = Object.values(G.zones).filter((z) => z.spawns.length), open = zones.filter((z) => match.group.island.zones.includes(z.id));
     const zone = open[Math.floor(Math.random() * open.length)] || zones[0];
     return G.missions.quick(zone, await G.cards.all(), match.group.level);
   }

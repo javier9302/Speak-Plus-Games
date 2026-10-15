@@ -6,6 +6,7 @@ import { KINDS } from './kinds/index.js';
 import { didYouMean } from './words.js';
 import { GOALS } from './goals/index.js';
 import { applyOverrides, OVERRIDE_FIELDS } from './overrides.js';
+import { atlasFor } from './atlas.js';
 
 // The map a mission plays on: its map file, changed by the mission's overrides if it has any.
 const played = new WeakMap();
@@ -45,7 +46,10 @@ export function normalizeMission(raw, zones, items) {
   const stop = () => { if (problems.length) throw Object.assign(new Error(`Mission "${raw?.title || raw?.id || '?'}": ${problems.map((p) => p.replace(/\.$/, '')).join('; ')}.`), { status: 400 }); };
   const base = zones[raw?.zone || Object.keys(zones)[0]];
   if (!base) { fail(`unknown zone "${raw?.zone}".${didYouMean(raw?.zone, Object.keys(zones))}`); stop(); }
-  const { zone, overrides } = applyOverrides(base, raw, fail);
+  const changed = applyOverrides(base, raw, fail), overrides = changed.overrides;
+  // The maps its exits lead to are joined to it (atlas.js); without exits, the map as it is.
+  const zone = atlasFor(changed.zone, zones);
+  if (zone.spawns.length < 6) fail(`it starts on ${base.name}, which has no player starts ("p"). Start on a map that has 6 or more.`);
   extra(raw, [...MISSION_FIELDS, 'pack', 'file', 'tablets'], '', problems);      // pack, file, tablets: added by the server itself
   const tablets = zone.objects.filter((o) => KINDS[o.kind].card);
   const stations = [];
@@ -80,7 +84,7 @@ export function normalizeMission(raw, zones, items) {
     pack: raw.pack || null,                // the scenario pack it comes from; null for the teacher's own templates
     ...overrides,                          // its changes to the map (overrides.js)
   };
-  if (overrides) played.set(mission, zone);
+  if (zone !== base) played.set(mission, zone);
   return mission;
 }
 
@@ -118,8 +122,8 @@ export function createMissions(storage, zones, items, packMissions = () => []) {
       return normalizeMission({ id: 'quick', title: 'Quick mission', story: zone.goal?.story || 'Work together and find what the island needs.', zone: zone.id, minutes: 25, goal: zone.goal, stations }, zones, items);
     },
     // For the mission builder: the tablets of a mission whose overrides change its map (added tablets...).
-    tablets: (m) => (m.add || m.remove ? zoneFor(m, zones).objects.filter((o) => KINDS[o.kind].card).map((o) => ({ id: o.id, name: o.name, x: o.x, y: o.y, reward: o.reward?.item || null })) : undefined),
+    tablets: (m) => (zoneFor(m, zones) !== zones[m.zone] ? zoneFor(m, zones).objects.filter((o) => KINDS[o.kind].card).map((o) => ({ id: o.id, name: o.name, x: o.x, y: o.y, reward: o.reward?.item || null })) : undefined),
     // For the mission builder: what each zone offers.
-    zones: () => Object.values(zones).map((z) => ({ id: z.id, name: z.name, goal: z.goal, places: z.places, unlock: z.unlock, stations: z.objects.filter((o) => o.kind === 'station').map((o) => ({ id: o.id, name: o.name, x: o.x, y: o.y, reward: o.reward?.item || null })) })),
+    zones: () => Object.values(zones).filter((z) => z.spawns.length).map((z) => ({ id: z.id, name: z.name, goal: z.goal, places: z.places, unlock: z.unlock, stations: z.objects.filter((o) => o.kind === 'station').map((o) => ({ id: o.id, name: o.name, x: o.x, y: o.y, reward: o.reward?.item || null })) })),
   };
 }

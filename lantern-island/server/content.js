@@ -77,6 +77,18 @@ export async function loadContent(contentDir, { abilities, items }) {
       pack.zones.push(raw.id);
     }
     if (!zones.length && !problems.length) problems.push(`scenarios/${id}: a pack needs at least one map in zones/`);
+    if (zones.length && !zones.some((z) => z.spawns.length)) problems.push(`scenarios/${id}: no map has player starts ("p"). At least one map needs 6 or more.`);
+    // Maps linked by exits become one atlas (atlas.js): exits must lead somewhere, and object ids must be unique in the pack.
+    const owner = new Map();
+    for (const z of zones) for (const o of z.objects) {
+      const file = where(`zones/${z.id}.json`);
+      if (owner.has(o.id)) problems.push(`${file}: the object id "${o.id}" is also used in the map "${owner.get(o.id)}". Object ids must be unique in a pack.`);
+      else owner.set(o.id, z.id);
+      if (o.kind !== 'exit') continue;
+      const to = zones.find((x) => x.id === o.to);
+      if (!to) problems.push(`${file}, object "${o.id}": "to" is "${o.to}", which is not a map of this pack. Maps: ${zones.map((x) => x.id).join(', ')}`);
+      else if (!to.objects.some((x) => x.id === o.arrive && x.kind === 'exit')) problems.push(`${file}, object "${o.id}": "arrive" is "${o.arrive}", which is not an exit of the map "${o.to}"`);
+    }
     const own = Object.fromEntries(zones.map((z) => [z.id, z]));
     for (const f of await jsonFiles(path.join(dir, id, 'missions'))) {
       const raw = await read(`missions/${f}`);

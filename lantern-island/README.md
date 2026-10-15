@@ -224,6 +224,7 @@ server/validate.js       checks pack files and says what is wrong, in plain Engl
 server/overrides.js      a mission's changes to its map (rename, texts, lines, move, remove, add, slots, shuffle)
 server/run.js            one run of a mission from a seed: slots, shuffles, the goal's random parts
 server/tiles.js          tiles (what blocks the way; packs can add their own) and themes (how a map looks)
+server/atlas.js          maps of a pack linked by exits, joined into one big map (exits become teleports)
 data/themes.json         the built-in themes: day, sunset, night, winter, autumn, rain, festival
 server/rooms.js          rooms, lobby, game loop, the message list
 server/match.js          competitive mode: teams, scores, sabotage

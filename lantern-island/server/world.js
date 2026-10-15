@@ -22,7 +22,7 @@ export function parseZone(raw, tiles = BASE) {
       if (ch === 'p') spawns.push({ x: x + 0.5, y: y + 0.6 });
     });
   });
-  if (spawns.length < 6) throw new Error(`Zone ${id}: needs 6 player starts ("p"), has ${spawns.length}`);
+  if (spawns.length && spawns.length < 6) throw new Error(`Zone ${id}: needs 6 player starts ("p") or none, has ${spawns.length}`);
 
   // Slots: named lists of tiles. An object with "slot" stands on one of them, a different one each run (run.js).
   // Here it gets the first free tile of its slot: the layout as written (seed 0).
@@ -41,7 +41,7 @@ export function parseZone(raw, tiles = BASE) {
       o.x = tile.x; o.y = tile.y;
     }
     for (const f of o.floods || []) { const tile = rows[f.y]?.[f.x]; if (!tile || SOLID.has(tile)) throw new Error(`${where}: flooded tile ${f.x},${f.y} must be ground`); }
-    for (const at of [o, o.to].filter(Boolean)) {
+    for (const at of [o, o.to].filter((p) => p && typeof p === 'object')) {           // an exit's "to" is a map id, not a tile
       const tile = rows[at.y]?.[at.x];
       if (!tile || SOLID.has(tile) || tile === 'p') throw new Error(`${where}: ${at.x},${at.y} is not free ground`);
       if (taken.has(`${at.x},${at.y}`)) throw new Error(`${where}: another object is already at ${at.x},${at.y}`);

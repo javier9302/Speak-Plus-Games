@@ -57,6 +57,8 @@ export function solve(zone, mission, sets, { without = [], explore = false } = {
           if (seen.has(key(x, y)) || !free(i, x, y)) continue;
           seen.add(key(x, y));
           todo.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
+          const to = zone.links?.get(key(x, y));                  // an exit to another map (atlas.js)
+          if (to) todo.push([to.x, to.y]);
         }
         return seen;
       });
@@ -106,6 +108,8 @@ export function solve(zone, mission, sets, { without = [], explore = false } = {
       if (seen.has(key(x, y)) || !free(x, y)) continue;
       seen.add(key(x, y));
       todo.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
+      const to = zone.links?.get(key(x, y));                      // it follows its leader through exits
+      if (to) todo.push([to.x, to.y]);
     }
     return seen;
   }

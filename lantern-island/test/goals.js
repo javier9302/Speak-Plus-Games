@@ -49,10 +49,21 @@ const testbed = {
     { id: 'farmer', kind: 'npc', name: 'Farmer', x: 20, y: 10 },
     { id: 'key', kind: 'item', name: 'Key', x: 2, y: 9, item: 'key' },
     { id: 'letter', kind: 'item', name: 'Letter', x: 3, y: 11, item: 'letter' },
+    { id: 'to-cave', kind: 'exit', name: 'Cave mouth', x: 21, y: 6, to: 'cave', arrive: 'cave-door' },
+  ],
+};
+// A second map, reached through the cave mouth: no player starts, a machine inside, a darker theme.
+const cave = {
+  id: 'cave', name: 'The cave', theme: 'night',
+  rows: Array.from({ length: 10 }, (_, y) => (y === 0 || y === 9 ? '~'.repeat(16) : `~${','.repeat(14)}~`)),
+  places: [], landmarks: [],
+  objects: [
+    { id: 'cave-door', kind: 'exit', name: 'Way out', x: 2, y: 5, to: 'testbed', arrive: 'to-cave' },
+    { id: 'm3', kind: 'machine', name: 'Cave lamp', x: 10, y: 5 },
   ],
 };
 const missions = {
-  'tb-restore': { goal: { type: 'restore' } },
+  'tb-restore': { goal: { type: 'restore', machines: ['m1', 'm2'] } },
   'tb-sequence': { goal: { type: 'sequence', order: ['moon', 'sun', 'star'] } },
   'tb-odd': { goal: { type: 'odd-one-out', answer: 'c2' } },
   'tb-order': { goal: { type: 'deliver-order', order: [{ to: 'farmer', item: 'key' }, { to: 'cook', item: 'letter' }] } },
@@ -71,6 +82,7 @@ const missions = {
     add: [1, 2, 3].map((n) => ({ id: `q${n}`, kind: 'candidate', name: `Pot ${n}`, slot: 'pots' })),
   },
   'tb-night': { goal: { type: 'restore' }, theme: 'night' },
+  'tb-cave': { goal: { type: 'restore', machines: ['m2', 'm3'] } },
   'tb-override': { goal: { type: 'restore' }, rename: { board: 'Notice board' }, texts: { board: { read: 'TODAY: fix the pump first.' } }, add: [{ id: 'extra', kind: 'sign', name: 'New sign', x: 4, y: 4, clues: { read: 'Hello from the mission.' } }] },
 };
 
@@ -84,6 +96,7 @@ async function main() {
   await fs.mkdir(path.join(pack, 'missions'), { recursive: true });
   await fs.writeFile(path.join(pack, 'pack.json'), JSON.stringify({ id: 'testbed', name: 'Test pack', order: 9 }));
   await fs.writeFile(path.join(pack, 'zones', 'testbed.json'), JSON.stringify(testbed));
+  await fs.writeFile(path.join(pack, 'zones', 'cave.json'), JSON.stringify(cave));
   for (const [id, m] of Object.entries(missions)) await fs.writeFile(path.join(pack, 'missions', `${id}.json`), JSON.stringify({ id, title: id, zone: 'testbed', stations: [{ at: 't1' }], ...m }));
 
   console.log('\nThe solver');
@@ -91,13 +104,18 @@ async function main() {
   const it = JSON.parse(await fs.readFile(path.join(dir, 'items.json'), 'utf8'));
   const items = { list: it.items, byId: Object.fromEntries(it.items.map((i) => [i.id, i])) };
   const content = await loadContent(dir, { abilities, items });
-  check('the test pack loads, with every goal type', !content.errors.length && content.missions.filter((m) => m.pack === 'testbed').length === 11, content.errors.join(' | '));
+  check('the test pack loads, with every goal type', !content.errors.length && content.missions.filter((m) => m.pack === 'testbed').length === 12, content.errors.join(' | '));
   const zone = content.zones.testbed;
-  for (const id of ['tb-restore', 'tb-sequence', 'tb-odd', 'tb-order', 'tb-escort']) {
+  for (const id of ['tb-restore', 'tb-sequence', 'tb-odd', 'tb-order', 'tb-escort', 'tb-cave']) {
     const m = normalizeMission(content.missions.find((x) => x.id === id), content.zones, items);
-    const results = [2, 3, 4, 5, 6].map((n) => inspect(zone, m, dealPreset(abilities, n), abilities.ids));
+    const results = [2, 3, 4, 5, 6].map((n) => inspect(zoneFor(m, content.zones), m, dealPreset(abilities, n), abilities.ids));
     check(`${m.goal.type}: can be finished with 2 to 6 players`, results.every((r) => r.ok), results.map((r) => r.problems.join(';')).join(' | '));
   }
+  const caveMission = normalizeMission(content.missions.find((x) => x.id === 'tb-cave'), content.zones, items), atlas = zoneFor(caveMission, content.zones);
+  check('maps linked by exits become one atlas, the start map first', atlas.regions.map((r) => r.id).join() === 'testbed,cave' && atlas.objects.find((o) => o.id === 'm3').x === 24 + 16 + 10);
+  check('an exit knows where players land, next to the exit it arrives at', JSON.stringify(atlas.objects.find((o) => o.id === 'to-cave').land) === JSON.stringify({ x: 42, y: 6 }));
+  const noDoor = { ...atlas, links: new Map() };
+  check('the solver walks through exits (and without them the cave lamp is out of reach)', solve(atlas, caveMission, dealPreset(abilities, 2)).ok && !solve(noDoor, caveMission, dealPreset(abilities, 2)).ok);
   // Dead ends the solver must see.
   const norm = (goal) => normalizeMission({ id: 'x', zone: 'testbed', stations: [{ at: 't1' }], goal }, content.zones, items);
   const two = dealPreset(abilities, 2);
@@ -228,6 +246,18 @@ async function main() {
   let safe = true;
   for (let i = 0; i < 8; i++) { await start('tb-reroll'); safe &&= !(thing('q2').x === 21 && thing('q2').y === 12); }
   check('runs that cannot be finished are never started', safe);
+
+  // through an exit to another map
+  await start('tb-cave');
+  check('a mission across maps sends both maps, each with its theme', host.last.world.zone.regions?.map((x) => `${x.id}:${x.theme.id}`).join() === 'testbed:winter,cave:night');
+  const caver = who('fix');
+  await tp(caver, 21, 6);
+  await sleep(150);
+  check('walking onto an exit takes the player to the other map', player(caver).x > 40 && lastSay(caver).includes('The cave'));
+  const m3 = thing('m3');
+  await tp(caver, m3.x, m3.y + 1); await act(caver, 'fix');
+  await tp(caver, 16, 3); await act(caver, 'fix');
+  check('machines on both maps count, and finish the mission', (await ended())?.result.completed === true);
 
   // themes reach the screens with the map
   check('the map\'s theme comes with the map', host.last.world.zone.theme.id === 'winter' && host.last.world.zone.theme.weather === 'snow' && host.last.world.zone.theme.palette['#6abe45']);

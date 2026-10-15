@@ -6,32 +6,38 @@ const calm = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-mo
 // Pre-draws the whole zone once (two frames, for the water).
 export function createScene(zone) {
   setKindArt(zone.art);                  // pictures of kinds that bring their own
-  setTiles(zone.tiles, zone.theme?.art);  // the pack's own tiles, and the theme's pictures for tiles
+  // Several maps joined (an atlas) have regions, each with its theme; one map is one region.
+  const regions = zone.regions || [{ x: 0, y: 0, w: zone.w, h: zone.h, theme: zone.theme }];
+  const regionAt = (x) => regions.find((r) => x >= r.x && x < r.x + r.w) || regions[0];
   const make = (frame) => {
     const c = document.createElement('canvas');
     c.width = zone.w * TILE; c.height = zone.h * TILE;
     const g = c.getContext('2d');
     // A rock stands on sand if there is sand next to it, otherwise in the grass.
     const sandy = (x, y) => [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => zone.rows[y + dy]?.[x + dx] === '.');
-    for (let y = 0; y < zone.h; y++) for (let x = 0; x < zone.w; x++) drawTile(g, zone.rows[y][x], x, y, frame, zone.rows[y][x] === 'R' && !sandy(x, y));
+    for (let y = 0; y < zone.h; y++) for (let x = 0; x < zone.w; x++) {
+      setTiles(zone.tiles, regionAt(x).theme?.art);                // the pack's own tiles, and the theme's pictures for tiles
+      drawTile(g, zone.rows[y][x], x, y, frame, zone.rows[y][x] === 'R' && !sandy(x, y));
+    }
     return c;
   };
   // One tile of sea, for places that flood (the tide pool behind the water gate).
   const sea = [0, 1].map((frame) => { const c = document.createElement('canvas'); c.width = c.height = TILE; drawTile(c.getContext('2d'), '~', 0, 0, frame); return c; });
   const frames = [make(0), make(1)];
-  // The theme's palette: colours of the ground swapped for others (snow for grass...).
-  if (zone.theme?.palette) for (const c of [...frames, ...sea]) recolor(c, zone.theme.palette);
-  return { zone, frames, sea, theme: zone.theme || {} };
+  // Each region's palette: colours of the ground swapped for others (snow for grass...).
+  for (const r of regions) if (r.theme?.palette) for (const c of frames) recolor(c, r.theme.palette, r.x * TILE, r.y * TILE, r.w * TILE, r.h * TILE);
+  if (regions[0].theme?.palette) for (const c of sea) recolor(c, regions[0].theme.palette, 0, 0, TILE, TILE);
+  return { zone, frames, sea, regions };
 }
 
-function recolor(canvas, palette) {
+function recolor(canvas, palette, x = 0, y = 0, w = canvas.width, h = canvas.height) {
   const map = new Map(Object.entries(palette).map(([from, to]) => [parseInt(from.slice(1), 16), parseInt(to.slice(1), 16)]));
-  const g = canvas.getContext('2d'), img = g.getImageData(0, 0, canvas.width, canvas.height), d = img.data;
+  const g = canvas.getContext('2d'), img = g.getImageData(x, y, w, h), d = img.data;
   for (let i = 0; i < d.length; i += 4) {
     const to = map.get((d[i] << 16) | (d[i + 1] << 8) | d[i + 2]);
     if (to !== undefined) { d[i] = to >> 16; d[i + 1] = (to >> 8) & 255; d[i + 2] = to & 255; }
   }
-  g.putImageData(img, 0, 0);
+  g.putImageData(img, x, y);
 }
 
 // Weather, drawn over the picture (not tied to the map). Every particle is worked out from the time alone.
@@ -137,9 +143,18 @@ export function drawScene(g, scene, rect, view, players, time, extra = {}) {
   }
   // A shot that was just fired: everybody sees the flash.
   for (const b of extra.beams || []) band(b.dir, b.at, `rgba(255,247,194,${Math.max(0, Math.min(0.9, (b.until - time) * 1.6))})`);
-  // The theme: a colour over everything (night, sunset), and the weather.
-  if (scene.theme?.tint) { g.fillStyle = scene.theme.tint; g.fillRect(rect.x, rect.y, rect.w, rect.h); }
-  if (scene.theme?.weather && scene.theme.weather !== 'none' && !calm) weather(g, rect, scene.theme.weather, time, ppt);
+  // Each region's theme: a colour over it (night, sunset), and its weather.
+  for (const r of scene.regions) {
+    const t = r.theme || {};
+    if (!t.tint && (!t.weather || t.weather === 'none')) continue;
+    const x0 = Math.max(rect.x, sx(r.x)), y0 = Math.max(rect.y, sy(r.y)), x1 = Math.min(rect.x + rect.w, sx(r.x + r.w)), y1 = Math.min(rect.y + rect.h, sy(r.y + r.h));
+    if (x1 <= x0 || y1 <= y0) continue;
+    const area = { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+    g.save(); g.beginPath(); g.rect(area.x, area.y, area.w, area.h); g.clip();
+    if (t.tint) { g.fillStyle = t.tint; g.fillRect(area.x, area.y, area.w, area.h); }
+    if (t.weather && t.weather !== 'none' && !calm) weather(g, area, t.weather, time, ppt);
+    g.restore();
+  }
   // The mood of the island: the air turns warmer when the monster is angry.
   if (extra.mood > 0) { g.fillStyle = extra.mood === 1 ? 'rgba(255,150,40,.10)' : 'rgba(210,30,70,.16)'; g.fillRect(rect.x, rect.y, rect.w, rect.h); }
 

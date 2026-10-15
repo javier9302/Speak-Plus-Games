@@ -287,6 +287,30 @@ $('#match-leave').addEventListener('click', () => {
 });
 
 // ---------- map ----------
+const BIG = { w: 48, h: 30 };             // a map bigger than this: the big screen follows the players
+function hostBox() {
+  const { w, h } = scene.zone;
+  let box = { x: 0, y: 0, w, h };
+  const placed = [...players.values()].filter((p) => p.x !== undefined);
+  const regions = scene.zone.regions;
+  if (regions) {
+    const count = (r) => placed.filter((p) => p.x >= r.x && p.x < r.x + r.w).length;
+    const best = regions.reduce((a, r) => (count(r) > count(a) ? r : a), regions[0]);
+    box = { x: best.x, y: best.y, w: best.w, h: best.h };
+    const away = regions.filter((r) => r !== best && count(r)).map((r) => `${count(r)} in ${r.name}`);
+    $('#elsewhere').textContent = away.length ? `Also: ${away.join(', ')}` : '';
+  }
+  if (box.w > BIG.w || box.h > BIG.h) {
+    const inBox = placed.filter((p) => p.x >= box.x && p.x < box.x + box.w);
+    if (inBox.length) {
+      const xs = inBox.map((p) => p.x), ys = inBox.map((p) => p.y);
+      const bw = Math.min(box.w, Math.max(24, Math.max(...xs) - Math.min(...xs) + 16)), bh = Math.min(box.h, Math.max(16, Math.max(...ys) - Math.min(...ys) + 12));
+      const cx = (Math.max(...xs) + Math.min(...xs)) / 2, cy = (Math.max(...ys) + Math.min(...ys)) / 2;
+      box = { x: Math.max(box.x, Math.min(box.x + box.w - bw, cx - bw / 2)), y: Math.max(box.y, Math.min(box.y + box.h - bh, cy - bh / 2)), w: bw, h: bh };
+    }
+  }
+  return box;
+}
 const canvas = $('#map');
 const g2d = canvas.getContext('2d');
 let before = performance.now();
@@ -298,13 +322,14 @@ function frame(now) {
     smooth(players, dt);
     g2d.fillStyle = '#131a33';
     g2d.fillRect(0, 0, canvas.width, canvas.height);
-    // Fit the whole zone on screen.
-    const { w, h } = scene.zone;
-    const ppt = Math.min(canvas.width / w, canvas.height / h);
-    const rect = { w: w * ppt, h: h * ppt, x: (canvas.width - w * ppt) / 2, y: (canvas.height - h * ppt) / 2 };
+    // What the big screen shows: the whole map; of several maps joined (an atlas), the one with most players;
+    // of a very big map, the part around the players.
+    const box = hostBox();
+    const ppt = Math.min(canvas.width / box.w, canvas.height / box.h);
+    const rect = { w: box.w * ppt, h: box.h * ppt, x: (canvas.width - box.w * ppt) / 2, y: (canvas.height - box.h * ppt) / 2 };
     fx = fx.filter((f) => f.until > now / 1000);
     beams = beams.filter((b) => b.until > now / 1000);
-    drawScene(g2d, scene, rect, { cx: w / 2, cy: h / 2, tiles: Math.min(w, h) }, players, now / 1000, { fx, things, labels: roster.settings?.hostDetails, places: true, beams, mood: roster.phase === 'play' ? roster.mood : -1,
+    drawScene(g2d, scene, rect, { cx: box.x + box.w / 2, cy: box.y + box.h / 2, tiles: Math.min(box.w, box.h) }, players, now / 1000, { fx, things, labels: roster.settings?.hostDetails, places: true, beams, mood: roster.phase === 'play' ? roster.mood : -1,
       restored: roster.group?.island.landmarks || [], fresh: roster.phase === 'done' ? roster.result?.restoreId : null });
     // The mission clock runs on between messages from the server. It turns yellow after the target time; nothing else happens.
     const running = roster.phase === 'play' && !roster.paused;

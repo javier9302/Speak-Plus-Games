@@ -133,6 +133,22 @@ async function main() {
   errs = (await load(dir)).errors;
   check('tile and theme mistakes are explained', has(errs, 'tile "~"', 'base tile') && has(errs, 'tile "+"', '"solid" is true') && has(errs, 'theme "fog"', '"weather"', 'Did you mean "snow"?') && has(errs, '"theme" is "wintr"', 'Did you mean "winter"?'), errs.join(' | '));
 
+  console.log('\nSeveral maps in a pack, and exits');
+  dir = await copy();
+  const coveMap = { id: 'cove', name: 'The cove', rows: Array.from({ length: 8 }, (_, y) => (y === 0 || y === 7 ? '~'.repeat(12) : `~${','.repeat(10)}~`)), places: [], landmarks: [],
+    objects: [{ id: 'cove-sign', kind: 'sign', name: 'Cove sign', x: 5, y: 3, clues: { read: 'Hello.' } }] };
+  await write(dir, 'beach/zones/cove.json', coveMap);
+  loaded = await load(dir);
+  check('a map without player starts or a goal loads (players arrive through exits)', !loaded.errors.length && loaded.zones.cove, loaded.errors.join(' | '));
+  const lonely = await runCheck(dir, dir, 'beach');
+  check('npm run check: a map that no exit leads to is reported', has(lonely.errors, 'beach/cove', 'Nobody can ever get there'));
+  const bz2 = await read(dir, 'beach/zones/beach.json');
+  bz2.objects.push({ id: 'to-nowhere', kind: 'exit', name: 'Tunnel', x: 21, y: 12, to: 'nowhere', arrive: 'x' }, { id: 'to-cove', kind: 'exit', name: 'Path', x: 22, y: 12, to: 'cove', arrive: 'cove-sign' });
+  await write(dir, 'beach/zones/beach.json', bz2);
+  await write(dir, 'beach/zones/cove.json', { ...coveMap, objects: [...coveMap.objects, { id: 'bottle', kind: 'sign', name: 'Copy', x: 2, y: 2 }] });
+  errs = (await load(dir)).errors;
+  check('exit mistakes: no such map, "arrive" not an exit, an id used on two maps', has(errs, 'object "to-nowhere"', '"nowhere", which is not a map') && has(errs, 'object "to-cove"', '"cove-sign", which is not an exit') && has(errs, 'object id "bottle"', 'also used'), errs.join(' | '));
+
   console.log('\nnpm run check');
   ({ dir } = await beachErrors((z) => {
     // A sign alone in the sea: ground nobody can walk to.

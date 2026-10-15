@@ -127,10 +127,15 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
     const themes = room.zone.themes || room.themes || {}, name = room.mission?.theme || room.zone.themeName || 'day';
     return { id: name, ...(themes[name] || {}) };
   };
+  // An atlas (several maps joined, atlas.js) has regions, each with its own theme (the mission's theme, if it has one).
+  const regionsOf = (room) => room.zone.regions?.map((r) => {
+    const themes = room.zone.themes || room.themes || {}, name = room.mission?.theme || r.themeName || 'day';
+    return { id: r.id, name: r.name, x: r.x, y: r.y, w: r.w, h: r.h, theme: { id: name, ...(themes[name] || {}) } };
+  });
   const worldMsg = (room) => ({
     t: 'world', reach: REACH,
     zone: { id: room.zone.id, name: room.zone.name, w: room.zone.w, h: room.zone.h, rows: room.zone.rows, places: room.zone.places, landmarks: room.zone.landmarks, art: KIND_ART,
-      tiles: customTiles(room.zone.tiles || {}), theme: themeOf(room) },
+      tiles: customTiles(room.zone.tiles || {}), theme: themeOf(room), regions: regionsOf(room) },
   });
   const stateMsg = (room) => ({ t: 'state', p: room.players.map((p) => [p.id, Math.round(p.x * 100) / 100, Math.round(p.y * 100) / 100, p.dir, p.moving ? 1 : 0, p.stun > 0 ? 1 : 0]) });
   const thingsMsg = (room) => ({ t: 'things', list: publicThings(room.things) });
@@ -474,7 +479,7 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
     async start(room, m, ws) {
       if (!room.group) return fail(ws, 'no-group', 'Choose a group first.');
       // In one of the zones this group has opened, chosen at random.
-      const open = Object.values(zones).filter((z) => room.group.island.zones.includes(z.id));
+      const open = Object.values(zones).filter((z) => room.group.island.zones.includes(z.id) && z.spawns.length);   // a map players can start on
       const zone = open[Math.floor(Math.random() * open.length)] || Object.values(zones)[0];
       await startMission(room, missions.quick(zone, await cards.all(), room.group.level), ws);
     },
@@ -640,7 +645,7 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
       // A time limit (some missions have one): when the time is up, the mission ends, not finished.
       if (room.mission?.timeLimit && room.clock >= room.mission.timeLimit * 60) { room.timeUp = true; endMission(room, false); continue; }
       for (const p of room.players) { if (p.stun > 0) p.moving = false; else stepPlayer(room.zone, p, dt, room.block); }
-      if (pressPlates(room)) changed(room);                       // somebody stepped on, or off, a flat stone
+      if (pressPlates(room, { tell: (p, msg) => send(p.ws, { t: 'say', msg }) })) changed(room);   // plates, exits (kinds with a tick)
       if (room.mission && goalOf(room.mission.goal).tick?.(room, dt, { ...gameCtx(room, items), tell: (p, msg) => send(p.ws, { t: 'say', msg }) })) changed(room);
       monster.tick(room, dt);
       broadcast(room, stateMsg(room));
