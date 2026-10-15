@@ -113,6 +113,11 @@ async function main() {
   phones[1].send({ t: 'hero', id: 'kirby' });
   await sleep(50);
   check('nobody changes character during a mission', app.rooms.rooms.get(room.code).players[1].hero === 'totoro');
+  await sleep(100);
+  const usage = JSON.parse(await fs.readFile(path.join(dataDir, 'meta', 'card-usage.json'), 'utf8'));
+  const drawn = app.rooms.rooms.get(room.code).things.filter((t) => t.card).map((t) => t.card.id);
+  const cardFiles = await Promise.all(drawn.map(async (id) => JSON.parse(await fs.readFile(path.join(dataDir, 'cards', id + '.json'), 'utf8'))));
+  check('starting a mission notes when its cards were used, without rewriting the cards', drawn.length > 0 && drawn.every((id) => usage.used[id]) && cardFiles.every((c) => !c.lastUsed));
   check('phones get the map', world.zone.w === 40 && world.zone.rows.length === 24 && host.last.roster.settings.view === 9);
   const pos = (id) => { const s = host.last.state.p.find((p) => p[0] === id); return { x: s[1], y: s[2], dir: s[3], moving: s[4] }; };
   const start = pos(phones[0].me.id);

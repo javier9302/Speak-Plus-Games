@@ -2,3 +2,4 @@ node_modules/
 data/groups/
 data/media/
 .DS_Store
+data/meta/card-usage.json

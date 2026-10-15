@@ -98,8 +98,11 @@ export function normalizeCard(raw) {
 export function createCards(storage, contentDir) {
   return {
     // Read fresh at every mission start, so edits apply to the next mission.
+    // When each card was last played is kept apart (meta "card-usage"), so playing never rewrites a card.
     async all() {
-      return (await seed(storage, contentDir, 'cards', 'seed-cards.json')).map(normalizeCard).filter(Boolean);
+      const used = (await storage.get('meta', 'card-usage'))?.used || {};
+      return (await seed(storage, contentDir, 'cards', 'seed-cards.json')).map(normalizeCard).filter(Boolean)
+        .map((c) => (used[c.id] ? { ...c, lastUsed: used[c.id] } : c));
     },
     // Saves one card (new or changed). Throws with the reason if it is not valid.
     async put(raw) {
@@ -119,10 +122,13 @@ export function createCards(storage, contentDir) {
       return { saved, skipped };
     },
     async remove(id) { await storage.remove('cards', id); },
-    // Remembers when cards were played, for the "used recently" filter.
+    // Remembers when cards were played, for the "used recently" filter. One record for all cards.
     async touch(list) {
+      if (!list.length) return;
       const now = new Date().toISOString();
-      for (const c of list) await storage.put('cards', c.id, { ...c, lastUsed: now });
+      const rec = (await storage.get('meta', 'card-usage')) || { id: 'card-usage', used: {} };
+      for (const c of list) rec.used[c.id] = now;
+      await storage.put('meta', 'card-usage', rec);
     },
   };
 }
