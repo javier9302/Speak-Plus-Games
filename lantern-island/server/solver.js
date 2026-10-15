@@ -14,7 +14,6 @@ import { buildThings } from './things.js';
 import { kindOf, abilityOf, progressOf } from './kinds/index.js';
 import { goalOf } from './goals/index.js';
 
-const TERRAIN_SOLID = new Set(['~', 'T', 'R']);
 const NAMES = { look: 'Look', read: 'Read', talk: 'Talk', listen: 'Listen', pickup: 'Pick up', give: 'Give', open: 'Open', close: 'Close', jump: 'Jump', push: 'Push', use: 'Use', fix: 'Fix' };
 
 // sets: one list of abilities per player. without: abilities to pretend nobody has.
@@ -31,7 +30,7 @@ export function solve(zone, mission, sets, { without = [], explore = false } = {
   let done = false;
 
   const key = (x, y) => `${x},${y}`;
-  const ground = (x, y) => x >= 0 && y >= 0 && x < zone.w && y < zone.h && !TERRAIN_SOLID.has(zone.rows[y][x]) && !zone.fixed.has(key(x, y));
+  const ground = (x, y) => x >= 0 && y >= 0 && x < zone.w && y < zone.h && !zone.solidTiles.has(zone.rows[y][x]) && !zone.fixed.has(key(x, y));
   const starts = zone.spawns.map((s) => [Math.floor(s.x), Math.floor(s.y)]);
 
   // Where each player can walk. A plate lets the *other* players through its gap or gate

@@ -1,6 +1,8 @@
 // Scenario packs: the game's adventures, one folder per pack, data only.
 //
-//   data/scenarios/<pack>/pack.json          { id (= folder name), name, order?, story?, unlock?: { landmarks: N } }
+//   data/scenarios/<pack>/pack.json          { id (= folder name), name, order?, story?, unlock?: { landmarks: N },
+//                                             theme?, tiles?, themes? (tiles.js) }
+//   data/themes.json                         the built-in themes, for every pack
 //   data/scenarios/<pack>/zones/<id>.json    maps with their objects, clues, places and landmarks (world.js parseZone)
 //   data/scenarios/<pack>/missions/<id>.json quest templates (missions.js normalizeMission)
 //   data/scenarios/<pack>/cards/<id>.json    challenge cards for this pack (cards.js validateCard)
@@ -15,6 +17,7 @@ import { parseZone } from './world.js';
 import { validateCard } from './cards.js';
 import { normalizeMission } from './missions.js';
 import { zoneProblems, packProblems } from './validate.js';
+import { tileSet, tileProblems, themeProblems } from './tiles.js';
 
 const ID = /^[a-z0-9][a-z0-9-]{0,63}$/;
 
@@ -35,6 +38,13 @@ export async function loadContent(contentDir, { abilities, items }) {
   try { folders = (await fs.readdir(dir, { withFileTypes: true })).filter((d) => d.isDirectory() && !/^[._]/.test(d.name)).map((d) => d.name); }
   catch { errors.push(`scenarios: the folder ${dir} is missing`); }
 
+  // The built-in themes (data/themes.json).
+  let builtIn = { day: { name: 'Day' } };
+  try {
+    builtIn = Object.fromEntries(Object.entries(JSON.parse(await fs.readFile(path.join(contentDir, 'themes.json'), 'utf8'))).filter(([k]) => !k.endsWith('Help')));
+    for (const [name, def] of Object.entries(builtIn)) for (const p of themeProblems(name, def, tileSet())) errors.push(`themes.json: ${p}`);
+  } catch (e) { if (e.code !== 'ENOENT') errors.push(`themes.json: ${e.message}`); }
+
   const loaded = [], failed = new Set();
   for (const id of folders) {
     const where = (f) => `scenarios/${id}/${f}`;
@@ -44,16 +54,25 @@ export async function loadContent(contentDir, { abilities, items }) {
     const meta = await read('pack.json');
     if (meta) for (const p of packProblems(meta, id)) problems.push(`${where('pack.json')}: ${p}`);
     const pack = { id, name: String(meta?.name || id), story: String(meta?.story || ''), order: Number(meta?.order) || 0, unlock: Math.max(0, Number(meta?.unlock?.landmarks) || 0), zones: [] };
+    // Its tiles (the base ones and its own) and the themes its maps and missions may use (the built-in ones and its own).
+    for (const p of tileProblems(meta?.tiles)) problems.push(`${where('pack.json')}: ${p}`);
+    const tiles = tileSet(tileProblems(meta?.tiles).length ? {} : meta?.tiles || {});
+    const themes = { ...builtIn, ...(meta?.themes && typeof meta.themes === 'object' ? meta.themes : {}) };
+    for (const [name, def] of Object.entries(meta?.themes || {})) for (const p of themeProblems(name, def, tiles)) problems.push(`${where('pack.json')}: ${p}`);
+    if (meta?.theme !== undefined && !themes[meta.theme]) problems.push(`${where('pack.json')}: "theme" is "${meta.theme}", which is not a theme. Themes: ${Object.keys(themes).join(', ')}`);
     const zones = [], missions = [], cards = [];
     for (const f of await jsonFiles(path.join(dir, id, 'zones'))) {
       const raw = await read(`zones/${f}`);
       if (!raw) continue;
-      const found = zoneProblems(raw, { items: items.list.map((i) => i.id), abilities: abilities.ids });
+      const found = zoneProblems(raw, { items: items.list.map((i) => i.id), abilities: abilities.ids, tiles, themes: Object.keys(themes) });
       if (raw.id !== f.slice(0, -5)) found.unshift(`"id" must be "${f.slice(0, -5)}", the name of the file`);
       if (found.length) { problems.push(...found.map((p) => `${where(`zones/${f}`)}: ${p}`)); continue; }
-      const zone = Object.assign(parseZone(raw), { pack: id, unlock: pack.unlock });
+      const zone = Object.assign(parseZone(raw, tiles), { pack: id, unlock: pack.unlock, themeName: raw.theme || meta?.theme || 'day' });
       // A mission's overrides start from the map file and are checked the same way (overrides.js).
-      Object.defineProperties(zone, { raw: { value: raw }, deps: { value: { items: items.list.map((i) => i.id), abilities: abilities.ids } } });
+      Object.defineProperties(zone, {
+        raw: { value: raw }, themes: { value: themes },
+        deps: { value: { items: items.list.map((i) => i.id), abilities: abilities.ids, tiles, themes: Object.keys(themes) } },
+      });
       zones.push(zone);
       pack.zones.push(raw.id);
     }

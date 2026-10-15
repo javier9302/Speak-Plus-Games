@@ -96,9 +96,27 @@ function rnd(x, y, n) {
 
 // Draws tile `ch` at tile position (x, y). frame 0 or 1 animates the water.
 // `onGrass`: a rock that stands in grass, not on the beach.
+// Tiles a pack brings (server/tiles.js), and pictures a theme draws instead of a tile. Set by createScene.
+let packTiles = {}, themeArt = {};
+export function setTiles(tiles, art) { packTiles = tiles || {}; themeArt = art || {}; }
+// A 16x16 picture written as letters ("." clear, "k" outline) at tile (x, y).
+function letterArt(g, rows, pal, x, y) {
+  rows.forEach((row, yy) => { for (let xx = 0; xx < TILE; xx++) { const ch = row[xx]; if (ch !== '.') { g.fillStyle = ch === 'k' ? OUTLINE : pal[ch]; g.fillRect(x * TILE + xx, y * TILE + yy, 1, 1); } } });
+}
+
 export function drawTile(g, ch, x, y, frame, onGrass = false) {
   const px = x * TILE, py = y * TILE;
   const r = (a, b, w, h, c) => { g.fillStyle = c; g.fillRect(px + a, py + b, w, h); };
+  // A theme's picture for this tile (on its "base" tile, if it has one).
+  if (themeArt[ch]) { if (themeArt[ch].base) drawTile(g, themeArt[ch].base, x, y, frame); letterArt(g, themeArt[ch].art, themeArt[ch].pal, x, y); return; }
+  // A pack's own tile: its base, its colour with a few dots, its picture.
+  const own = packTiles[ch];
+  if (own) {
+    if (own.base) drawTile(g, own.base, x, y, frame);
+    if (own.color) { r(0, 0, 16, 16, own.color); (own.speckle || []).forEach((c, i) => { for (let k = 0; k < 3; k++) r(Math.floor(rnd(x, y, i * 7 + k) * 14), Math.floor(rnd(x, y, i * 7 + k + 3) * 14) + 1, 2, 1, c); }); }
+    if (own.art) letterArt(g, own.art, own.pal || {}, x, y);
+    return;
+  }
   const dots = (n, color, w = 1) => {
     for (let i = 0; i < n; i++) r(Math.floor(rnd(x, y, i) * 14), Math.floor(rnd(x, y, i + 9) * 14) + 1, w, 1, color);
   };

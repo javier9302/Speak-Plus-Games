@@ -30,7 +30,7 @@ rows[6] = `~,,pppppp${','.repeat(14)}~`;
 rows[11] = `${rows[11].slice(0, 20)}~~~${rows[11].slice(23)}`;
 rows[12] = `${rows[12].slice(0, 20)}~,~${rows[12].slice(23)}`;
 const testbed = {
-  id: 'testbed', name: 'Test field', rows,
+  id: 'testbed', name: 'Test field', theme: 'winter', rows,
   goal: { type: 'restore', story: 'Make the machines work.' },
   places: [{ id: 'harbor', name: 'the harbor', x: 14.5, y: 4.5 }, { id: 'field', name: 'the field', x: 5, y: 8 }],
   landmarks: [],
@@ -70,13 +70,14 @@ const missions = {
     slots: { pots: [[21, 12], [13, 11], [14, 11], [15, 11]] },
     add: [1, 2, 3].map((n) => ({ id: `q${n}`, kind: 'candidate', name: `Pot ${n}`, slot: 'pots' })),
   },
+  'tb-night': { goal: { type: 'restore' }, theme: 'night' },
   'tb-override': { goal: { type: 'restore' }, rename: { board: 'Notice board' }, texts: { board: { read: 'TODAY: fix the pump first.' } }, add: [{ id: 'extra', kind: 'sign', name: 'New sign', x: 4, y: 4, clues: { read: 'Hello from the mission.' } }] },
 };
 
 async function main() {
   // A content folder with the real packs and the test pack.
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'lantern-goals-'));
-  for (const f of ['items.json', 'abilities.json', 'monster.json', 'seed-cards.json']) await fs.copyFile(path.join(root, 'data', f), path.join(dir, f));
+  for (const f of ['items.json', 'abilities.json', 'monster.json', 'seed-cards.json', 'themes.json']) await fs.copyFile(path.join(root, 'data', f), path.join(dir, f));
   await fs.cp(path.join(root, 'data', 'scenarios'), path.join(dir, 'scenarios'), { recursive: true });
   const pack = path.join(dir, 'scenarios', 'testbed');
   await fs.mkdir(path.join(pack, 'zones'), { recursive: true });
@@ -90,7 +91,7 @@ async function main() {
   const it = JSON.parse(await fs.readFile(path.join(dir, 'items.json'), 'utf8'));
   const items = { list: it.items, byId: Object.fromEntries(it.items.map((i) => [i.id, i])) };
   const content = await loadContent(dir, { abilities, items });
-  check('the test pack loads, with every goal type', !content.errors.length && content.missions.filter((m) => m.pack === 'testbed').length === 10, content.errors.join(' | '));
+  check('the test pack loads, with every goal type', !content.errors.length && content.missions.filter((m) => m.pack === 'testbed').length === 11, content.errors.join(' | '));
   const zone = content.zones.testbed;
   for (const id of ['tb-restore', 'tb-sequence', 'tb-odd', 'tb-order', 'tb-escort']) {
     const m = normalizeMission(content.missions.find((x) => x.id === id), content.zones, items);
@@ -227,6 +228,11 @@ async function main() {
   let safe = true;
   for (let i = 0; i < 8; i++) { await start('tb-reroll'); safe &&= !(thing('q2').x === 21 && thing('q2').y === 12); }
   check('runs that cannot be finished are never started', safe);
+
+  // themes reach the screens with the map
+  check('the map\'s theme comes with the map', host.last.world.zone.theme.id === 'winter' && host.last.world.zone.theme.weather === 'snow' && host.last.world.zone.theme.palette['#6abe45']);
+  await start('tb-night');
+  check('a mission can choose another theme', host.last.world.zone.theme.id === 'night' && host.last.world.zone.theme.tint);
 
   // a mission's overrides reach the phones
   await start('tb-override');

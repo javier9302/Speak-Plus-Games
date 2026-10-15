@@ -23,7 +23,7 @@ function check(name, ok, detail = '') {
 // A copy of the content folder (no saves) that a test can change.
 async function copy() {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'lantern-content-'));
-  for (const f of ['items.json', 'abilities.json', 'monster.json', 'seed-cards.json']) await fs.copyFile(path.join(root, 'data', f), path.join(dir, f));
+  for (const f of ['items.json', 'abilities.json', 'monster.json', 'seed-cards.json', 'themes.json']) await fs.copyFile(path.join(root, 'data', f), path.join(dir, f));
   await fs.cp(path.join(root, 'data', 'scenarios'), path.join(dir, 'scenarios'), { recursive: true });
   return dir;
 }
@@ -113,6 +113,25 @@ async function main() {
   await write(dir, 'beach/missions/night-lights.json', { ...night, remove: ['garden-gate'] });
   errs = (await load(dir)).errors;
   check('removing an object that clues still point to is caught', has(errs, 'night-lights.json', '{d1}', 'no code gate'), errs.join(' | '));
+
+  console.log('\nTiles and themes');
+  dir = await copy();
+  const bush = { name: 'bush', solid: true, base: ',', art: Array.from({ length: 16 }, (_, y) => (y > 3 && y < 13 ? '...gggggggggg...' : '................')), pal: { g: '#2f7d32' } };
+  const beachPack = await read(dir, 'beach/pack.json');
+  await write(dir, 'beach/pack.json', { ...beachPack, theme: 'sunset', tiles: { '*': bush }, themes: { swamp: { name: 'Swamp', tint: 'rgba(40,80,40,0.3)', weather: 'rain' } } });
+  const bz = await read(dir, 'beach/zones/beach.json');
+  bz.rows[12] = bz.rows[12].replace(',p', '*p');                   // a bush next to the player starts
+  await write(dir, 'beach/zones/beach.json', { ...bz, theme: 'swamp' });
+  loaded = await load(dir);
+  const at = loaded.zones.beach.rows[12].indexOf('*');
+  check('a pack can add tiles and themes; a map uses them', !loaded.errors.length && at > 0 && loaded.zones.beach.themeName === 'swamp' && loaded.zones.beach.themes.swamp.weather === 'rain', loaded.errors.join(' | '));
+  const { solidAt } = await import('../server/world.js');
+  check('a solid pack tile blocks the way, like water', solidAt(loaded.zones.beach, at + 0.5, 12.5) && !solidAt(loaded.zones.forest, at + 0.5, 12.5));
+  check('without a map theme, the pack\'s theme is used', loaded.zones.beach.themeName === 'swamp' && (await (async () => { const z = await read(dir, 'beach/zones/beach.json'); delete z.theme; await write(dir, 'beach/zones/beach.json', z); return (await load(dir)).zones.beach.themeName; })()) === 'sunset');
+  await write(dir, 'beach/pack.json', { ...beachPack, tiles: { '~': bush, '+': { name: 'x', solid: 'yes' } }, themes: { fog: { weather: 'snowy' } } });
+  await write(dir, 'beach/zones/beach.json', { ...bz, rows: (await read(dir, 'beach/zones/beach.json')).rows, theme: 'wintr' });
+  errs = (await load(dir)).errors;
+  check('tile and theme mistakes are explained', has(errs, 'tile "~"', 'base tile') && has(errs, 'tile "+"', '"solid" is true') && has(errs, 'theme "fog"', '"weather"', 'Did you mean "snow"?') && has(errs, '"theme" is "wintr"', 'Did you mean "winter"?'), errs.join(' | '));
 
   console.log('\nnpm run check');
   ({ dir } = await beachErrors((z) => {

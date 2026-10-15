@@ -1,9 +1,12 @@
 // Draws the map and the characters. Used by the host screen and the phones.
-import { TILE, PLAYER_COLORS, charSprite, drawTile, thingSprite, iconCanvas, monsterSprite, landmarkSprite, setKindArt } from './pixel.js';
+import { TILE, PLAYER_COLORS, charSprite, drawTile, thingSprite, iconCanvas, monsterSprite, landmarkSprite, setKindArt, setTiles } from './pixel.js';
+
+const calm = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;   // no weather moving about
 
 // Pre-draws the whole zone once (two frames, for the water).
 export function createScene(zone) {
   setKindArt(zone.art);                  // pictures of kinds that bring their own
+  setTiles(zone.tiles, zone.theme?.art);  // the pack's own tiles, and the theme's pictures for tiles
   const make = (frame) => {
     const c = document.createElement('canvas');
     c.width = zone.w * TILE; c.height = zone.h * TILE;
@@ -15,7 +18,34 @@ export function createScene(zone) {
   };
   // One tile of sea, for places that flood (the tide pool behind the water gate).
   const sea = [0, 1].map((frame) => { const c = document.createElement('canvas'); c.width = c.height = TILE; drawTile(c.getContext('2d'), '~', 0, 0, frame); return c; });
-  return { zone, frames: [make(0), make(1)], sea };
+  const frames = [make(0), make(1)];
+  // The theme's palette: colours of the ground swapped for others (snow for grass...).
+  if (zone.theme?.palette) for (const c of [...frames, ...sea]) recolor(c, zone.theme.palette);
+  return { zone, frames, sea, theme: zone.theme || {} };
+}
+
+function recolor(canvas, palette) {
+  const map = new Map(Object.entries(palette).map(([from, to]) => [parseInt(from.slice(1), 16), parseInt(to.slice(1), 16)]));
+  const g = canvas.getContext('2d'), img = g.getImageData(0, 0, canvas.width, canvas.height), d = img.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const to = map.get((d[i] << 16) | (d[i + 1] << 8) | d[i + 2]);
+    if (to !== undefined) { d[i] = to >> 16; d[i + 1] = (to >> 8) & 255; d[i + 2] = to & 255; }
+  }
+  g.putImageData(img, 0, 0);
+}
+
+// Weather, drawn over the picture (not tied to the map). Every particle is worked out from the time alone.
+const R = (i, k) => { const v = Math.sin(i * 12.9898 + k * 78.233) * 43758.5453; return v - Math.floor(v); };
+function weather(g, rect, kind, time, ppt) {
+  const W = rect.w, H = rect.h, s = Math.max(2, ppt / 8);
+  const each = (n, fn) => { for (let i = 0; i < n; i++) fn(i); };
+  g.save();
+  if (kind === 'snow') each(70, (i) => { g.fillStyle = 'rgba(255,255,255,.85)'; const x = (R(i, 1) * W + Math.sin(time + i) * ppt * 0.4 + W) % W, y = (R(i, 2) * H + time * ppt * (0.6 + R(i, 3))) % H; g.fillRect(rect.x + x, rect.y + y, s, s); });
+  if (kind === 'rain') { g.strokeStyle = 'rgba(170,200,255,.55)'; g.lineWidth = Math.max(1, ppt / 16); each(90, (i) => { const x = (R(i, 1) * W + time * ppt * 2) % W, y = (R(i, 2) * H + time * ppt * (7 + R(i, 3) * 3)) % H; g.beginPath(); g.moveTo(rect.x + x, rect.y + y); g.lineTo(rect.x + x - ppt * 0.12, rect.y + y + ppt * 0.45); g.stroke(); }); }
+  if (kind === 'fireflies') each(26, (i) => { const a = 0.35 + 0.55 * Math.max(0, Math.sin(time * (1.5 + R(i, 4)) + i)); g.fillStyle = `rgba(255,240,140,${a})`; const x = rect.x + R(i, 1) * W + Math.sin(time * 0.6 + i) * ppt, y = rect.y + R(i, 2) * H + Math.cos(time * 0.5 + i * 2) * ppt; g.fillRect(x, y, s, s); });
+  if (kind === 'leaves') each(32, (i) => { g.fillStyle = ['#d0632a', '#f0a03c', '#a8482a'][i % 3]; const x = (R(i, 1) * W + Math.sin(time * 1.3 + i) * ppt * 0.8 + W) % W, y = (R(i, 2) * H + time * ppt * (0.8 + R(i, 3))) % H; g.fillRect(rect.x + x, rect.y + y, s * 1.4, s); });
+  if (kind === 'confetti') each(60, (i) => { g.fillStyle = ['#E8483B', '#ffd166', '#9DB4E0', '#38b764', '#b98cf0'][i % 5]; const x = (R(i, 1) * W + Math.sin(time * 2 + i) * ppt * 0.5 + W) % W, y = (R(i, 2) * H + time * ppt * (1 + R(i, 3))) % H; g.fillRect(rect.x + x, rect.y + y, s, s * (1 + Math.abs(Math.sin(time * 4 + i)))); });
+  g.restore();
 }
 
 // Keeps the picture sharp on any screen: the canvas has as many pixels as the device shows.
@@ -107,6 +137,9 @@ export function drawScene(g, scene, rect, view, players, time, extra = {}) {
   }
   // A shot that was just fired: everybody sees the flash.
   for (const b of extra.beams || []) band(b.dir, b.at, `rgba(255,247,194,${Math.max(0, Math.min(0.9, (b.until - time) * 1.6))})`);
+  // The theme: a colour over everything (night, sunset), and the weather.
+  if (scene.theme?.tint) { g.fillStyle = scene.theme.tint; g.fillRect(rect.x, rect.y, rect.w, rect.h); }
+  if (scene.theme?.weather && scene.theme.weather !== 'none' && !calm) weather(g, rect, scene.theme.weather, time, ppt);
   // The mood of the island: the air turns warmer when the monster is angry.
   if (extra.mood > 0) { g.fillStyle = extra.mood === 1 ? 'rgba(255,150,40,.10)' : 'rgba(210,30,70,.16)'; g.fillRect(rect.x, rect.y, rect.w, rect.h); }
 

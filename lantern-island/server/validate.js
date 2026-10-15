@@ -3,7 +3,7 @@
 // npm run check. Fields whose name ends in "Help" are notes for authors and are always allowed.
 import { KINDS } from './kinds/index.js';
 import { checkObject } from './things.js';
-import { TILES, SOLID_TILES } from './world.js';
+import { tileSet, solidSet } from './tiles.js';
 import { didYouMean } from './words.js';
 import { normalizeGoal } from './missions.js';
 
@@ -17,19 +17,22 @@ export function unknownFields(rec, allowed, where, out) {
 
 const isInt = (v) => Number.isInteger(v);
 const OBJECT_FIELDS = ['id', 'kind', 'name', 'x', 'y', 'slot', 'clues'];
-export const ZONE_FIELDS = ['id', 'name', 'legend', 'goal', 'rows', 'places', 'landmarks', 'objects', 'slots', 'shuffle'];
+export const ZONE_FIELDS = ['id', 'name', 'theme', 'legend', 'goal', 'rows', 'places', 'landmarks', 'objects', 'slots', 'shuffle'];
 // What a shuffle can swap between objects, each run (run.js).
 export const SHUFFLE_FIELDS = ['holds', 'reward', 'item', 'clues', 'name'];
 // Clue placeholders filled in each run (besides {d1}... the code digits): {where:<id>} {name:<id>}, and the goal's.
 export const GOAL_PLACEHOLDERS = ['order', 'odd', 'deliveries'];
-export const PACK_FIELDS = ['id', 'name', 'order', 'story', 'unlock'];
+export const PACK_FIELDS = ['id', 'name', 'order', 'story', 'unlock', 'theme', 'tiles', 'themes'];
 
-// Everything wrong with one zone file. `items`: the item ids; `abilities`: the ability ids.
-export function zoneProblems(raw, { items, abilities }) {
+// Everything wrong with one zone file. `items`: the item ids; `abilities`: the ability ids; `tiles`: its pack's
+// tiles (tiles.js); `themes`: the names of the themes it may use.
+export function zoneProblems(raw, { items, abilities, tiles = tileSet(), themes = null }) {
   const out = [];
+  const TILES = new Set(Object.keys(tiles)), SOLID_TILES = solidSet(tiles);
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return ['a zone file is one JSON object: { "id": ..., "rows": [...], ... }'];
   unknownFields(raw, ZONE_FIELDS, 'zone', out);
   if (typeof raw.name !== 'string' || !raw.name.trim()) out.push('"name" is missing: the name players see (for example "The Beach")');
+  if (raw.theme !== undefined && themes && !themes.includes(raw.theme)) out.push(`"theme" is "${raw.theme}", which is not a theme.${didYouMean(raw.theme, themes)} Themes: ${themes.join(', ')}`);
 
   // The map
   const rows = raw.rows;

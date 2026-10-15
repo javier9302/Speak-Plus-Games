@@ -1,0 +1,19 @@
+{
+  "themesHelp": "Built-in themes, for every pack. A theme changes how a map looks, never where players can walk. See server/tiles.js and docs/SCENARIO_GUIDE.md.",
+  "day": { "name": "Day" },
+  "sunset": { "name": "Sunset", "tint": "rgba(255, 120, 60, 0.18)" },
+  "night": {
+    "name": "Night", "tint": "rgba(10, 20, 60, 0.45)", "weather": "fireflies",
+    "palette": { "#6abe45": "#3f7a4a", "#4f9e37": "#2f5e3a", "#f0dca0": "#b8b08a", "#dcc380": "#9a9070", "#3b82d6": "#24508a", "#7fb6f0": "#4a78b0" }
+  },
+  "winter": {
+    "name": "Winter", "weather": "snow",
+    "palette": { "#6abe45": "#e8eef5", "#4f9e37": "#cdd8e6", "#fff3a8": "#ffffff", "#f0dca0": "#e6e2d8", "#dcc380": "#cfcabd", "#3b82d6": "#7fb6e6", "#7fb6f0": "#d6ecff", "#2f7d32": "#2e5e4e", "#49a548": "#e8eef5", "#c8a56a": "#d8d0c0", "#b08c52": "#bfb5a0" }
+  },
+  "autumn": {
+    "name": "Autumn", "weather": "leaves",
+    "palette": { "#6abe45": "#c9a03c", "#4f9e37": "#a8782a", "#2f7d32": "#c0502a", "#49a548": "#f0a03c" }
+  },
+  "rain": { "name": "Rain", "tint": "rgba(40, 60, 90, 0.25)", "weather": "rain" },
+  "festival": { "name": "Festival", "weather": "confetti", "tint": "rgba(255, 210, 120, 0.10)" }
+}

@@ -40,6 +40,7 @@ import { goalOf } from './goals/index.js';
 import { gameCtx } from './things.js';
 import { zoneFor } from './missions.js';
 import { makeRun, isRandom } from './run.js';
+import { customTiles } from './tiles.js';
 
 const RUN_TRIES = 20;                     // seeds tried for a run that this team can finish
 import { whyNot, inspect } from './solver.js';
@@ -121,9 +122,15 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
     });
     if (room.match) M.refresh(room.match);
   }
+  // How the map looks: the mission's theme, else the map's (tiles.js). A run's map keeps its base map's themes in room.themes.
+  const themeOf = (room) => {
+    const themes = room.zone.themes || room.themes || {}, name = room.mission?.theme || room.zone.themeName || 'day';
+    return { id: name, ...(themes[name] || {}) };
+  };
   const worldMsg = (room) => ({
     t: 'world', reach: REACH,
-    zone: { id: room.zone.id, name: room.zone.name, w: room.zone.w, h: room.zone.h, rows: room.zone.rows, places: room.zone.places, landmarks: room.zone.landmarks, art: KIND_ART },
+    zone: { id: room.zone.id, name: room.zone.name, w: room.zone.w, h: room.zone.h, rows: room.zone.rows, places: room.zone.places, landmarks: room.zone.landmarks, art: KIND_ART,
+      tiles: customTiles(room.zone.tiles || {}), theme: themeOf(room) },
   });
   const stateMsg = (room) => ({ t: 'state', p: room.players.map((p) => [p.id, Math.round(p.x * 100) / 100, Math.round(p.y * 100) / 100, p.dir, p.moving ? 1 : 0, p.stun > 0 ? 1 : 0]) });
   const thingsMsg = (room) => ({ t: 'things', list: publicThings(room.things) });
@@ -230,6 +237,7 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
     }
     room.mission = run.mission;
     room.seed = run.seed;
+    room.themes = base.themes;
     room.missionRun++;
     room.zone = run.zone;
     room.gateCode = Array.from({ length: 6 }, () => 1 + crypto.randomInt(9)).join('');
