@@ -8,6 +8,7 @@ export default {
   check(o, v) {
     v.ability(o.by || 'use', 'by');
     if (o.reward?.item) v.item(o.reward.item, 'reward item');
+    if (o.reward?.open) v.object(o.reward.open, 'reward.open');
   },
   start: () => ({ st: 'new' }),
   passed: (t) => t.st === 'solved' && !t.holds,

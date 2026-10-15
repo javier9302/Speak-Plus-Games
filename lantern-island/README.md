@@ -220,6 +220,7 @@ server/index.js          start-up
 server/config.js         settings from the environment
 server/http.js           the pages and the groups API
 server/content.js        loads the scenario packs (data/scenarios)
+server/validate.js       checks pack files and says what is wrong, in plain English
 server/rooms.js          rooms, lobby, game loop, the message list
 server/match.js          competitive mode: teams, scores, sabotage
 server/compete-config.js competitive mode: every number and team name
@@ -245,6 +246,7 @@ data/cards/              the card library, one file per card
 data/groups/             saves (made when you create a group)
 test/sim.js              the simulated class
 test/compete.js          the simulated match (4 rooms, 24 phones)
+test/content.js          scenario packs: loading, and the mistakes npm run check finds
 ```
 
 Things you may want to change: walking speed is `SPEED` in `server/world.js`; how much of the map a phone sees is `DEFAULT_VIEW` in `server/rooms.js`; player colours are `PLAYER_COLORS` in `public/shared/pixel.js`. The map can be edited in `data/scenarios/beach/zones/beach.json`: keep every row the same length and keep six `p` start tiles (the `legend` in the file lists the characters).

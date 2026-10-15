@@ -8,11 +8,13 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { loadContent } from './content.js';
 import { loadAbilities, dealPreset } from './abilities.js';
 import { normalizeMission } from './missions.js';
-import { inspect, zoneRules } from './solver.js';
+import { inspect, zoneRules, solve } from './solver.js';
+import { KINDS, progressOf, abilityOf } from './kinds/index.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-export async function runCheck(contentDir = path.join(root, 'data'), dataDir = contentDir) {
+// only: a pack id, to check that pack alone (npm run check -- beach).
+export async function runCheck(contentDir = path.join(root, 'data'), dataDir = contentDir, only = null) {
   const lines = [], errors = [];
   const say = (s = '') => lines.push(s);
   const fail = (s) => { errors.push(s); lines.push(`  FAIL  ${s}`); };
@@ -22,21 +24,34 @@ export async function runCheck(contentDir = path.join(root, 'data'), dataDir = c
   const items = { list: itemFile.items, byId: Object.fromEntries(itemFile.items.map((i) => [i.id, i])) };
   const name = (a) => abilities.byId[a].name;
   const content = await loadContent(contentDir, { abilities, items });
-  for (const e of content.errors) fail(e);
+  for (const e of content.errors) if (!only || e.startsWith(`scenarios/${only}/`) || e.startsWith(`scenarios/${only}:`)) fail(e);
   const zones = content.zones;
+  if (only && !content.packs[only] && !errors.length) fail(`there is no pack "${only}" (packs: ${Object.keys(content.packs).join(', ')})`);
+  // Cards a mission can name: the packs', the samples, and the teacher's own (storage, data/cards).
+  const cardIds = new Set([...content.cards.map((c) => c.id), ...JSON.parse(await fs.readFile(path.join(contentDir, 'seed-cards.json'), 'utf8')).map((c) => c.id)]);
+  for (const f of await fs.readdir(path.join(dataDir, 'cards')).catch(() => [])) if (f.endsWith('.json')) cardIds.add(f.slice(0, -5));
 
   // The packs' missions, and the teacher's own templates (storage, data/missions) that do not share an id with one.
   const readAll = async (dir) => { try { return Promise.all((await fs.readdir(dir)).filter((f) => f.endsWith('.json')).map(async (f) => JSON.parse(await fs.readFile(path.join(dir, f), 'utf8')))); } catch { return []; } };
   const templates = [...content.missions, ...(await readAll(path.join(dataDir, 'missions'))).filter((t) => !content.missions.some((m) => m.id === t.id))];
 
-  for (const zone of Object.values(zones)) {
+  for (const zone of Object.values(zones).filter((z) => !only || z.pack === only)) {
     say(`PACK ${zone.pack}, MAP: ${zone.name}  (${zone.objects.length} objects, ${zone.landmarks.length} landmarks)`);
 
-    const all = normalizeMission({ id: 'whole-zone', title: `Whole zone: every tablet of ${zone.name}`, zone: zone.id, goal: { ...zone.goal, items: Object.fromEntries(Object.keys(zone.goal.items).map((k) => [k, 99])) }, stations: zone.objects.filter((o) => o.kind === 'station').map((o) => ({ at: o.id })) }, zones, items);
+    // Reachability: two players who have every ability must be able to read every clue and finish every object.
+    const reach = solve(zone, normalizeMission({ id: 'reach', zone: zone.id, goal: { items: Object.fromEntries(Object.keys(zone.goal.items).map((k) => [k, 99])) }, stations: zone.objects.filter((o) => KINDS[o.kind].card).map((o) => ({ at: o.id })) }, zones, items), [abilities.ids, abilities.ids]);
+    for (const t of reach.things) {
+      for (const a of Object.keys(t.def.clues || {})) if (!reach.clues.has(`${t.id}:${a}`)) fail(`${zone.id}: object "${t.id}" (at ${t.x},${t.y}): its ${name(a)} clue can never be reached`);
+      const step = progressOf(t);
+      if (step) fail(`${zone.id}: object "${t.id}" (at ${t.x},${t.y}): the team can never ${name(abilityOf(step, t))} it (it cannot be reached, or what it needs never turns up)`);
+    }
+
+    const all = normalizeMission({ id: 'whole-zone', title: `Whole zone: every tablet of ${zone.name}`, zone: zone.id, goal: { ...zone.goal, items: Object.fromEntries(Object.keys(zone.goal.items).map((k) => [k, 99])) }, stations: zone.objects.filter((o) => KINDS[o.kind].card).map((o) => ({ at: o.id })) }, zones, items);
     const missions = [all];
     for (const t of templates.filter((m) => (m.zone || Object.keys(zones)[0]) === zone.id)) { try { missions.push(normalizeMission(t, zones, items)); } catch (e) { fail(`${t.file || 'data/missions/' + t.id + '.json'}: ${e.message}`); } }
 
     for (const mission of missions) {
+      for (const s of mission.stations) if (s.card && !cardIds.has(s.card)) fail(`${mission.title}: tablet "${s.at}" asks for the card "${s.card}", which does not exist`);
       say();
       say(`  ${mission.title}  (${mission.stations.length} tablets, goal: ${Object.values(mission.goal.items)[0]} ${Object.keys(mission.goal.items)[0]}s)`);
       for (let n = 2; n <= 6; n++) {
@@ -61,7 +76,7 @@ export async function runCheck(contentDir = path.join(root, 'data'), dataDir = c
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const r = await runCheck(path.join(root, 'data'), process.env.DATA_DIR || path.join(root, 'data'));
+  const r = await runCheck(path.join(root, 'data'), process.env.DATA_DIR || path.join(root, 'data'), process.argv[2] || null);
   console.log('\n' + r.report + '\n');
   process.exit(r.ok ? 0 : 1);
 }

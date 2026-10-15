@@ -2,6 +2,7 @@
 // Positions are in tiles; (x, y) is the middle of a character's feet.
 const SOLID = new Set(['~', 'T', 'R']);
 const KNOWN = new Set(['~', ',', '.', '#', '=', 'T', 'R', 'p']);
+export { KNOWN as TILES, SOLID as SOLID_TILES };
 export const SPEED = 4.5;        // tiles per second
 export const REACH = 1.5;        // how close (in tiles) a player must be to use an object
 const HALF_W = 0.3, UP = 0.3, DOWN = 0.12;   // the box around the feet that must stay on walkable tiles

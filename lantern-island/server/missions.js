@@ -3,29 +3,47 @@
 // and the teacher's own templates (storage collection "missions", made in the mission builder).
 import { CARD_TYPES } from './cards.js';
 import { KINDS } from './kinds/index.js';
+import { didYouMean } from './words.js';
+
+export const MISSION_FIELDS = ['id', 'title', 'story', 'zone', 'minutes', 'goal', 'stations', 'monster'];
+const MONSTERS = ['off', 'gentle', 'normal', 'hard', 'group-setting'];
+// Fields a record may have; "...Help" fields are notes for authors.
+const extra = (rec, allowed, where, problems) => {
+  if (rec && typeof rec === 'object' && !Array.isArray(rec)) for (const k of Object.keys(rec)) if (!allowed.includes(k) && !k.endsWith('Help')) problems.push(`${where}unknown field "${k}".${didYouMean(k, allowed)}`);
+};
 
 const text = (v, max) => String(v ?? '').trim().slice(0, max);
 
-// Returns a clean mission for this zone, or throws saying what is wrong.
+// Returns a clean mission for this zone, or throws saying everything that is wrong.
 export function normalizeMission(raw, zones, items) {
-  const fail = (why) => { throw Object.assign(new Error(`Mission "${raw?.title || raw?.id || '?'}": ${why}.`), { status: 400 }); };
-  const zone = zones[raw?.zone || 'beach'];
-  if (!zone) fail(`unknown zone "${raw?.zone}"`);
+  const problems = [];
+  const fail = (why) => problems.push(why);
+  const stop = () => { if (problems.length) throw Object.assign(new Error(`Mission "${raw?.title || raw?.id || '?'}": ${problems.join('; ')}.`), { status: 400 }); };
+  const zone = zones[raw?.zone || Object.keys(zones)[0]];
+  if (!zone) { fail(`unknown zone "${raw?.zone}".${didYouMean(raw?.zone, Object.keys(zones))}`); stop(); }
+  extra(raw, [...MISSION_FIELDS, 'pack', 'file'], '', problems);
+  extra(raw.goal, ['label', 'items', 'restore', 'deliver', 'story'], 'goal: ', problems);
   const tablets = zone.objects.filter((o) => KINDS[o.kind].card);
   const stations = [];
   for (const s of Array.isArray(raw.stations) ? raw.stations : []) {
-    if (!tablets.some((t) => t.id === s.at)) fail(`"${s.at}" is not a tablet of ${zone.name}`);
+    extra(s, ['at', 'card', 'filter'], `tablet "${s?.at}": `, problems);
+    if (!tablets.some((t) => t.id === s.at)) { fail(`"${s.at}" is not a tablet of ${zone.name}.${didYouMean(s.at, tablets.map((t) => t.id))} Tablets: ${tablets.map((t) => t.id).join(', ')}`); continue; }
     if (stations.some((x) => x.at === s.at)) continue;
     if (s.card) stations.push({ at: s.at, card: text(s.card, 64) });
     else {
       const f = s.filter || {};
-      if (f.type && !CARD_TYPES.includes(f.type)) fail(`unknown card type "${f.type}"`);
+      extra(f, ['type', 'level', 'tags'], `tablet "${s.at}", filter: `, problems);
+      if (f.type && !CARD_TYPES.includes(f.type)) fail(`unknown card type "${f.type}".${didYouMean(f.type, CARD_TYPES)} Types: ${CARD_TYPES.join(', ')}`);
       stations.push({ at: s.at, filter: { type: f.type || undefined, level: text(f.level, 12) || 'group', tags: Array.isArray(f.tags) ? f.tags.map((t) => text(t, 30)).filter(Boolean) : [] } });
     }
   }
-  if (!stations.length) fail('needs at least one tablet');
+  if (!stations.length && !problems.length) fail('needs at least one tablet');
   const [item, wanted] = Object.entries(raw.goal?.items || zone.goal?.items || {})[0] || [];
-  if (!item || !items.byId[item]) fail('needs a goal item');
+  if (!item || !items.byId[item]) fail(item ? `the goal item "${item}" is not an item.${didYouMean(item, Object.keys(items.byId))}` : 'needs a goal item');
+  const restore = raw.goal?.restore;
+  if (restore && !zone.landmarks.some((l) => l.id === restore)) fail(`goal: "restore" is "${restore}", which is not a landmark of ${zone.name}.${didYouMean(restore, zone.landmarks.map((l) => l.id))} Landmarks: ${zone.landmarks.map((l) => l.id).join(', ')}`);
+  if (raw.monster !== undefined && !MONSTERS.includes(raw.monster)) fail(`"monster" must be one of ${MONSTERS.join(', ')}`);
+  stop();
   // Never ask for more than the chosen tablets can give.
   const can = stations.filter((s) => tablets.find((t) => t.id === s.at).reward?.item === item).length;
   const need = Math.max(1, Math.min(Number(wanted) || 1, can || 1));

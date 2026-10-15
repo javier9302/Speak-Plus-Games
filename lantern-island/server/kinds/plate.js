@@ -3,7 +3,7 @@ export default {
   kind: 'plate',
   about: 'A flat stone. While a player stands on it, its target (a broken bridge or a gate) lets everybody else through. No ability needed.',
   fields: { target: 'the id of the gap or gate it holds open' },
-  check: (o, v) => { if (!o.target) v.problem('a plate needs "target": the id of a gap or a gate'); },
+  check: (o, v) => { if (!o.target) v.problem('a plate needs "target": the id of a gap or a gate'); else v.object(o.target, 'target', (k) => k.holdable, 'something a plate can hold open (a gap or a gate)'); },
   solid: () => false,
   holdsOpen: (t) => t.def.target,
   how: () => 'No ability. While a player stands on it, everybody can cross the broken bridge.',

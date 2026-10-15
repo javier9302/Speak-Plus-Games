@@ -11,8 +11,9 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { parseZone } from './world.js';
-import { checkObject } from './things.js';
 import { validateCard } from './cards.js';
+import { normalizeMission } from './missions.js';
+import { zoneProblems, packProblems } from './validate.js';
 
 const ID = /^[a-z0-9][a-z0-9-]{0,63}$/;
 
@@ -36,38 +37,43 @@ export async function loadContent(contentDir, { abilities, items }) {
   const loaded = [];
   for (const id of folders) {
     const where = (f) => `scenarios/${id}/${f}`;
-    try {
-      if (!ID.test(id)) throw new Error(`scenarios/${id}: a pack folder name uses small letters, numbers and dashes only`);
-      const meta = await readJson(path.join(dir, id, 'pack.json'), where('pack.json'));
-      if (meta.id !== id) throw new Error(`${where('pack.json')}: "id" must be "${id}", the name of its folder`);
-      const pack = { id, name: String(meta.name || id), story: String(meta.story || ''), order: Number(meta.order) || 0, unlock: Math.max(0, Number(meta.unlock?.landmarks) || 0), zones: [] };
-      const zones = [], missions = [], cards = [];
-      for (const f of await jsonFiles(path.join(dir, id, 'zones'))) {
-        const raw = await readJson(path.join(dir, id, 'zones', f), where(`zones/${f}`));
-        if (raw.id !== f.slice(0, -5)) throw new Error(`${where(`zones/${f}`)}: "id" must be "${f.slice(0, -5)}", the name of the file`);
-        let zone;
-        try { zone = parseZone(raw); } catch (e) { throw new Error(`${where(`zones/${f}`)}: ${e.message}`); }
-        for (const o of zone.objects) {
-          const bad = checkObject(o, items.list.map((i) => i.id), abilities.ids);
-          if (bad.length) throw new Error(`${where(`zones/${f}`)}, object "${o.id}": ${bad.join('; ')}`);
-        }
-        zones.push(Object.assign(zone, { pack: id, unlock: pack.unlock }));
-        pack.zones.push(zone.id);
-      }
-      if (!zones.length) throw new Error(`scenarios/${id}: a pack needs at least one map in zones/`);
-      for (const f of await jsonFiles(path.join(dir, id, 'missions'))) {
-        const raw = await readJson(path.join(dir, id, 'missions', f), where(`missions/${f}`));
-        if (raw.id !== f.slice(0, -5)) throw new Error(`${where(`missions/${f}`)}: "id" must be "${f.slice(0, -5)}", the name of the file`);
-        if (raw.zone && !pack.zones.includes(raw.zone)) throw new Error(`${where(`missions/${f}`)}: "zone" must be one of this pack's maps: ${pack.zones.join(', ')}`);
-        missions.push({ ...raw, zone: raw.zone || pack.zones[0], pack: id, file: where(`missions/${f}`) });
-      }
-      for (const f of await jsonFiles(path.join(dir, id, 'cards'))) {
-        const r = validateCard(await readJson(path.join(dir, id, 'cards', f), where(`cards/${f}`)));
-        if (r.error) throw new Error(`${where(`cards/${f}`)}: ${r.error}`);
-        cards.push({ ...r.card, pack: id });
-      }
-      loaded.push({ pack, zones, missions, cards });
-    } catch (e) { errors.push(e.message); }
+    const problems = [];                               // every mistake in this pack, each with its file
+    const read = async (f) => { try { return await readJson(path.join(dir, id, f), where(f)); } catch (e) { problems.push(e.message); return null; } };
+    if (!ID.test(id)) { errors.push(`scenarios/${id}: a pack folder name uses small letters, numbers and dashes only`); continue; }
+    const meta = await read('pack.json');
+    if (meta) for (const p of packProblems(meta, id)) problems.push(`${where('pack.json')}: ${p}`);
+    const pack = { id, name: String(meta?.name || id), story: String(meta?.story || ''), order: Number(meta?.order) || 0, unlock: Math.max(0, Number(meta?.unlock?.landmarks) || 0), zones: [] };
+    const zones = [], missions = [], cards = [];
+    for (const f of await jsonFiles(path.join(dir, id, 'zones'))) {
+      const raw = await read(`zones/${f}`);
+      if (!raw) continue;
+      const found = zoneProblems(raw, { items: items.list.map((i) => i.id), abilities: abilities.ids });
+      if (raw.id !== f.slice(0, -5)) found.unshift(`"id" must be "${f.slice(0, -5)}", the name of the file`);
+      if (found.length) { problems.push(...found.map((p) => `${where(`zones/${f}`)}: ${p}`)); continue; }
+      zones.push(Object.assign(parseZone(raw), { pack: id, unlock: pack.unlock }));
+      pack.zones.push(raw.id);
+    }
+    if (!zones.length && !problems.length) problems.push(`scenarios/${id}: a pack needs at least one map in zones/`);
+    const own = Object.fromEntries(zones.map((z) => [z.id, z]));
+    for (const f of await jsonFiles(path.join(dir, id, 'missions'))) {
+      const raw = await read(`missions/${f}`);
+      if (!raw) continue;
+      if (raw.id !== f.slice(0, -5)) { problems.push(`${where(`missions/${f}`)}: "id" must be "${f.slice(0, -5)}", the name of the file`); continue; }
+      if (raw.zone && !own[raw.zone] && zones.length) { problems.push(`${where(`missions/${f}`)}: "zone" must be one of this pack's maps: ${pack.zones.join(', ')}`); continue; }
+      const m = { ...raw, zone: raw.zone || pack.zones[0], pack: id, file: where(`missions/${f}`) };
+      if (zones.length) { try { normalizeMission(m, own, items); } catch (e) { problems.push(`${m.file}: ${e.message}`); continue; } }
+      missions.push(m);
+    }
+    for (const f of await jsonFiles(path.join(dir, id, 'cards'))) {
+      const raw = await read(`cards/${f}`);
+      if (!raw) continue;
+      const r = validateCard(raw);
+      if (r.error) problems.push(`${where(`cards/${f}`)}: ${r.error}`);
+      else if (raw.id !== f.slice(0, -5)) problems.push(`${where(`cards/${f}`)}: "id" must be "${f.slice(0, -5)}", the name of the file`);
+      else cards.push({ ...r.card, pack: id });
+    }
+    if (problems.length) errors.push(...problems);
+    else loaded.push({ pack, zones, missions, cards });
   }
 
   // Ids that the game keys on must be unique across packs: maps, missions, cards and landmarks

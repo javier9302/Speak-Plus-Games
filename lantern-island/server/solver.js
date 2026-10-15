@@ -150,7 +150,7 @@ export function solve(zone, mission, sets, { without = [] } = {}) {
     if (have >= need) problems.push(`the ${goalItem}s cannot be carried to the ${byId[mission.goal.deliver]?.name.toLowerCase()}: ${!owners('talk').length ? 'nobody has Talk' : !owners('give').length ? 'the player with Talk is not the one who picks them up, and nobody has Give' : 'the player with Talk cannot get there'}`);
     else if (!problems.length) problems.push(`only ${have} of ${need} ${goalItem}s can be collected`);
   }
-  return { ok: done, used, log, problems, things };
+  return { ok: done, used, log, problems, things, clues };
 }
 
 // For the server: a short reason, or null if the mission can be finished.

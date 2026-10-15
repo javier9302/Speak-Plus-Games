@@ -3,20 +3,29 @@
 // Any thing may also have "clues": { look | read | listen | talk: text }: the text goes to the player who used the ability.
 import { REACH } from './world.js';
 import { KINDS as REGISTRY, kindOf, abilityOf, actionFor } from './kinds/index.js';
+import { didYouMean } from './words.js';
 
 export const KINDS = Object.keys(REGISTRY);
 
 // Checks one object from a zone file. Returns a list of problems (empty = fine).
-export function checkObject(o, itemIds, abilityIds) {
+// `objects`: the other objects of its map, to check what it points to (a plate's target...).
+export function checkObject(o, itemIds, abilityIds, objects = null) {
   const bad = [];
-  if (!REGISTRY[o.kind]) return [`unknown kind "${o.kind}" (kinds: ${KINDS.join(', ')})`];
+  if (!REGISTRY[o.kind]) return [`unknown kind "${o.kind}".${didYouMean(o.kind, KINDS)} Kinds: ${KINDS.join(', ')}`];
   const v = {
-    item: (id, what) => { if (!itemIds.includes(id)) bad.push(`${what} "${id}" is not in items.json`); },
-    ability: (id, what) => { if (!abilityIds.includes(id)) bad.push(`"${what}" must be an ability`); },
+    item: (id, what) => { if (!itemIds.includes(id)) bad.push(`${what} "${id}" is not an item.${didYouMean(id, itemIds)} Items: ${itemIds.join(', ')}`); },
+    ability: (id, what) => { if (!abilityIds.includes(id)) bad.push(`"${what}" is "${id}", which is not an ability.${didYouMean(id, abilityIds)} Abilities: ${abilityIds.join(', ')}`); },
     problem: (text) => bad.push(text),
+    // Another object of the map, optionally of a kind that passes `want`.
+    object(id, what, want = null, wanted = '') {
+      if (!objects) return;
+      const other = objects.find((x) => x?.id === id);
+      if (!other) bad.push(`"${what}" is "${id}", which is not an object of this map.${didYouMean(id, objects.map((x) => x?.id).filter(Boolean))}`);
+      else if (want && !(REGISTRY[other.kind] && want(REGISTRY[other.kind]))) bad.push(`"${what}" is "${id}", a ${other.kind}; it must be ${wanted}`);
+    },
   };
   REGISTRY[o.kind].check?.(o, v);
-  for (const a of Object.keys(o.clues || {})) if (!abilityIds.includes(a)) bad.push(`clue for unknown ability "${a}"`);
+  for (const a of Object.keys(o.clues && typeof o.clues === 'object' ? o.clues : {})) if (!abilityIds.includes(a)) bad.push(`a clue for "${a}", which is not an ability.${didYouMean(a, abilityIds)}`);
   return bad;
 }
 
