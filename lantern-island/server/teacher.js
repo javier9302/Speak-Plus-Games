@@ -110,7 +110,7 @@ export function createTeacherCommands(G) {
       const p = player(room, m.p), name = cleanName(m.name);
       if (!p || !name) return;
       p.name = name;
-      send(p.ws, { t: 'joined', id: p.id, token: p.token, name: p.name, ci: p.ci, room: room.code, abilities: G.abilities.list, items: items.list });
+      send(p.ws, { t: 'joined', id: p.id, token: p.token, name: p.name, ci: p.ci, hero: p.hero, room: room.code, abilities: G.abilities.list, items: items.list });
       sendRoster(room); sendQueue(room);
     },
     kick(room, m) { G.kick(room, m.p); },
@@ -148,7 +148,7 @@ export function createTeacherCommands(G) {
 
     // ----- the group -----
     async star(room) {
-      if (!room.group) return;
+      if (!room.group || room.match) return;          // a match is not saved to the group (use the team points instead)
       const saved = await groups.addStar(room.group.id);
       if (saved) { room.group.island = saved.island; sendRoster(room); }
     },

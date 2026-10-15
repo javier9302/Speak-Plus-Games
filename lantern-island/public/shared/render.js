@@ -81,7 +81,7 @@ export function drawScene(g, scene, rect, view, players, time, extra = {}) {
   for (const p of list) {
     const frame = p.moving ? Math.floor(time * 8) % 4 : 0;
     g.globalAlpha = p.online === false ? 0.4 : p.stun ? 0.65 : 1;
-    g.drawImage(charSprite(p.ci, p.dir, frame), sx(p.x) - size / 2, sy(p.y) - Math.round(size * 15 / 16), size, size);
+    g.drawImage(charSprite(p.ci, p.dir, frame, p.hero), sx(p.x) - size / 2, sy(p.y) - Math.round(size * 15 / 16), size, size);
   }
   g.globalAlpha = 1;
 

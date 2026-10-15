@@ -3,7 +3,6 @@
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import WebSocket from 'ws';
 import { createApp } from '../server/index.js';
 import { solidAt } from '../server/world.js';
 import { loadAbilities, dealPreset, dealRandom } from '../server/abilities.js';
@@ -11,7 +10,9 @@ import { normalizeCard, pickCard, checkAnswer, publicCard } from '../server/card
 import { createFileStorage } from '../server/storage/file.js';
 import { createSupabaseStorage } from '../server/storage/supabase.js';
 import { copyStorage } from '../server/copy.js';
+import { HEROES } from '../public/shared/heroes.js';
 import { startFakeSupabase } from './fake-supabase.js';
+import { client } from './client.js';
 
 let passed = 0, failed = 0;
 function check(name, ok, detail = '') {
@@ -19,28 +20,6 @@ function check(name, ok, detail = '') {
   else { failed++; console.log(`  FAIL  ${name} ${detail}`); }
 }
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-
-// A test client: remembers the last message of each type, and can wait for one.
-function client(port) {
-  const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`);
-  const last = {}, waiting = [];
-  ws.on('message', (d) => {
-    const m = JSON.parse(d.toString());
-    last[m.t] = m;
-    for (let i = waiting.length - 1; i >= 0; i--) if (waiting[i].test(m)) waiting.splice(i, 1)[0].resolve(m);
-  });
-  ws.on('error', () => {});
-  return {
-    ws, last,
-    opened: new Promise((r) => ws.once('open', r)),
-    send: (m) => ws.send(JSON.stringify(m)),
-    next: (t, test = () => true, ms = 2000) => new Promise((resolve, reject) => {
-      const timer = setTimeout(() => reject(new Error(`timeout waiting for "${t}"`)), ms);
-      waiting.push({ test: (m) => m.t === t && test(m), resolve: (m) => { clearTimeout(timer); resolve(m); } });
-    }),
-    close: () => new Promise((r) => { ws.once('close', r); ws.close(); }),
-  };
-}
 
 async function main() {
   const dataDir = await fs.mkdtemp(path.join(os.tmpdir(), 'lantern-test-'));
@@ -90,14 +69,21 @@ async function main() {
   const room = await host.next('room');
   check('host gets a room code and a QR code', /^[A-Z]{4}$/.test(room.code) && room.qr.startsWith('data:image/png') && room.joinUrl.endsWith(`/phone/?room=${room.code}`));
   const phones = [];
+  const chosen = { Mika: 'pikachu', Ken: 'not-a-character' };
   for (const name of ['Mika', 'Ken', 'Yui']) {
     const c = client(app.port);
     await c.opened;
-    c.send({ t: 'join', room: room.code.toLowerCase(), name });
+    c.send({ t: 'join', room: room.code.toLowerCase(), name, hero: chosen[name] });
     c.me = await c.next('joined');
     phones.push(c);
   }
   await sleep(50);
+  check('a player joins as the character they chose', phones[0].me.hero === 'pikachu' && host.last.roster.players[0].hero === 'pikachu');
+  check('an unknown character becomes the islander', phones[1].me.hero === '' && phones[2].me.hero === '');
+  phones[1].send({ t: 'hero', id: 'totoro' });
+  await host.next('roster', (m) => m.players[1].hero === 'totoro');
+  check('a player changes character in the lobby', true);
+  check('every character drawing is 16x16 with known colors', HEROES.every((h) => h.art.length === 16 && h.art.every((r) => r.length === 16 && [...r].every((c) => c === '.' || c === 'k' || h.pal[c])) && !/[^.]/.test(h.art[0])));
   check('three players, three colors', host.last.roster.players.length === 3 && new Set(host.last.roster.players.map((p) => p.ci)).size === 3);
   const lost = client(app.port); await lost.opened;
   lost.send({ t: 'join', room: 'ZZZZ', name: 'Nobody' });
@@ -124,6 +110,9 @@ async function main() {
   const world = await phones[0].next('world');
   await host.next('state');
   const zone = app.rooms.rooms.get(room.code).zone;
+  phones[1].send({ t: 'hero', id: 'kirby' });
+  await sleep(50);
+  check('nobody changes character during a mission', app.rooms.rooms.get(room.code).players[1].hero === 'totoro');
   check('phones get the map', world.zone.w === 40 && world.zone.rows.length === 24 && host.last.roster.settings.view === 9);
   const pos = (id) => { const s = host.last.state.p.find((p) => p[0] === id); return { x: s[1], y: s[2], dir: s[3], moving: s[4] }; };
   const start = pos(phones[0].me.id);

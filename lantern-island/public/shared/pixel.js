@@ -1,4 +1,5 @@
 // All pixel art, drawn in code. Tiles and characters are 16x16.
+import { heroById } from './heroes.js';
 export const TILE = 16;
 export const PLAYER_COLORS = ['#e0485f', '#41a6f6', '#38b764', '#f4b41b', '#a05fd6', '#f08a3c'];
 const HAIR = ['#3a2a1e', '#1f1f2e', '#7a4a21', '#2b2b2b', '#5a3215', '#40304f'];
@@ -37,7 +38,10 @@ function shade(hex, f) {
 
 const sprites = new Map();
 // dir: 0 down, 1 left, 2 right, 3 up. frame: 0..3 of the walk cycle (0 = standing).
-export function charSprite(ci, dir, frame) {
+// `hero`: the character the student chose (heroes.js). Without one, the islander in the player's color.
+export function charSprite(ci, dir, frame, hero) {
+  const h = heroById(hero);
+  if (h) return heroSprite(h, dir, frame);
   const key = `${ci}/${dir}/${frame}`;
   if (sprites.has(key)) return sprites.get(key);
   const color = PLAYER_COLORS[ci % PLAYER_COLORS.length];
@@ -54,6 +58,32 @@ export function charSprite(ci, dir, frame) {
   });
   sprites.set(key, c);
   return c;
+}
+
+// A chosen character. It always faces the camera (mirrored when walking left), shows its back
+// when walking up, and walks with a little hop instead of moving its legs.
+function heroSprite(h, dir, frame) {
+  const hop = frame % 2, key = `hero/${h.id}/${dir}/${hop}`;
+  if (sprites.has(key)) return sprites.get(key);
+  const c = document.createElement('canvas');
+  c.width = c.height = TILE;
+  const g = c.getContext('2d');
+  h.art.forEach((row, y) => {
+    for (let x = 0; x < TILE; x++) {
+      let ch = row[dir === 1 ? TILE - 1 - x : x];
+      if (dir === 3 && y < h.back.rows) ch = h.back.swap[ch] || ch;
+      if (ch !== '.') { g.fillStyle = ch === 'k' ? OUTLINE : h.pal[ch]; g.fillRect(x, y - hop, 1, 1); }
+    }
+  });
+  sprites.set(key, c);
+  return c;
+}
+const heroUrls = new Map();
+// The character standing still, as an image for the phone's picker and the lobby list.
+export function heroUrl(hero, ci = 0) {
+  const key = `${hero || ''}/${ci}`;
+  if (!heroUrls.has(key)) heroUrls.set(key, charSprite(ci, 0, 0, hero).toDataURL());
+  return heroUrls.get(key);
 }
 
 // ---------- tiles ----------

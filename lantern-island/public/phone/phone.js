@@ -1,6 +1,7 @@
 // Phone: join, then walk with the joystick. The phone only sends its joystick; the server moves the character.
 import { connect, esc } from '../shared/net.js';
-import { PLAYER_COLORS, charSprite, iconUrl, itemUrl } from '../shared/pixel.js';
+import { PLAYER_COLORS, charSprite, heroUrl, iconUrl, itemUrl } from '../shared/pixel.js';
+import { HEROES, heroById } from '../shared/heroes.js';
 import { createScene, drawScene, fitCanvas, smooth } from '../shared/render.js';
 import { cardHtml, hintsHtml, speak, safeUrl } from '../shared/cardview.js';
 import { play, isMuted, setMuted } from '../shared/audio.js';
@@ -17,7 +18,8 @@ const store = {
 const tokenKey = (room) => `li-token-${room}-${slot}`;
 
 let roomCode = (params.get('room') || '').toUpperCase();
-let me = null;                    // { id, name, ci }
+let me = null;                    // { id, name, ci, hero }
+let hero = heroById(store.get(`li-hero-${slot}`))?.id || '';   // the character chosen on this phone ('' = the islander)
 let phase = 'lobby';
 let scene = null, viewTiles = 9;
 let wantJoin = false;             // true once the player pressed Join (or has a saved character)
@@ -43,6 +45,9 @@ let mon = null;                   // the monster. Only the Seer's phone ever get
 let beams = [];
 let coolUntil = 0;                // when the Slayer's power is charged again
 let myCount = 0;                  // how many items I carried at the last update (for the pick-up sound)
+let team = null;                  // competitive mode: { n, name, charge, sabotage, effect, ... } from the roster; null in the normal game
+let board = null;                 // the shared scoreboard: { phase, board: [{ n, team, score, progress, place }] }
+let effect = null;                // an effect on my room: { id, from, until (performance.now()) }
 
 const screens = ['join', 'wait', 'play', 'notice'];
 const show = (name) => screens.forEach((s) => { $('#' + s).hidden = s !== name; });
@@ -53,7 +58,7 @@ const socket = connect({
   onStatus: (up) => { $('#offline').hidden = up || !me; },
   onMessage(m) {
     if (m.t === 'joined') {
-      me = { id: m.id, name: m.name, ci: m.ci };
+      me = { id: m.id, name: m.name, ci: m.ci, hero: m.hero || '' };
       roomCode = m.room;
       defs = m.abilities;
       itemDefs = m.items;
@@ -61,9 +66,7 @@ const socket = connect({
       store.set('li-name', m.name);
       $('#me-name').textContent = $('#wait-name').textContent = m.name;
       $('#me-dot').style.background = PLAYER_COLORS[m.ci % PLAYER_COLORS.length];
-      const a = $('#avatar').getContext('2d');
-      a.clearRect(0, 0, 16, 16);
-      a.drawImage(charSprite(m.ci, 0, 0), 0, 0);
+      drawAvatar();
       keepAwake();
       showGame();
     } else if (m.t === 'roster') {
@@ -84,10 +87,29 @@ const socket = connect({
       $('#wait-text').textContent = m.phase === 'done' ? (m.result?.completed ? 'Mission complete! Great teamwork.' : 'The mission is over.') : 'You are in! Look at the big screen.';
       $('#wait-soft').textContent = m.phase === 'done' ? 'Look at the big screen.' : 'The game starts soon.';
       if (m.phase !== 'play') { $('#sheet').hidden = true; card = null; }
+      else $('#picker').hidden = true;
+      const mine = me && m.players.find((p) => p.id === me.id);
+      if (mine && (mine.hero || '') !== me.hero) { me.hero = mine.hero || ''; drawAvatar(); }
+      if (!$('#picker').hidden) renderPicker();      // show who took which character
       if (m.phase === 'done' && was !== 'done' && m.result?.completed) play('win');
       if (me && (m.players.find((p) => p.id === me.id)?.items.length || 0) > myCount) play('item');
       myCount = m.players.find((p) => p.id === me?.id)?.items.length || 0;
+      team = m.team || null;
+      syncEffect(team?.effect);
+      renderTeam();
       if (me) { showGame(); renderInventory(); newDeal(m); }
+    } else if (m.t === 'score:update') {
+      board = m;
+      renderTeam();
+    } else if (m.t === 'sabotage:start') {
+      syncEffect(m);
+      play('warn');
+    } else if (m.t === 'sabotage:end') {
+      syncEffect(null);
+      if (m.why === 'time') toast('The fog is gone!');
+    } else if (m.t === 'sabotage:sent') {
+      toast(`Fog sent to ${m.target}!`);
+      play('good');
     } else if (m.t === 'world') {
       scene = createScene(m.zone);
       reach = m.reach;
@@ -160,8 +182,45 @@ const socket = connect({
 });
 
 function sendJoin() {
-  socket.send({ t: 'join', room: roomCode, name: $('#name').value.trim() || store.get('li-name') || '', token: store.get(tokenKey(roomCode)) || undefined });
+  socket.send({ t: 'join', room: roomCode, name: $('#name').value.trim() || store.get('li-name') || '', hero, token: store.get(tokenKey(roomCode)) || undefined });
 }
+
+// ---------- choosing a character ----------
+// Before joining, the choice goes with the join message; after, it is sent at once (the server ignores it during a mission).
+// Two players may choose the same character: their names on the map tell them apart.
+const heroName = (id) => heroById(id)?.name || 'Islander';
+function drawAvatar() {
+  const a = $('#avatar').getContext('2d');
+  a.clearRect(0, 0, 16, 16);
+  if (me) a.drawImage(charSprite(me.ci, 0, 0, me.hero), 0, 0);
+  $('#pick-face').src = heroUrl(hero);
+  $('#pick-name').textContent = heroName(hero);
+}
+function renderPicker() {
+  const current = me ? me.hero : hero;
+  const takenBy = (id) => [...players.values()].filter((p) => p.id !== me?.id && (p.hero || '') === id).map((p) => p.name);
+  $('#pick-grid').innerHTML = [{ id: '', name: 'Islander', from: 'Lantern Island' }, ...HEROES].map((h) => {
+    const taken = takenBy(h.id);
+    return `<button type="button" class="hero ${h.id === current ? 'sel' : ''}" data-hero="${h.id}" role="option" aria-selected="${h.id === current}">
+      <img src="${heroUrl(h.id, me?.ci || 0)}" alt=""><b>${esc(h.name)}</b><small>${esc(h.from)}</small>
+      ${taken.length ? `<span class="taken">${esc(taken.join(', '))}</span>` : ''}</button>`;
+  }).join('');
+}
+function openPicker() { renderPicker(); $('#picker').hidden = false; $('#pick-grid .sel')?.scrollIntoView({ block: 'center' }); }
+$('#pick-open').addEventListener('click', openPicker);
+$('#pick-change').addEventListener('click', openPicker);
+$('#pick-done').addEventListener('click', () => { $('#picker').hidden = true; });
+$('#pick-grid').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-hero]');
+  if (!b) return;
+  hero = b.dataset.hero;
+  store.set(`li-hero-${slot}`, hero);
+  play('item');
+  if (me) { me.hero = hero; socket.send({ t: 'hero', id: hero }); }
+  drawAvatar();
+  renderPicker();
+});
+drawAvatar();
 function showGame() { show(phase === 'play' ? 'play' : 'wait'); }
 function leave(title, text) {
   store.del(tokenKey(roomCode));
@@ -309,6 +368,61 @@ $('#sheet-body').addEventListener('click', (e) => {
   play('tap');
 });
 $('#open-notes').addEventListener('click', openNotes);
+
+// ---------- competitive mode: team, scoreboard, sabotage ----------
+// How each effect looks on the phone. The server decides when it starts and ends (server/sabotage.js).
+const EFFECT_VIEWS = {
+  fog: { title: (from) => `${from} sent you fog!`, show() { $('#effect').hidden = false; }, hide() { $('#effect').hidden = true; } },
+};
+// The server's word on my room's effect: { id, from, left } or null. Called on every roster and on start/end.
+function syncEffect(e) {
+  const view = e && EFFECT_VIEWS[e.id];
+  if (effect && (!view || effect.id !== e.id)) { EFFECT_VIEWS[effect.id]?.hide(); effect = null; }
+  if (!view) return;
+  effect = { id: e.id, from: e.from, until: performance.now() + e.left };
+  $('#effect-from').textContent = view.title(e.from);
+  view.show();
+  tickEffect();
+}
+// The countdown only shows the time left; the effect goes away when the server says so.
+function tickEffect() { if (effect) $('#effect-left').textContent = Math.max(0, Math.ceil((effect.until - performance.now()) / 1000)); }
+setInterval(tickEffect, 250);
+
+const ordinal = (n) => `${n}${['th', 'st', 'nd', 'rd'][(n % 100 > 10 && n % 100 < 14) || n % 10 > 3 ? 0 : n % 10]}`;
+function renderTeam() {
+  $('#team-bar').hidden = !team;
+  $('#wait-team').hidden = !team;
+  if (!team) { $('#board-list').hidden = true; return; }
+  $('#wait-team').textContent = $('#team-name').textContent = team.name;
+  const rows = board?.board || [], mine = rows.find((r) => r.n === team.n);
+  $('#team-score').textContent = mine ? `${mine.score} pts${mine.place ? ' · ' + ordinal(mine.place) : ''}` : '';
+  const others = rows.filter((r) => r.n !== team.n && !r.place);
+  $('#fog-send').hidden = !(team.sabotage && team.charge > 0 && phase === 'play' && !mine?.place && others.length);
+  // Finished teams first, in their order; then the others by score.
+  const sorted = [...rows].sort((a, b) => (a.place || 99) - (b.place || 99) || b.score - a.score);
+  $('#board-list').innerHTML = sorted.map((r) => {
+    const p = r.progress, pct = p.goalNeed ? Math.round((100 * p.goal) / p.goalNeed) : 0;
+    return `<li class="${r.n === team.n ? 'me' : ''}"><span class="place">${r.place ? ordinal(r.place) : ''}</span><span>${esc(r.team)}</span><span>${r.score}</span>
+      <span class="bar" title="${p.goal} of ${p.goalNeed}, ${p.clues} of ${p.cluesTotal} clues"><i style="width:${pct}%"></i></span></li>`;
+  }).join('');
+}
+$('#board-toggle').addEventListener('click', () => {
+  const open = $('#board-list').hidden;
+  $('#board-list').hidden = !open;
+  $('#board-toggle').setAttribute('aria-expanded', String(open));
+});
+// Spend the charge. With one other team it goes straight there; with more, the player picks.
+$('#fog-send').addEventListener('click', () => {
+  const others = (board?.board || []).filter((r) => r.n !== team.n && !r.place);
+  if (others.length === 1) return socket.send({ t: 'sabotage:send', target: others[0].n, effect: 'fog' });
+  openSheet(`<h3>Send fog</h3><h2>Which team?</h2><div class="targets">${others.map((r) => `<button type="button" class="big" data-fog="${r.n}">${esc(r.team)}</button>`).join('')}</div>`, 'Cancel');
+});
+$('#sheet-body').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-fog]');
+  if (!b) return;
+  socket.send({ t: 'sabotage:send', target: Number(b.dataset.fog), effect: 'fog' });
+  $('#sheet').hidden = true;
+});
 
 let toastTimer;
 function toast(text) {

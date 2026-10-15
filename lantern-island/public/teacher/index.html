@@ -25,10 +25,30 @@
   <section id="tab-live" hidden>
     <form id="watch" class="row panel slim">
       <strong>Room</strong>
-      <input class="field code" id="watch-room" maxlength="4" placeholder="ABCD" aria-label="Room code" autocapitalize="characters">
+      <input class="field code" id="watch-room" maxlength="4" placeholder="ABCD" aria-label="Room or match code" autocapitalize="characters">
       <button class="btn btn-small" type="submit">Watch</button>
       <span class="muted small grow" id="live-status">Type the room code from the host screen.</span>
     </form>
+
+    <!-- Competitive mode: every team at a glance, and the controls for all of them or one. -->
+    <div id="match-box" class="panel slim" hidden>
+      <div class="row">
+        <h2 class="grow" id="match-title">Teams</h2>
+        <button class="btn btn-small btn-primary" data-match="match:start" type="button">Start all</button>
+        <button class="btn btn-small" data-match="match:pause" data-on="1" type="button">Pause all</button>
+        <button class="btn btn-small" data-match="match:pause" data-on="0" type="button">Resume all</button>
+        <button class="btn btn-small btn-danger" data-match="match:end" type="button">End all</button>
+        <button class="btn btn-small" data-match="match:lobby" type="button">Back to lobby</button>
+        <label class="check"><input type="checkbox" id="sabotage-on"> Sabotage</label>
+      </div>
+      <div class="table-wrap">
+        <table class="teams-table">
+          <thead><tr><th>Team</th><th>Players</th><th>Status</th><th>Score</th><th>Progress</th><th>Charge</th><th>Effect</th><th>Points</th><th>Room</th></tr></thead>
+          <tbody id="match-teams"></tbody>
+        </table>
+      </div>
+      <p class="muted small" id="match-help"></p>
+    </div>
 
     <div id="live-body" hidden>
       <div class="live-grid">

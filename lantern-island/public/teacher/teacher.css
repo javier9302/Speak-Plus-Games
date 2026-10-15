@@ -84,3 +84,14 @@ label.check input { width: 20px; height: 20px; accent-color: var(--indigo); }
 .group label { display: flex; flex-direction: column; gap: 4px; font-size: 14px; font-weight: 700; }
 .stats { display: flex; flex-wrap: wrap; gap: 6px 18px; }
 form.panel.slim.row { flex-direction: row; }
+
+/* Competitive mode: the teams table */
+.table-wrap { overflow-x: auto; }
+.teams-table { width: 100%; border-collapse: collapse; font-size: 16px; }
+.teams-table th { text-align: left; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 6px 8px; border-bottom: 1px solid var(--line); }
+.teams-table td { padding: 8px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.teams-table tr.watched td { background: rgba(157, 180, 224, .18); }
+.teams-table td .row { flex-wrap: nowrap; gap: 4px; }
+.teams-table .btn-small { min-height: 44px; }
+.teams-table input { width: 4.5em; }
+.teams-table .score { font-size: 22px; font-weight: 800; }

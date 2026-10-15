@@ -49,7 +49,7 @@ export async function createApp(over = {}) {
   });
   const port = server.address().port;
   const network = createNetwork(config, port);
-  const rooms = createRooms({ config, groups, zones, abilities, items, cards, missions, monsterCfg: await loadMonster(config.contentDir), network });
+  const rooms = createRooms({ config, groups, zones, abilities, items, cards, missions, monsterCfg: await loadMonster(config.contentDir), network, compete: over.compete, clock: over.clock });
 
   live.sheets = createSheets({ zones, abilities, items, missions, rooms });
 

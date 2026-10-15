@@ -21,6 +21,9 @@
   <label>Your name
     <input id="name" maxlength="12" placeholder="Name" required>
   </label>
+  <button class="pick-btn" id="pick-open" type="button">
+    <img id="pick-face" alt=""><span><small>Your character</small><b id="pick-name"></b></span><span class="pick-go" aria-hidden="true">›</span>
+  </button>
   <p id="join-error" class="error" role="alert" hidden></p>
   <button class="big" type="submit">Join</button>
 </form>
@@ -30,7 +33,18 @@
   <canvas id="avatar" width="16" height="16"></canvas>
   <h1 id="wait-name"></h1>
   <p id="wait-text">You are in! Look at the big screen.</p>
+  <p class="team-tag" id="wait-team" hidden></p>
   <p class="soft" id="wait-soft">The game starts soon.</p>
+  <button class="chip" id="pick-change" type="button">Change character</button>
+</section>
+
+<!-- CHARACTER PICKER: on the join screen, and while waiting for the teacher -->
+<section id="picker" hidden>
+  <div class="picker-card">
+    <h2>Choose your character</h2>
+    <div id="pick-grid" role="listbox" aria-label="Characters"></div>
+    <button class="big" id="pick-done" type="button">Done</button>
+  </div>
 </section>
 
 <!-- PLAY -->
@@ -43,8 +57,18 @@
     <button class="chip" id="open-notes" type="button">Clues <b id="notes-count" hidden>0</b></button>
     <button class="chip" id="open-role" type="button">Role</button>
   </header>
+  <!-- Competitive mode: my team, the scores (tap to open), and fog to send when the team has a charge -->
+  <div id="team-bar" hidden>
+    <button type="button" id="board-toggle" aria-expanded="false" aria-controls="board-list">
+      <b id="team-name"></b><span id="team-score"></span><span class="caret" aria-hidden="true">▾</span>
+    </button>
+    <button type="button" class="chip fog-btn" id="fog-send" hidden>Send fog</button>
+  </div>
+  <ol id="board-list" hidden></ol>
   <div id="stage">
     <canvas id="view"></canvas>
+    <!-- An effect another team sent (fog). It covers the map; moving and abilities still work. -->
+    <div id="effect" hidden><strong id="effect-from"></strong><span id="effect-left"></span></div>
     <div id="toast" hidden></div>
     <div id="warn" hidden></div>
     <div id="stunned" hidden></div>

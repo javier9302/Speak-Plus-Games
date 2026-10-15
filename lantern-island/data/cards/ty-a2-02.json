@@ -7,13 +7,17 @@
     "past"
   ],
   "prompt": "Write the past tense of 'buy'.",
-  "accepted": [
-    "bought"
-  ],
-  "allowTypos": false,
   "hints": [
     "It is irregular.",
     "It ends in '-ought'.",
     "b-o-u-g-h-t"
-  ]
+  ],
+  "explanation": "",
+  "points": 1,
+  "media": {},
+  "accepted": [
+    "bought"
+  ],
+  "allowTypos": false,
+  "lastUsed": "2026-10-15T13:38:58.527Z"
 }

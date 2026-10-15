@@ -140,4 +140,4 @@ load();
 document.addEventListener('tab', (e) => { if (e.detail === 'groups') load(); });
 
 // Open on the live game when a room code came with the link, else on the last tab used.
-showTab(new URLSearchParams(location.search).get('room') ? 'live' : sessionStorage.getItem('li-tab') || 'groups');
+showTab(new URLSearchParams(location.search).get('room') || new URLSearchParams(location.search).get('match') ? 'live' : sessionStorage.getItem('li-tab') || 'groups');

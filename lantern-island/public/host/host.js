@@ -1,12 +1,15 @@
 // Host screen: the lobby (group, QR code, players) and the shared map.
+// In a match (competitive mode) it shows instead each team's join code, then the scoreboard. Never a map:
+// every team can see this screen.
 import { connect, api, getPin, askPin, esc } from '../shared/net.js';
-import { PLAYER_COLORS } from '../shared/pixel.js';
+import { PLAYER_COLORS, heroUrl } from '../shared/pixel.js';
 import { createScene, drawScene, fitCanvas, smooth } from '../shared/render.js';
 import { play, isMuted, setMuted } from '../shared/audio.js';
 
 const $ = (s) => document.querySelector(s);
 const ROOM_KEY = 'li-host-room';        // lets a reloaded host page keep its room
 const GROUP_KEY = 'li-last-group';
+const MATCH_KEY = 'li-host-match';      // the same for a match: { match, matchKey }
 
 let room = null;                        // { code, hostKey, joinUrl, ... }
 let roster = { phase: 'lobby', group: null, players: [] };
@@ -18,17 +21,34 @@ let beams = [];                         // the monster's shots, for a moment aft
 let things = [];                        // objects on the map and their state
 let rosterAt = 0;                       // when the last roster arrived (the clock runs on from there)
 
+let match = null;                       // the match this screen shows, or null in the normal game
+let scores = null;                      // the shared scoreboard
 const saved = () => { try { return JSON.parse(sessionStorage.getItem(ROOM_KEY) || '{}'); } catch { return {}; } };
+const savedMatch = () => { try { return JSON.parse(sessionStorage.getItem(MATCH_KEY) || '{}'); } catch { return {}; } };
+const hostHello = (s = socket) => s.send({ t: 'host', pin: getPin(), room: saved().code, hostKey: saved().hostKey, ...savedMatch() });
 
 const socket = connect({
-  onOpen: (s) => s.send({ t: 'host', pin: getPin(), room: saved().code, hostKey: saved().hostKey }),
+  onOpen: (s) => hostHello(s),
   onStatus: (up) => { $('#offline').hidden = up; },
   onMessage(m) {
     if (m.t === 'room') {
       room = m;
       try { sessionStorage.setItem(ROOM_KEY, JSON.stringify({ code: m.code, hostKey: m.hostKey })); } catch { /* private mode */ }
+      match = null;
+      $('#match').hidden = true;
       renderRoom();
+      renderLobby();
       pickSavedGroup();
+    } else if (m.t === 'match') {
+      if (!match) scores = null;
+      match = m;
+      try { sessionStorage.setItem(MATCH_KEY, JSON.stringify({ match: m.id, matchKey: m.key })); } catch { /* private mode */ }
+      renderMatch();
+    } else if (m.t === 'score:update') {
+      if (scores && m.phase === 'done' && scores.phase === 'play') play('win');
+      else if (scores && m.board.some((e, i) => e.place && !scores.board[i]?.place)) play('win');
+      scores = m;
+      renderMatch();
     } else if (m.t === 'roster') {
       if (m.phase === 'lobby' && m.players.length > roster.players.length) play('join');
       if (m.phase === 'done' && roster.phase === 'play') play(m.result?.completed ? 'win' : 'bad');
@@ -56,8 +76,9 @@ const socket = connect({
       fx.push({ by: m.by, a: m.a, until: performance.now() / 1000 + 1.4 });
       play(m.a === 'heal' ? 'heal' : 'tap');
     } else if (m.t === 'error') {
-      if (m.code === 'pin') { if (askPin()) socket.send({ t: 'host', pin: getPin() }); return; }
+      if (m.code === 'pin') { if (askPin()) hostHello(); return; }
       showError(m.msg);
+      if (match) { $('#m-error').textContent = m.msg; $('#m-error').hidden = false; }
     }
   },
 });
@@ -65,6 +86,8 @@ const socket = connect({
 // ---------- lobby ----------
 function renderRoom() {
   $('#qr').src = room.qr;
+  const max = room.compete?.maxRooms || 4;
+  if ($('#team-count').options.length !== max) $('#team-count').innerHTML = Array.from({ length: max }, (_, i) => `<option${i === 1 ? ' selected' : ''}>${i + 1}</option>`).join('');
   $('#code').textContent = room.code;
   $('#play-code').textContent = room.code;
   $('#teacher-link').href = `../teacher/?room=${room.code}`;
@@ -76,6 +99,7 @@ function renderRoom() {
 }
 
 function renderLobby() {
+  if (match) return;
   const playing = roster.phase !== 'lobby';             // the map stays up for the mission-complete screen
   $('#lobby').hidden = playing;
   $('#play').hidden = !playing;
@@ -96,6 +120,7 @@ function renderLobby() {
   $('#players-empty').hidden = n > 0;
   $('#players').innerHTML = roster.players.map((p) => `
     <li class="${p.online ? '' : 'off'}">
+      <img class="face" src="${heroUrl(p.hero, p.ci)}" alt="">
       <span class="dot" style="background:${PLAYER_COLORS[p.ci % PLAYER_COLORS.length]}"></span>
       <span class="name">${esc(p.name)}</span>
       ${p.online ? '' : '<span class="state">away</span>'}
@@ -145,8 +170,9 @@ function showError(text) {
 
 async function loadGroups() {
   try { groups = await api('/groups'); } catch (e) { showError(e.message); return; }
-  $('#group').innerHTML = '<option value="">Choose a group…</option>' +
+  $('#group').innerHTML = $('#m-group').innerHTML = '<option value="">Choose a group…</option>' +
     groups.map((g) => `<option value="${esc(g.id)}">${esc(g.name)}</option>`).join('');
+  if (match?.group) $('#m-group').value = match.group.id;
   if (roster.group) $('#group').value = roster.group.id;
   pickSavedGroup();
 }
@@ -197,6 +223,67 @@ $('#test-player').addEventListener('click', () => {
   if (!room) return;
   testN++;
   window.open(`/phone/?room=${room.code}&p=${Date.now() % 100000}${testN}`, '_blank', `width=400,height=760,left=${40 + testN * 60},top=60`);
+});
+
+// ---------- a match: several teams ----------
+const ordinal = (n) => `${n}${['th', 'st', 'nd', 'rd'][(n % 100 > 10 && n % 100 < 14) || n % 10 > 3 ? 0 : n % 10]}`;
+function renderMatch() {
+  if (!match) return;
+  $('#lobby').hidden = $('#play').hidden = true;
+  $('#match').hidden = false;
+  $('#match-teacher').href = `../teacher/?match=${match.id}`;
+  const net = match.network;
+  $('#match-net').hidden = net.ok;
+  if (!net.ok) $('#match-net').textContent = 'No network found. Connect this computer to Wi-Fi or to a phone hotspot. The QR codes will update by itself.';
+  $('#m-url').textContent = match.teams[0] ? `No camera? Open ${match.teams[0].joinUrl.replace(/^https?:\/\//, '').replace(/\/phone\/.*$/, '')} and type your team's code.` : '';
+  const lobby = match.phase === 'lobby';
+  $('#match-setup').hidden = $('#teams').hidden = !lobby;
+  $('#scores-wrap').hidden = lobby;
+  $('#m-lobby').hidden = match.phase !== 'done';          // never one click away from stopping every team mid-game
+  if (match.group && $('#m-group').value !== match.group.id) $('#m-group').value = match.group.id;
+  $('#m-teams').innerHTML = Array.from({ length: match.max }, (_, i) => `<option${i + 1 === match.teams.length ? ' selected' : ''}>${i + 1}</option>`).join('');
+  const joined = match.teams.filter((t) => t.players.length);
+  const small = joined.find((t) => t.players.length < 2);
+  $('#m-start').disabled = !match.group || !joined.length || !!small;
+  $('#m-start').textContent = !match.group ? 'Choose a group to start' : !joined.length ? 'Waiting for players' : small ? `${small.name}: waiting for 2 players` : 'Start the match';
+  if (!$('#m-start').disabled) $('#m-error').hidden = true;
+  $('#teams').innerHTML = match.teams.map((t) => `
+    <article class="panel team-card">
+      <h2>${esc(t.name)}</h2>
+      <img class="qr" src="${t.qr}" alt="QR code to join ${esc(t.name)}">
+      <span class="tcode">${esc(t.code)}</span>
+      <span class="muted">${t.players.length} of ${match.roomSize}</span>
+      <ul class="players">${t.players.map((p) => `
+        <li class="${p.online ? '' : 'off'}"><img class="face" src="${heroUrl(p.hero, p.ci)}" alt=""><span class="name">${esc(p.name)}</span>
+        <button type="button" data-kick="${esc(p.id)}" data-n="${t.n}" aria-label="Remove ${esc(p.name)}">✕</button></li>`).join('')}</ul>
+    </article>`).join('');
+  // The scoreboard: finished teams first in their order, then the others by score.
+  const rows = [...(scores?.board || [])].sort((a, b) => (a.place || 99) - (b.place || 99) || b.score - a.score);
+  $('#scores').innerHTML = rows.map((r) => {
+    const p = r.progress, pct = p.goalNeed ? Math.round((100 * p.goal) / p.goalNeed) : 0;
+    return `<li class="${r.place === 1 ? 'first' : ''}"><span class="place">${r.place ? ordinal(r.place) : ''}</span><span class="name">${esc(r.team)}</span><span class="pts">${r.score}</span>
+      <span class="bar"><span><i style="width:${pct}%"></i></span>${p.goal} of ${p.goalNeed} · ${p.clues} of ${p.cluesTotal} clues</span></li>`;
+  }).join('');
+}
+$('#make-match').addEventListener('click', () => socket.send({ t: 'match:create', teams: Number($('#team-count').value) }));
+$('#m-teams').addEventListener('change', (e) => socket.send({ t: 'match:teams', teams: Number(e.target.value) }));
+$('#m-group').addEventListener('change', (e) => {
+  if (!e.target.value) return;
+  try { localStorage.setItem(GROUP_KEY, e.target.value); } catch { /* private mode */ }
+  socket.send({ t: 'match:group', id: e.target.value });
+});
+$('#m-start').addEventListener('click', () => socket.send({ t: 'match:start' }));
+$('#m-lobby').addEventListener('click', () => socket.send({ t: 'match:lobby' }));
+$('#m-full').addEventListener('click', () => { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen?.(); });
+$('#teams').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-kick]');
+  if (b) socket.send({ t: 'match:kick', n: Number(b.dataset.n), id: b.dataset.kick });
+});
+// Back to the normal game: this screen's own room again. The match goes away once nobody uses it.
+$('#match-leave').addEventListener('click', () => {
+  try { sessionStorage.removeItem(MATCH_KEY); } catch { /* private mode */ }
+  match = null; scores = null;
+  hostHello();
 });
 
 // ---------- map ----------

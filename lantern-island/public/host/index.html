@@ -52,6 +52,15 @@
         <p class="muted small" id="players-empty">Scan the code, type your name, and you appear here.</p>
       </div>
 
+      <div class="panel">
+        <span class="eyebrow">Compete</span>
+        <p class="muted small">Teams play the same island in separate rooms and race each other. Each team joins with its own code. This screen then shows only the codes and the scores, never a team's map.</p>
+        <div class="row">
+          <label class="row">Teams <select class="field" id="team-count" aria-label="Number of teams"></select></label>
+          <button class="btn btn-small" id="make-match" type="button">Create teams</button>
+        </div>
+      </div>
+
       <p class="error" id="error" role="alert" hidden></p>
       <button class="btn btn-primary btn-big" id="start" type="button" disabled>Start</button>
       <p class="muted small">Start plays a quick mission made for the group's level. To choose a mission, use the Teacher panel.</p>
@@ -83,6 +92,34 @@
       <span id="done-restore"></span>
       <div class="stars" id="done-stars" aria-hidden="true"></div>
       <dl id="done-stats"></dl>
+    </div>
+  </div>
+</section>
+
+<!-- MATCH: several teams in separate rooms. Everybody sees this screen, so: join codes and scores only. -->
+<section id="match" hidden>
+  <header class="top">
+    <div class="logo">speak<svg viewBox="0 0 40 40" aria-hidden="true"><g transform="rotate(12 20 20)"><line x1="20" y1="6" x2="20" y2="34" stroke="#E8483B" stroke-width="8.5" stroke-linecap="round"/><line x1="6" y1="20" x2="34" y2="20" stroke="#E8483B" stroke-width="8.5" stroke-linecap="round"/></g></svg></div>
+    <h1>Lantern Island · Teams</h1>
+    <span class="spacer"></span>
+    <button class="btn btn-small mute" type="button">Sound: on</button>
+    <a class="btn btn-small" id="match-teacher" href="../teacher/" target="_blank" rel="noopener">Teacher panel</a>
+    <button class="btn btn-small" id="match-leave" type="button">Play together instead</button>
+  </header>
+  <p class="warn" id="match-net" hidden></p>
+  <div class="panel row wrap" id="match-setup">
+    <label class="row">Group <select class="field" id="m-group" aria-label="Group"></select></label>
+    <label class="row">Teams <select class="field" id="m-teams" aria-label="Number of teams"></select></label>
+    <span class="muted small grow" id="m-url"></span>
+    <button class="btn btn-primary" id="m-start" type="button" disabled>Start the match</button>
+  </div>
+  <p class="error" id="m-error" role="alert" hidden></p>
+  <div class="teams" id="teams"></div>
+  <div id="scores-wrap" hidden>
+    <ol class="scores" id="scores"></ol>
+    <div class="row">
+      <button class="btn" id="m-lobby" type="button">Back to the team lobby</button>
+      <button class="btn" id="m-full" type="button">Full screen</button>
     </div>
   </div>
 </section>

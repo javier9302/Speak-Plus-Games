@@ -24,6 +24,7 @@
 .players li { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 4px 6px 4px 14px; border: 2px solid var(--line); border-radius: 14px; font-size: 22px; font-weight: 700; }
 .players li.off { opacity: .5; }
 .players .dot { width: 18px; height: 18px; border-radius: 50%; flex: none; border: 2px solid #1a1c2c; }
+.players .face { width: 40px; height: 40px; image-rendering: pixelated; flex: none; }
 .players .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .players .state { font-size: 13px; font-weight: 400; color: var(--muted); }
 .players button { width: 44px; height: 44px; border: 0; background: none; border-radius: 10px; font-size: 20px; color: var(--muted); }
@@ -67,3 +68,23 @@
 .goal { flex: 0 1 auto; min-width: 0; }
 #goal-text { overflow: hidden; text-overflow: ellipsis; }
 @media (max-width: 1100px) { .mission, .bar .logo { display: none; } }
+
+/* Match: team cards with their join codes, then the scoreboard. Big enough to read from the back of the room. */
+#match { min-height: 100%; padding: 20px 28px 28px; display: flex; flex-direction: column; gap: 18px; max-width: 1400px; margin: 0 auto; }
+.wrap { flex-wrap: wrap; }
+.teams { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+.team-card { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; }
+.team-card h2 { font-size: 26px; }
+.team-card img.qr { width: 100%; max-width: 230px; aspect-ratio: 1; image-rendering: pixelated; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+.team-card .tcode { font-size: 48px; font-weight: 800; letter-spacing: .12em; line-height: 1; font-variant-numeric: tabular-nums; }
+.team-card .players { width: 100%; grid-template-columns: 1fr; }
+.team-card .players li { font-size: 18px; min-height: 44px; }
+.scores { list-style: none; margin: 0 0 16px; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.scores li { display: grid; grid-template-columns: 90px minmax(0, 1fr) 140px; grid-template-areas: "place name score" "place bar bar"; align-items: center; gap: 6px 18px; padding: 16px 24px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); }
+.scores .place { grid-area: place; font-size: 40px; font-weight: 800; color: var(--indigo); }
+.scores .name { grid-area: name; font-size: 34px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.scores .pts { grid-area: score; font-size: 40px; font-weight: 800; text-align: right; font-variant-numeric: tabular-nums; }
+.scores .bar { grid-area: bar; display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 18px; }
+.scores .bar span { flex: 1; height: 14px; border-radius: 7px; background: var(--line); overflow: hidden; }
+.scores .bar i { display: block; height: 100%; background: var(--sky); }
+.scores li.first { border: 3px solid var(--vermilion); }

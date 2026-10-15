@@ -26,6 +26,26 @@ input {
 .error { color: #ffb4a8; font-weight: 700; }
 #avatar { width: 128px; height: 128px; image-rendering: pixelated; }
 
+/* Choosing a character */
+.pick-btn { font: inherit; width: 100%; max-width: 320px; min-height: 72px; display: flex; align-items: center; gap: 12px; padding: 6px 16px 6px 8px; border-radius: 14px; border: 3px solid #9DB4E0; background: #1c2547; color: #F7F4EE; text-align: left; }
+.pick-btn img { width: 56px; height: 56px; image-rendering: pixelated; flex: none; }
+.pick-btn span:not(.pick-go) { flex: 1; display: flex; flex-direction: column; }
+.pick-btn small { font-size: 14px; color: #aeb8d3; }
+.pick-btn b { font-size: 20px; }
+.pick-go { font-size: 32px; line-height: 1; color: #9DB4E0; }
+#picker { position: fixed; inset: 0; z-index: 4; background: rgba(10, 14, 32, .92); display: flex; align-items: center; justify-content: center; padding: 12px; }
+.picker-card { width: 100%; max-width: 440px; max-height: 100%; display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 20px; background: #F7F4EE; color: #1F2F5C; }
+.picker-card h2 { margin: 0; font-size: 22px; text-align: center; }
+.picker-card .big { max-width: none; flex: none; }
+#pick-grid { overflow-y: auto; touch-action: pan-y; display: grid; grid-template-columns: repeat(3, 1fr); grid-auto-rows: max-content; gap: 8px; padding: 2px; }
+.hero { font: inherit; min-height: 44px; padding: 8px 4px; border-radius: 14px; border: 3px solid #d6dbe8; background: #fff; color: #1F2F5C; display: flex; flex-direction: column; align-items: center; gap: 2px; line-height: 1.15; }
+.hero img { width: 64px; height: 64px; image-rendering: pixelated; flex: none; }
+.hero b { font-size: 15px; }
+.hero small { font-size: 12px; color: #4A5578; }
+.hero .taken { font-size: 12px; font-weight: 700; color: #1F2F5C; background: #9DB4E0; border-radius: 999px; padding: 0 8px; }
+.hero.sel { border-color: #E8483B; background: #fff1ef; }
+.hero:active { transform: scale(.96); }
+
 #play { height: 100%; display: flex; flex-direction: column; }
 #play header { display: flex; align-items: center; gap: 5px; padding: 6px 8px; min-height: 52px; }
 #me-name { min-width: 2em; }
@@ -100,4 +120,28 @@ input {
 .clue .from { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; color: #4A5578; }
 .clue .from img { width: 20px; height: 20px; image-rendering: pixelated; }
 
+/* Competitive mode */
+.team-tag { font-weight: 800; font-size: 20px; color: #1a1c2c; background: #9DB4E0; border-radius: 999px; padding: 4px 16px; }
+#team-bar { display: flex; align-items: center; gap: 6px; padding: 0 8px 4px; }
+#board-toggle { font: inherit; flex: 1; min-width: 0; min-height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 12px; border-radius: 12px; border: 2px solid #3a4674; background: #1c2547; color: #F7F4EE; text-align: left; }
+#team-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#team-score { color: #ffd166; font-weight: 700; white-space: nowrap; }
+.caret { margin-left: auto; transition: transform .15s; }
+#board-toggle[aria-expanded="true"] .caret { transform: rotate(180deg); }
+.fog-btn { background: #b98cf0; border-color: #b98cf0; color: #1a1c2c; }
+#board-list { list-style: none; margin: 0 8px 6px; padding: 6px 10px; border-radius: 12px; background: #1c2547; display: flex; flex-direction: column; gap: 6px; }
+#board-list li { display: grid; grid-template-columns: 2.2em 1fr auto; align-items: center; gap: 2px 8px; font-size: 15px; }
+#board-list li.me { color: #ffd166; font-weight: 700; }
+#board-list .place { font-weight: 800; }
+#board-list .bar { grid-column: 2 / 4; height: 6px; border-radius: 3px; background: #3a4674; overflow: hidden; }
+#board-list .bar i { display: block; height: 100%; background: #9DB4E0; }
+#effect { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 16px; text-align: center;
+  background: radial-gradient(circle at 30% 40%, #e6e9f2, #b9c0d4 60%, #9aa3bb); color: #1a1c2c; animation: drift 6s ease-in-out infinite alternate; background-size: 160% 160%; }
+#effect strong { font-size: 22px; }
+#effect span { font-size: 40px; font-weight: 800; font-variant-numeric: tabular-nums; }
+@keyframes drift { from { background-position: 0% 0%; } to { background-position: 100% 60%; } }
+@media (prefers-reduced-motion: reduce) { #effect { animation: none; } }
+
 #offline { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 8px); left: 50%; transform: translateX(-50%); padding: 8px 18px; border-radius: 999px; background: #E8483B; color: #fff; font-weight: 700; z-index: 5; }
+.targets { display: flex; flex-direction: column; gap: 8px; }
+.targets .big { max-width: none; }

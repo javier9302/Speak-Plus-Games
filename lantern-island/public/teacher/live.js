@@ -9,7 +9,12 @@ const $ = (s) => document.querySelector(s);
 const LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1'];
 const TYPE = { choice: 'Choice', typed: 'Typed answer', spelling: 'Spelling', code: 'Code card (you check)', link: 'Link (through a helper)', courier: 'Courier (a letter)' };
 
-let watching = (new URLSearchParams(location.search).get('room') || sessionStorage.getItem('li-watch') || '').toUpperCase();
+const params = new URLSearchParams(location.search);
+const stored = (k) => { try { return sessionStorage.getItem(k) || ''; } catch { return ''; } };
+let watching = (params.get('room') || (params.get('match') ? '' : stored('li-watch')) || '').toUpperCase();
+// Competitive mode: the match this panel follows (all its teams), and the overview the server sends.
+let matchId = (params.get('match') || (params.get('room') ? '' : stored('li-watch-match')) || '').toUpperCase();
+let match = null, matchAt = 0, team = null;
 let defs = { abilities: [], items: [] };
 let roster = null, queue = null, scene = null, things = [];
 const players = new Map();
@@ -20,13 +25,20 @@ let notesFor = null;               // the group whose notes are in the box
 
 const showError = (text) => { $('#error').textContent = text || ''; $('#error').hidden = !text; };
 const cmd = (c, extra = {}) => socket.send({ t: 'cmd', c, ...extra });
-const hello = () => { if (watching) socket.send({ t: 'teacher', pin: getPin(), room: watching }); };
+const hello = () => { if (watching || matchId) socket.send({ t: 'teacher', pin: getPin(), room: watching, match: matchId || undefined }); };
 
 const socket = connect({
   onOpen: hello,
   onStatus: (up) => { if (!up && watching) $('#live-status').textContent = 'Connection lost. Reconnecting…'; },
   onMessage(m) {
-    if (m.t === 'watching') { defs = m; showError(''); $('#live-body').hidden = false; }
+    if (m.t === 'watching') {
+      defs = m; showError(''); $('#live-body').hidden = false;
+      watching = m.room; matchId = m.match || ''; team = m.team || null;
+      if (!matchId) { match = null; renderMatch(); }
+      try { sessionStorage.setItem('li-watch', watching); sessionStorage.setItem('li-watch-match', matchId); } catch { /* private mode */ }
+      $('#watch-room').value = matchId || watching;
+    }
+    else if (m.t === 'match') { match = m; matchAt = performance.now(); renderMatch(); }
     else if (m.t === 'roster') {
       roster = m;
       const ids = new Set(m.players.map((p) => p.id));
@@ -47,13 +59,74 @@ const socket = connect({
   },
 });
 
-$('#watch-room').value = watching;
+$('#watch-room').value = matchId || watching;
 $('#watch').addEventListener('submit', (e) => {
   e.preventDefault();
+  // A room code or a match code: the server works out which.
   watching = $('#watch-room').value.trim().toUpperCase();
-  try { sessionStorage.setItem('li-watch', watching); } catch { /* private mode */ }
+  matchId = '';
   hello();
 });
+
+// ---------- competitive mode: every team ----------
+const ordinal = (n) => `${n}${['th', 'st', 'nd', 'rd'][(n % 100 > 10 && n % 100 < 14) || n % 10 > 3 ? 0 : n % 10]}`;
+const matchCmd = (t, extra = {}) => socket.send({ t, ...extra });
+function renderMatch() {
+  $('#match-box').hidden = !match;
+  if (!match) return;
+  $('#match-title').textContent = `Match ${match.id} · ${match.phase === 'lobby' ? 'lobby' : match.phase === 'play' ? 'playing' : 'finished'}${match.group ? ' · ' + match.group.name : ''}`;
+  $('#sabotage-on').checked = match.sabotage;
+  for (const b of document.querySelectorAll('#match-box [data-match]')) b.disabled = b.dataset.match === 'match:start' ? match.phase === 'play' : b.dataset.match !== 'match:lobby' && match.phase !== 'play';
+  const since = performance.now() - matchAt;
+  $('#match-teams').innerHTML = match.teams.map((t) => {
+    const p = t.progress, effect = t.effect && Math.max(0, Math.ceil((t.effect.left - since) / 1000));
+    const status = t.place ? `Finished ${ordinal(t.place)}` : t.phase === 'play' ? (t.paused ? 'Paused' : 'Playing') : t.phase === 'done' ? 'Ended' : 'Lobby';
+    return `<tr class="${t.code === watching ? 'watched' : ''}">
+      <td><strong>${esc(t.name)}</strong><br><span class="muted small">${esc(t.code)}</span></td>
+      <td>${t.players.filter((x) => x.online).length} / ${t.players.length}<span class="muted small"> (max ${match.roomSize})</span></td>
+      <td>${status}</td>
+      <td class="score">${t.score}</td>
+      <td>${p.goal} of ${p.goalNeed}<br><span class="muted small">${p.clues} of ${p.cluesTotal} clues</span></td>
+      <td>${t.charge ? 'Ready' : `${t.chargeClues} / ${match.cluesPerCharge} clues`}</td>
+      <td>${t.effect ? `${esc(t.effect.id)} from ${esc(t.effect.from)}, ${effect} s <button class="btn btn-small" data-n="${t.n}" data-act="cancel" type="button">Cancel</button>` : t.shield ? '<span class="muted small">protected</span>' : ''}</td>
+      <td><div class="row">
+        <button class="btn btn-small" data-n="${t.n}" data-act="bonus" type="button" title="Bonus for good speaking">+${match.points.speaking} speaking</button>
+        <input class="field" type="number" step="1" value="-5" aria-label="Points to add or take away for ${esc(t.name)}" data-pts="${t.n}">
+        <button class="btn btn-small" data-n="${t.n}" data-act="adjust" type="button">Add</button>
+      </div></td>
+      <td><div class="row">
+        <button class="btn btn-small" data-n="${t.n}" data-act="watch" type="button"${t.code === watching ? ' disabled' : ''}>Watch</button>
+        ${t.phase === 'play'
+          ? `<button class="btn btn-small" data-n="${t.n}" data-act="pause" type="button">${t.paused ? 'Resume' : 'Pause'}</button><button class="btn btn-small btn-danger" data-n="${t.n}" data-act="end" type="button">End</button>`
+          : match.phase !== 'lobby' && t.players.length ? `<button class="btn btn-small" data-n="${t.n}" data-act="start" type="button">Start</button>` : ''}
+      </div></td>
+    </tr>`;
+  }).join('');
+  const watched = match.teams.find((t) => t.code === watching);
+  $('#match-help').textContent = `The map, tablets and players below are ${watched ? watched.name + "'s" : 'one team\'s'}. Press Watch to switch team. Points: clue ${match.points.clue}, challenge ${match.points.challenge}, obstacle ${match.points.obstacle}, monster ${match.points.monster}, finishing ${match.points.finish.join(' / ')}.`;
+}
+setInterval(() => { if (match?.teams.some((t) => t.effect)) renderMatch(); }, 1000);   // the effects' countdown
+$('#match-box').addEventListener('click', (e) => {
+  const all = e.target.closest('[data-match]');
+  if (all) {
+    if (all.dataset.match === 'match:end' && !confirm('End the game for every team?')) return;
+    return matchCmd(all.dataset.match, all.dataset.on !== undefined ? { on: all.dataset.on === '1' } : {});
+  }
+  const b = e.target.closest('[data-act]');
+  if (!b) return;
+  const n = Number(b.dataset.n), t = match.teams[n];
+  const act = {
+    bonus: () => matchCmd('score:adjust', { n, delta: match.points.speaking }),
+    adjust: () => matchCmd('score:adjust', { n, delta: Math.round(Number($(`[data-pts="${n}"]`).value)) || 0 }),
+    cancel: () => matchCmd('sabotage:cancel', { n }),
+    watch: () => { watching = t.code; hello(); },
+    pause: () => matchCmd('match:pause', { n, on: !t.paused }),
+    end: () => { if (confirm(`End the game for ${t.name}?`)) matchCmd('match:end', { n }); },
+    start: () => matchCmd('match:start', { n }),
+  }[b.dataset.act];
+  act?.();
+});
+$('#sabotage-on').addEventListener('change', (e) => matchCmd('sabotage:toggle', { on: e.target.checked }));
 
 // ---------- game controls and settings ----------
 $('#set-level').innerHTML = LEVELS.map((l) => `<option>${l}</option>`).join('');
@@ -62,7 +135,7 @@ $('#set-view').innerHTML = [5, 7, 9, 11, 13, 15].map((n) => `<option value="${n}
 function renderGame() {
   const r = roster, playing = r.phase === 'play';
   const where = r.phase === 'lobby' ? 'in the lobby' : r.phase === 'done' ? 'mission finished' : r.paused ? 'PAUSED' : `playing "${r.mission.title}"`;
-  $('#live-status').textContent = `Room ${watching} · ${r.group ? r.group.name : 'no group chosen yet'} · ${r.players.length} players · ${where}`;
+  $('#live-status').textContent = `${team ? team.name + ' · room ' : 'Room '}${watching} · ${r.group ? r.group.name : 'no group chosen yet'} · ${r.players.length} players · ${where}`;
   $('#btn-pause').textContent = r.paused ? 'Resume' : 'Pause';
   $('#btn-mix').textContent = r.dealMode === 'random' ? 'Random mix: on' : 'Random mix: off';
   for (const b of document.querySelectorAll('#tab-live [data-cmd]')) if (!['star', 'lobby'].includes(b.dataset.cmd)) b.disabled = !playing;
