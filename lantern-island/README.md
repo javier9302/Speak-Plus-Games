@@ -221,6 +221,7 @@ server/config.js         settings from the environment
 server/http.js           the pages and the groups API
 server/content.js        loads the scenario packs (data/scenarios)
 server/validate.js       checks pack files and says what is wrong, in plain English
+server/overrides.js      a mission's changes to its map (rename, texts, lines, move, remove, add)
 server/rooms.js          rooms, lobby, game loop, the message list
 server/match.js          competitive mode: teams, scores, sabotage
 server/compete-config.js competitive mode: every number and team name

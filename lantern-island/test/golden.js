@@ -6,7 +6,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { loadContent } from '../server/content.js';
 import { loadAbilities, dealPreset } from '../server/abilities.js';
-import { normalizeMission } from '../server/missions.js';
+import { normalizeMission, zoneFor } from '../server/missions.js';
 import { solve } from '../server/solver.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -21,7 +21,7 @@ export async function solverAnswers() {
   const out = {};
   for (const raw of content.missions) {
     const m = normalizeMission(raw, content.zones, items);
-    for (let n = 2; n <= 6; n++) { const r = solve(content.zones[m.zone], m, dealPreset(abilities, n)); out[`${m.id} ${n}`] = { ok: r.ok, log: r.log, problems: r.problems }; }
+    for (let n = 2; n <= 6; n++) { const r = solve(zoneFor(m, content.zones), m, dealPreset(abilities, n)); out[`${m.id} ${n}`] = { ok: r.ok, log: r.log, problems: r.problems }; }
   }
   return out;
 }

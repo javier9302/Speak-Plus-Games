@@ -7,7 +7,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { loadContent } from './content.js';
 import { loadAbilities, dealPreset } from './abilities.js';
-import { normalizeMission } from './missions.js';
+import { normalizeMission, zoneFor } from './missions.js';
 import { inspect, zoneRules, solve } from './solver.js';
 import { KINDS, progressOf, abilityOf } from './kinds/index.js';
 import { goalOf } from './goals/index.js';
@@ -57,7 +57,7 @@ export async function runCheck(contentDir = path.join(root, 'data'), dataDir = c
       say(`  ${mission.title}  (${mission.stations.length} tablets, goal: ${goalOf(mission.goal).describe(mission.goal)})`);
       for (let n = 2; n <= 6; n++) {
         const sets = dealPreset(abilities, n);
-        const r = inspect(zone, mission, sets, abilities.ids);
+        const r = inspect(zoneFor(mission, zones), mission, sets, abilities.ids);   // the map as this mission changes it
         if (!r.ok) { fail(`${mission.title}, ${n} players: cannot be finished. ${r.problems.join('; ')}`); continue; }
         const notes = [];
         if (r.idle.length) fail(`${mission.title}, ${n} players: player ${r.idle.map((i) => i + 1).join(' and ')} (${r.idle.map((i) => sets[i].map(name).join('/')).join('; ')}) is never needed`);

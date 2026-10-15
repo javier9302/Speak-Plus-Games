@@ -51,7 +51,10 @@ export async function loadContent(contentDir, { abilities, items }) {
       const found = zoneProblems(raw, { items: items.list.map((i) => i.id), abilities: abilities.ids });
       if (raw.id !== f.slice(0, -5)) found.unshift(`"id" must be "${f.slice(0, -5)}", the name of the file`);
       if (found.length) { problems.push(...found.map((p) => `${where(`zones/${f}`)}: ${p}`)); continue; }
-      zones.push(Object.assign(parseZone(raw), { pack: id, unlock: pack.unlock }));
+      const zone = Object.assign(parseZone(raw), { pack: id, unlock: pack.unlock });
+      // A mission's overrides start from the map file and are checked the same way (overrides.js).
+      Object.defineProperties(zone, { raw: { value: raw }, deps: { value: { items: items.list.map((i) => i.id), abilities: abilities.ids } } });
+      zones.push(zone);
       pack.zones.push(raw.id);
     }
     if (!zones.length && !problems.length) problems.push(`scenarios/${id}: a pack needs at least one map in zones/`);

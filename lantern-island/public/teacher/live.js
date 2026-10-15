@@ -466,7 +466,8 @@ function renderMission() {
   $('#m-delete').title = m.pack ? `From the scenario pack "${m.pack}": edit it in data/scenarios/${m.pack}/missions/` : '';
   $('#m-monster').value = m.monster || 'group-setting';
   $('#m-story').textContent = m.story;
-  $('#m-stations').innerHTML = zone.stations.map((st, i) => {
+  // A mission that changes its map (overrides) may have tablets of its own.
+  $('#m-stations').innerHTML = (m.tablets || zone.stations).map((st, i) => {
     const s = m.stations.find((x) => x.at === st.id);
     const pick = s?.card ? `card:${s.card}` : s?.filter?.type || '';
     return `<div class="m-row" data-at="${esc(st.id)}">
@@ -490,7 +491,8 @@ function builtMission() {
     if (pick.startsWith('card:')) return { at: row.dataset.at, card: pick.slice(5) };
     return { at: row.dataset.at, filter: { type: pick || undefined, level: 'group', tags: row.querySelector('[data-tags]').value.split(',').map((t) => t.trim()).filter(Boolean) } };
   });
-  return { ...m, minutes: Number($('#m-minutes').value), monster: $('#m-monster').value, stations };
+  const { tablets, ...rest } = m;                  // the list of tablets is for this page, not part of the mission
+  return { ...rest, minutes: Number($('#m-minutes').value), monster: $('#m-monster').value, stations };
 }
 $('#m-start').addEventListener('click', () => { showError(''); cmd('mission', { mission: builtMission() }); });
 // Keep a mission you built, to use it again in other classes.

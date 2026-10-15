@@ -7,6 +7,9 @@ import { fileURLToPath } from 'node:url';
 import { loadContent } from '../server/content.js';
 import { loadAbilities } from '../server/abilities.js';
 import { runCheck } from '../server/check.js';
+import { normalizeMission, zoneFor } from '../server/missions.js';
+import { solve } from '../server/solver.js';
+import { dealPreset } from '../server/abilities.js';
 import { createApp } from '../server/index.js';
 import { client } from './client.js';
 
@@ -81,6 +84,35 @@ async function main() {
   await write(dir, 'beach/cards/beach-hello.json', { id: 'beach-hello', type: 'choice', level: 'A1', prompt: 'Hello?', options: { A: 'Hi', B: 'Bye' }, answer: 'A' });
   const withCard = await load(dir);
   check('a pack can bring its own cards', !withCard.errors.length && withCard.cards.some((x) => x.id === 'beach-hello' && x.pack === 'beach'));
+
+  console.log('\nQuest overrides: a mission changes its map for itself');
+  dir = await copy();
+  const night = {
+    id: 'night-lights', title: 'Night lights', zone: 'beach', minutes: 20, stations: [{ at: 'tablet-1' }, { at: 'tablet-2' }, { at: 'tablet-3' }, { at: 'tablet-4' }],
+    goal: { items: { lantern: 3 }, restore: 'lighthouse' },
+    rename: { keeper: 'Night keeper' },
+    texts: { 'old-sign': { read: 'THE NIGHT IS DARK. Bring three lanterns. The garden gate code starts with {d1}.' }, 'small-shell': { listen: null, look: 'A tiny shell.' } },
+    lines: { keeper: ['Thank you for coming at night!'] },
+    move: { bottle: { x: 34, y: 8 } },
+    remove: ['big-rock-sign'],
+    add: [{ id: 'night-sign', kind: 'sign', name: 'Night sign', x: 21, y: 12, clues: { read: 'Lanterns, quick!' } }],
+  };
+  await write(dir, 'beach/missions/night-lights.json', { ...night, remove: [] });
+  let loaded = await load(dir);
+  check('a mission with overrides loads', !loaded.errors.length, loaded.errors.join(' | '));
+  const nm = normalizeMission(loaded.missions.find((x) => x.id === 'night-lights'), loaded.zones, { byId: Object.fromEntries(JSON.parse(await fs.readFile(path.join(dir, 'items.json'), 'utf8')).items.map((i) => [i.id, i])) });
+  const nz = zoneFor(nm, loaded.zones), obj = (z, id) => z.objects.find((o) => o.id === id);
+  check('its map has the changes: names, clue texts, lines, moved and added objects', obj(nz, 'keeper').name === 'Night keeper' && obj(nz, 'old-sign').clues.read.startsWith('THE NIGHT') && !obj(nz, 'small-shell').clues.listen && obj(nz, 'keeper').lines[0].includes('night') && obj(nz, 'bottle').x === 34 && obj(nz, 'night-sign'));
+  check('the map file itself is unchanged', obj(loaded.zones.beach, 'keeper').name === 'Lighthouse keeper' && !obj(loaded.zones.beach, 'night-sign'));
+  const ab = await loadAbilities(dir);
+  const played = solve(nz, nm, dealPreset(ab, 3));
+  check('the solver plays the changed map', played.ok, played.problems.join(' | '));
+  await write(dir, 'beach/missions/night-lights.json', { ...night, rename: { kepper: 'X' }, move: { bottle: { x: 0, y: 0 } }, add: [{ id: 'night-sign', kind: 'sign', name: 'Night sign', x: 34, y: 10 }] });
+  errs = (await load(dir)).errors;
+  check('override mistakes are explained: unknown id, object in the sea, two on one tile', has(errs, 'night-lights.json', '"kepper" is not an object', 'Did you mean "keeper"?') && has(errs, 'night-lights.json', 'object "bottle"', 'blocks the way') && has(errs, 'night-lights.json', 'object "night-sign"', 'taken by "keeper"'), errs.join(' | '));
+  await write(dir, 'beach/missions/night-lights.json', { ...night, remove: ['garden-gate'] });
+  errs = (await load(dir)).errors;
+  check('removing an object that clues still point to is caught', has(errs, 'night-lights.json', '{d1}', 'no code gate'), errs.join(' | '));
 
   console.log('\nnpm run check');
   ({ dir } = await beachErrors((z) => {

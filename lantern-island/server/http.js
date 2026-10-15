@@ -81,7 +81,7 @@ export function createHttpHandler({ config, groups, cards, missions, storage, li
       packs: Object.values(content.packs).map((p) => ({ id: p.id, name: p.name, zones: p.zones, missions: content.missions.filter((x) => x.pack === p.id).length })),
     });
     // Mission templates, and what each zone offers the mission builder
-    if (parts[0] === 'missions' && !parts[1] && m === 'GET') return json(res, 200, { missions: await missions.all(), zones: missions.zones() });
+    if (parts[0] === 'missions' && !parts[1] && m === 'GET') return json(res, 200, { missions: (await missions.all()).map((x) => ({ ...x, tablets: missions.tablets(x) })), zones: missions.zones() });
     if (parts[0] === 'missions' && parts[1] && m === 'PUT') return json(res, 200, await missions.put({ ...(await readJson(req)), id: parts[1] }));
     if (parts[0] === 'missions' && parts[1] && m === 'DELETE') { await missions.remove(parts[1]); return json(res, 200, { ok: true }); }
     // Printable sheets: ?zone=beach (before class) or ?room=ABCD (the mission that is running)

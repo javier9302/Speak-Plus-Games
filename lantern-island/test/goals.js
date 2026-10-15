@@ -51,6 +51,7 @@ const missions = {
   'tb-odd': { goal: { type: 'odd-one-out', answer: 'c2' } },
   'tb-order': { goal: { type: 'deliver-order', order: [{ to: 'farmer', item: 'key' }, { to: 'cook', item: 'letter' }] } },
   'tb-escort': { goal: { type: 'escort', npc: 'cook', to: 'harbor' } },
+  'tb-override': { goal: { type: 'restore' }, rename: { board: 'Notice board' }, texts: { board: { read: 'TODAY: fix the pump first.' } }, add: [{ id: 'extra', kind: 'sign', name: 'New sign', x: 4, y: 4, clues: { read: 'Hello from the mission.' } }] },
 };
 
 async function main() {
@@ -70,9 +71,9 @@ async function main() {
   const it = JSON.parse(await fs.readFile(path.join(dir, 'items.json'), 'utf8'));
   const items = { list: it.items, byId: Object.fromEntries(it.items.map((i) => [i.id, i])) };
   const content = await loadContent(dir, { abilities, items });
-  check('the test pack loads, with every goal type', !content.errors.length && content.missions.filter((m) => m.pack === 'testbed').length === 5, content.errors.join(' | '));
+  check('the test pack loads, with every goal type', !content.errors.length && content.missions.filter((m) => m.pack === 'testbed').length === 6, content.errors.join(' | '));
   const zone = content.zones.testbed;
-  for (const id of Object.keys(missions)) {
+  for (const id of Object.keys(missions).filter((x) => x !== 'tb-override')) {
     const m = normalizeMission(content.missions.find((x) => x.id === id), content.zones, items);
     const results = [2, 3, 4, 5, 6].map((n) => inspect(zone, m, dealPreset(abilities, n), abilities.ids));
     check(`${m.goal.type}: can be finished with 2 to 6 players`, results.every((r) => r.ok), results.map((r) => r.problems.join(';')).join(' | '));
@@ -167,6 +168,13 @@ async function main() {
   const done = await ended(9000);
   guide.send({ t: 'input', x: 0, y: 0 });
   check('escort: walking to the place with it completes the mission', done?.result.completed === true, `cook at ${thing('cook').x},${thing('cook').y}`);
+
+  // a mission's overrides reach the phones
+  await start('tb-override');
+  const reader = who('read');
+  check('overrides: the renamed object and the added one are on the map', host.last.things.list.some((t) => t.id === 'board' && t.name === 'Notice board') && host.last.things.list.some((t) => t.id === 'extra'));
+  await tp(reader, 2, 3); await act(reader, 'read');
+  check('overrides: the clue has the mission\'s text', reader.all.filter((m) => m.t === 'clue').at(-1)?.text === 'TODAY: fix the pump first.');
 
   await app.close();
   console.log(`\n${passed} passed, ${failed} failed`);

@@ -5,8 +5,13 @@ import { CARD_TYPES } from './cards.js';
 import { KINDS } from './kinds/index.js';
 import { didYouMean } from './words.js';
 import { GOALS } from './goals/index.js';
+import { applyOverrides, OVERRIDE_FIELDS } from './overrides.js';
 
-export const MISSION_FIELDS = ['id', 'title', 'story', 'zone', 'minutes', 'timeLimit', 'goal', 'stations', 'monster'];
+// The map a mission plays on: its map file, changed by the mission's overrides if it has any.
+const played = new WeakMap();
+export const zoneFor = (mission, zones) => played.get(mission) || zones[mission.zone];
+
+export const MISSION_FIELDS = ['id', 'title', 'story', 'zone', 'minutes', 'timeLimit', 'goal', 'stations', 'monster', ...OVERRIDE_FIELDS];
 export const GOAL_FIELDS = ['type', 'label', 'restore', 'story'];       // every goal type has these; the rest is in its file
 
 // The clean goal of a mission (or of a map, with stations = null). Mistakes go to `fail`.
@@ -37,10 +42,11 @@ export function normalizeMission(raw, zones, items) {
   const problems = [];
   const fail = (why) => problems.push(why);
   fail.problems = problems;
-  const stop = () => { if (problems.length) throw Object.assign(new Error(`Mission "${raw?.title || raw?.id || '?'}": ${problems.join('; ')}.`), { status: 400 }); };
-  const zone = zones[raw?.zone || Object.keys(zones)[0]];
-  if (!zone) { fail(`unknown zone "${raw?.zone}".${didYouMean(raw?.zone, Object.keys(zones))}`); stop(); }
-  extra(raw, [...MISSION_FIELDS, 'pack', 'file'], '', problems);
+  const stop = () => { if (problems.length) throw Object.assign(new Error(`Mission "${raw?.title || raw?.id || '?'}": ${problems.map((p) => p.replace(/\.$/, '')).join('; ')}.`), { status: 400 }); };
+  const base = zones[raw?.zone || Object.keys(zones)[0]];
+  if (!base) { fail(`unknown zone "${raw?.zone}".${didYouMean(raw?.zone, Object.keys(zones))}`); stop(); }
+  const { zone, overrides } = applyOverrides(base, raw, fail);
+  extra(raw, [...MISSION_FIELDS, 'pack', 'file', 'tablets'], '', problems);      // pack, file, tablets: added by the server itself
   const tablets = zone.objects.filter((o) => KINDS[o.kind].card);
   const stations = [];
   for (const s of Array.isArray(raw.stations) ? raw.stations : []) {
@@ -60,7 +66,7 @@ export function normalizeMission(raw, zones, items) {
   if (raw.monster !== undefined && !MONSTERS.includes(raw.monster)) fail(`"monster" must be one of ${MONSTERS.join(', ')}`);
   if (raw.timeLimit != null && !(Number.isInteger(raw.timeLimit) && raw.timeLimit >= 1 && raw.timeLimit <= 90)) fail('"timeLimit" is a number of minutes, 1 to 90: the mission ends when the time is up');
   stop();
-  return {
+  const mission = {
     id: /^[a-z0-9][a-z0-9-]{0,63}$/.test(raw.id || '') ? raw.id : 'custom',
     title: text(raw.title, 60) || 'Mission', story: text(raw.story, 400), zone: zone.id,
     minutes: Math.max(5, Math.min(90, Math.round(Number(raw.minutes) || 25))),
@@ -68,7 +74,10 @@ export function normalizeMission(raw, zones, items) {
     goal,
     stations, monster: ['off', 'gentle', 'normal', 'hard'].includes(raw.monster) ? raw.monster : 'group-setting',
     pack: raw.pack || null,                // the scenario pack it comes from; null for the teacher's own templates
+    ...overrides,                          // its changes to the map (overrides.js)
   };
+  if (overrides) played.set(mission, zone);
+  return mission;
 }
 
 export function createMissions(storage, zones, items, packMissions = () => []) {
@@ -104,6 +113,8 @@ export function createMissions(storage, zones, items, packMissions = () => []) {
       const stations = zone.objects.filter((o) => o.kind === 'station').map((o, i) => ({ at: o.id, filter: { type: order[i % order.length], level: 'group' } }));
       return normalizeMission({ id: 'quick', title: 'Quick mission', story: zone.goal?.story || 'Work together and find what the island needs.', zone: zone.id, minutes: 25, goal: zone.goal, stations }, zones, items);
     },
+    // For the mission builder: the tablets of a mission whose overrides change its map (added tablets...).
+    tablets: (m) => (m.add || m.remove ? zoneFor(m, zones).objects.filter((o) => KINDS[o.kind].card).map((o) => ({ id: o.id, name: o.name, x: o.x, y: o.y, reward: o.reward?.item || null })) : undefined),
     // For the mission builder: what each zone offers.
     zones: () => Object.values(zones).map((z) => ({ id: z.id, name: z.name, goal: z.goal, places: z.places, unlock: z.unlock, stations: z.objects.filter((o) => o.kind === 'station').map((o) => ({ id: o.id, name: o.name, x: o.x, y: o.y, reward: o.reward?.item || null })) })),
   };

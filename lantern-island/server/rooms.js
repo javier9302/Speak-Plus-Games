@@ -38,6 +38,7 @@ import { buildThings, blockSet, publicThings, useAbility, returnItems, pressPlat
 import { kindOf, KIND_ART } from './kinds/index.js';
 import { goalOf } from './goals/index.js';
 import { gameCtx } from './things.js';
+import { zoneFor } from './missions.js';
 import { whyNot, inspect } from './solver.js';
 import { pickCard, innerCard, publicCard, teacherCard, checkAnswer } from './cards.js';
 import { createChat } from './chat.js';
@@ -210,7 +211,7 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
     if (!room.group) return fail(ws, 'no-group', 'Choose a group first (on the host screen).');
     if (room.players.length < 2) return fail(ws, 'few-players', `The game needs 2 to ${cfg.roomSize} players.`);
     // Never start a mission that cannot be finished: say why instead.
-    const zone = zones[mission.zone], n = room.players.length;
+    const zone = zoneFor(mission, zones), n = room.players.length;   // the map as this mission changes it
     let stuck = whyNot(zone, mission, dealPreset(abilities, n));
     if (stuck) return fail(ws, 'bad', `This mission cannot be finished with ${n} players. ${stuck}.`);
     room.mission = mission;
