@@ -95,17 +95,22 @@ export function normalizeCard(raw) {
   return r.card || null;
 }
 
-export function createCards(storage, contentDir) {
+// packCards: the cards of the scenario packs (content.js). They are read-only here: edited in their files.
+export function createCards(storage, contentDir, packCards = () => []) {
+  const fromPack = (id) => packCards().find((c) => c.id === id);
+  const readOnly = (id) => Object.assign(new Error(`Card "${id}" comes from the scenario pack "${fromPack(id).pack}". Edit it in data/scenarios/${fromPack(id).pack}/cards/.`), { status: 400 });
   return {
     // Read fresh at every mission start, so edits apply to the next mission.
     // When each card was last played is kept apart (meta "card-usage"), so playing never rewrites a card.
     async all() {
       const used = (await storage.get('meta', 'card-usage'))?.used || {};
-      return (await seed(storage, contentDir, 'cards', 'seed-cards.json')).map(normalizeCard).filter(Boolean)
+      const library = (await seed(storage, contentDir, 'cards', 'seed-cards.json')).filter((c) => !fromPack(c.id));
+      return [...packCards(), ...library].map((raw) => { const c = normalizeCard(raw); return c && raw.pack ? { ...c, pack: raw.pack } : c; }).filter(Boolean)
         .map((c) => (used[c.id] ? { ...c, lastUsed: used[c.id] } : c));
     },
     // Saves one card (new or changed). Throws with the reason if it is not valid.
     async put(raw) {
+      if (fromPack(raw?.id)) throw readOnly(raw.id);
       const r = validateCard(raw);
       if (r.error) throw Object.assign(new Error(`Card "${raw?.id || '?'}": ${r.error}.`), { status: 400 });
       await storage.put('cards', r.card.id, r.card);
@@ -115,13 +120,13 @@ export function createCards(storage, contentDir) {
     async putMany(list) {
       const saved = [], skipped = [];
       for (const raw of Array.isArray(list) ? list.slice(0, 2000) : []) {
-        const r = validateCard(raw);
+        const r = fromPack(raw?.id) ? { error: 'it is a card of a scenario pack (edit its file)' } : validateCard(raw);
         if (r.error) skipped.push({ id: String(raw?.id || '?'), why: r.error });
         else { await storage.put('cards', r.card.id, r.card); saved.push(r.card.id); }
       }
       return { saved, skipped };
     },
-    async remove(id) { await storage.remove('cards', id); },
+    async remove(id) { if (fromPack(id)) throw readOnly(id); await storage.remove('cards', id); },
     // Remembers when cards were played, for the "used recently" filter. One record for all cards.
     async touch(list) {
       if (!list.length) return;

@@ -1,0 +1,10 @@
+{
+  "id": "forest",
+  "name": "Whisper Forest",
+  "order": 2,
+  "story": "The forest behind the beach.",
+  "unlock": {
+    "landmarks": 2
+  },
+  "unlockHelp": "The forest opens when a group has restored this many landmarks."
+}

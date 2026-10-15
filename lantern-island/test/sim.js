@@ -852,6 +852,9 @@ async function main() {
 
   console.log('\nZones and mission templates');
   const lib2 = await (await fetch(base + '/api/missions')).json();
+  const packPut = await http('/missions/light-the-lighthouse', 'PUT', { ...lib2.missions.find((m) => m.id === 'light-the-lighthouse'), title: 'Changed' });
+  check('a scenario pack\'s mission cannot be changed or deleted from the panel', packPut.status === 400 && packPut.data.error.includes('scenarios/beach/missions/light-the-lighthouse.json') && (await http('/missions/light-the-lighthouse', 'DELETE')).status === 400);
+  check('missions say which pack they come from', lib2.missions.filter((m) => m.zone === 'forest').every((m) => m.pack === 'forest'));
   check('two zones, each with its missions', lib2.zones.map((z) => z.id).join() === 'beach,forest' && lib2.zones[1].unlock === 2 && lib2.missions.filter((m) => m.zone === 'forest').length === 3 && lib2.missions.filter((m) => m.zone === 'beach').length >= 6);
   // A fresh group: the forest opens after two restored landmarks.
   const fresh = (await http('/groups', 'POST', { name: 'Fresh class' })).data;
@@ -972,10 +975,10 @@ async function main() {
   const cbase = `http://127.0.0.1:${cloud.port}`;
   const cg = await (await fetch(cbase + '/api/groups', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: 'Cloud class' }) })).json();
   const ccards = await (await fetch(cbase + '/api/cards')).json();
-  await fetch(cbase + '/api/missions');
+  const cmissions = (await (await fetch(cbase + '/api/missions')).json()).missions;
   const cup = await (await fetch(cbase + '/api/media', { method: 'POST', headers: { 'content-type': 'audio/mpeg' }, body: Buffer.from('mp3-bytes') })).json();
   const cget = await fetch(cbase + cup.url);
-  check('the game runs on Supabase: groups, sample cards, missions, uploads', fake.db.li_groups.has(cg.id) && ccards.length >= 40 && fake.db.li_cards.size === ccards.length && fake.db.li_missions.size >= 6 && (await cget.text()) === 'mp3-bytes' && cget.headers.get('content-type') === 'audio/mpeg');
+  check('the game runs on Supabase: groups, sample cards, pack missions (kept in their files), uploads', fake.db.li_groups.has(cg.id) && ccards.length >= 40 && fake.db.li_cards.size === ccards.length && cmissions.length >= 9 && cmissions.every((m) => m.pack) && fake.db.li_missions.size === 0 && (await cget.text()) === 'mp3-bytes' && cget.headers.get('content-type') === 'audio/mpeg');
   check('the Supabase key never reaches a browser', !JSON.stringify([await (await fetch(cbase + '/api/info')).json(), cg, cup]).includes(fake.key) && !(await (await fetch(cbase + '/host/host.js')).text()).includes('SERVICE_KEY'));
   await cloud.close();
   // Moving a school from files to Supabase and back.

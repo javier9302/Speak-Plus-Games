@@ -9,7 +9,7 @@
     "items": {
       "lantern": 3
     },
-    "restore": "old-bridge"
+    "restore": "dock"
   },
   "stations": [
     {

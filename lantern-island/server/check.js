@@ -1,14 +1,13 @@
 // npm run check
-// For every zone and every mission template, with 2 to 6 players: can it be finished, does
+// For every scenario pack (data/scenarios), every map and every mission template, with 2 to 6 players: can it be finished, does
 // every player have something they are needed for, and are the design rules respected?
 // Prints a report and ends with an error if anything is wrong.
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { loadZone } from './world.js';
+import { loadContent } from './content.js';
 import { loadAbilities, dealPreset } from './abilities.js';
 import { normalizeMission } from './missions.js';
-import { checkObject } from './things.js';
 import { inspect, zoneRules } from './solver.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -22,23 +21,20 @@ export async function runCheck(contentDir = path.join(root, 'data'), dataDir = c
   const itemFile = JSON.parse(await fs.readFile(path.join(contentDir, 'items.json'), 'utf8'));
   const items = { list: itemFile.items, byId: Object.fromEntries(itemFile.items.map((i) => [i.id, i])) };
   const name = (a) => abilities.byId[a].name;
-  const zoneIds = (await fs.readdir(path.join(contentDir, 'zones'))).filter((f) => f.endsWith('.json')).map((f) => f.slice(0, -5));
-  const zones = {};
-  for (const id of zoneIds) zones[id] = await loadZone(contentDir, id);
+  const content = await loadContent(contentDir, { abilities, items });
+  for (const e of content.errors) fail(e);
+  const zones = content.zones;
 
-  // The templates the teacher will actually use (data/missions), or the samples if the game never ran.
+  // The packs' missions, and the teacher's own templates (storage, data/missions) that do not share an id with one.
   const readAll = async (dir) => { try { return Promise.all((await fs.readdir(dir)).filter((f) => f.endsWith('.json')).map(async (f) => JSON.parse(await fs.readFile(path.join(dir, f), 'utf8')))); } catch { return []; } };
-  let templates = await readAll(path.join(dataDir, 'missions'));
-  const samples = JSON.parse(await fs.readFile(path.join(contentDir, 'seed-missions.json'), 'utf8'));
-  for (const s of samples) if (!templates.some((t) => t.id === s.id)) templates.push(s);
+  const templates = [...content.missions, ...(await readAll(path.join(dataDir, 'missions'))).filter((t) => !content.missions.some((m) => m.id === t.id))];
 
   for (const zone of Object.values(zones)) {
-    say(`ZONE: ${zone.name}  (${zone.objects.length} objects, ${zone.landmarks.length} landmarks)`);
-    for (const o of zone.objects) for (const bad of checkObject(o, itemFile.items.map((i) => i.id), abilities.ids)) fail(`object "${o.id}": ${bad}`);
+    say(`PACK ${zone.pack}, MAP: ${zone.name}  (${zone.objects.length} objects, ${zone.landmarks.length} landmarks)`);
 
     const all = normalizeMission({ id: 'whole-zone', title: `Whole zone: every tablet of ${zone.name}`, zone: zone.id, goal: { ...zone.goal, items: Object.fromEntries(Object.keys(zone.goal.items).map((k) => [k, 99])) }, stations: zone.objects.filter((o) => o.kind === 'station').map((o) => ({ at: o.id })) }, zones, items);
     const missions = [all];
-    for (const t of templates.filter((m) => (m.zone || 'beach') === zone.id)) { try { missions.push(normalizeMission(t, zones, items)); } catch (e) { fail(e.message); } }
+    for (const t of templates.filter((m) => (m.zone || Object.keys(zones)[0]) === zone.id)) { try { missions.push(normalizeMission(t, zones, items)); } catch (e) { fail(`${t.file || 'data/missions/' + t.id + '.json'}: ${e.message}`); } }
 
     for (const mission of missions) {
       say();
@@ -60,7 +56,7 @@ export async function runCheck(contentDir = path.join(root, 'data'), dataDir = c
     for (const step of inspect(zone, all, dealPreset(abilities, 3), abilities.ids).log) say(`    - ${step}`);
     say();
   }
-  say(errors.length ? `${errors.length} PROBLEM${errors.length > 1 ? 'S' : ''} FOUND` : 'All zones and missions are fine for 2 to 6 players.');
+  say(errors.length ? `${errors.length} PROBLEM${errors.length > 1 ? 'S' : ''} FOUND` : `All packs (${Object.keys(content.packs).join(', ')}), maps and missions are fine for 2 to 6 players.`);
   return { ok: !errors.length, errors, report: lines.join('\n') };
 }
 

@@ -76,7 +76,7 @@ When the game starts, the 12 abilities are shared out so that nobody can do ever
 
 On the host screen, **Reshuffle** gives the abilities to different players, and **Random mix** switches between the preset sets and a random share-out. If a player joins late or is removed, the abilities are shared out again by themselves, and every phone shows its new role card.
 
-**Editing.** The sets are in `data/abilities.json` (`assignments`, one list per player for each player count), with the names and short descriptions of the abilities and the rules for the random mix. Objects and their clue texts are in `data/zones/beach.json` under `objects`. Restart the server after editing these; if an object has a mistake, the server says which one and does not start.
+**Editing.** The sets are in `data/abilities.json` (`assignments`, one list per player for each player count), with the names and short descriptions of the abilities and the rules for the random mix. Objects and their clue texts are in `data/scenarios/beach/zones/beach.json` under `objects`. Restart the server after editing these; if an object has a mistake, the server says which one and does not start.
 
 ### Testing abilities and clues on one computer
 
@@ -219,6 +219,7 @@ Runs two simulations. `test/sim.js` starts the server on a spare port and plays 
 server/index.js          start-up
 server/config.js         settings from the environment
 server/http.js           the pages and the groups API
+server/content.js        loads the scenario packs (data/scenarios)
 server/rooms.js          rooms, lobby, game loop, the message list
 server/match.js          competitive mode: teams, scores, sabotage
 server/compete-config.js competitive mode: every number and team name
@@ -235,7 +236,7 @@ public/phone/            the students' controller
 public/teacher/          the teacher panel
 public/shared/pixel.js   all pixel art, drawn in code (tiles, characters, objects, ability icons)
 public/shared/render.js  drawing the map and characters
-data/zones/beach.json    the map, one character per tile, and its objects and clues
+data/scenarios/       scenario packs, one folder each: pack.json, zones/ (maps, objects, clues), missions/, cards/
 data/abilities.json      the abilities and who gets which
 data/items.json          the items, and how many a player can carry
 data/seed-cards.json     the sample cards (copied to data/cards/ on the first start)
@@ -245,4 +246,4 @@ test/sim.js              the simulated class
 test/compete.js          the simulated match (4 rooms, 24 phones)
 ```
 
-Things you may want to change: walking speed is `SPEED` in `server/world.js`; how much of the map a phone sees is `DEFAULT_VIEW` in `server/rooms.js`; player colours are `PLAYER_COLORS` in `public/shared/pixel.js`. The map can be edited in `data/zones/beach.json`: keep every row the same length and keep six `p` start tiles (the `legend` in the file lists the characters).
+Things you may want to change: walking speed is `SPEED` in `server/world.js`; how much of the map a phone sees is `DEFAULT_VIEW` in `server/rooms.js`; player colours are `PLAYER_COLORS` in `public/shared/pixel.js`. The map can be edited in `data/scenarios/beach/zones/beach.json`: keep every row the same length and keep six `p` start tiles (the `legend` in the file lists the characters).

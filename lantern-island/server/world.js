@@ -1,16 +1,14 @@
 // The map: loading a zone, what blocks the way, and moving a player.
 // Positions are in tiles; (x, y) is the middle of a character's feet.
-import fs from 'node:fs/promises';
-import path from 'node:path';
-
 const SOLID = new Set(['~', 'T', 'R']);
 const KNOWN = new Set(['~', ',', '.', '#', '=', 'T', 'R', 'p']);
 export const SPEED = 4.5;        // tiles per second
 export const REACH = 1.5;        // how close (in tiles) a player must be to use an object
 const HALF_W = 0.3, UP = 0.3, DOWN = 0.12;   // the box around the feet that must stay on walkable tiles
 
-export async function loadZone(contentDir, id) {
-  const raw = JSON.parse(await fs.readFile(path.join(contentDir, 'zones', `${id}.json`), 'utf8'));
+// A zone from its JSON (a scenario pack's zones/<id>.json, see content.js). Throws with the reason if it is wrong.
+export function parseZone(raw) {
+  const id = raw.id;
   const rows = raw.rows;
   if (!Array.isArray(rows) || !rows.length) throw new Error(`Zone ${id}: no rows`);
   const w = rows[0].length, spawns = [];
@@ -51,8 +49,8 @@ export async function loadZone(contentDir, id) {
     }
   }
   const places = (raw.places || []).filter((p) => p.id && p.name && Number.isFinite(p.x) && Number.isFinite(p.y)).map((p) => ({ id: p.id, name: String(p.name), x: p.x, y: p.y }));
-  return { id: raw.id, name: raw.name, w, h: rows.length, rows: rows.map((r) => r.replace(/p/g, ',')), spawns, objects, places, landmarks, fixed, goal: raw.goal || null,
-    unlock: Math.max(0, Number(raw.unlock?.landmarks) || 0) };     // landmarks a group must have restored before this zone opens
+  // `pack` and `unlock` (landmarks a group must have restored before this zone opens) come from the pack (content.js).
+  return { id: raw.id, name: raw.name, w, h: rows.length, rows: rows.map((r) => r.replace(/p/g, ',')), spawns, objects, places, landmarks, fixed, goal: raw.goal || null };
 }
 
 // `block` is a set of "x,y" tiles taken by things (closed gates, chests...). It changes during the game.

@@ -1,10 +1,6 @@
 {
   "id": "forest",
   "name": "Whisper Forest",
-  "unlock": {
-    "landmarks": 2
-  },
-  "unlockHelp": "This zone opens for a group when it has restored this many landmarks.",
   "legend": {
     "~": "water (blocks)",
     ",": "grass",

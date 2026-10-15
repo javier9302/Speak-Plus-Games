@@ -461,6 +461,9 @@ function renderMission() {
   if (!m) return;
   const zone = lib.zones.find((z) => z.id === m.zone);
   $('#m-minutes').value = m.minutes;
+  // A scenario pack's mission is edited in its file; your own templates can be deleted here.
+  $('#m-delete').disabled = !!m.pack;
+  $('#m-delete').title = m.pack ? `From the scenario pack "${m.pack}": edit it in data/scenarios/${m.pack}/missions/` : '';
   $('#m-monster').value = m.monster || 'group-setting';
   $('#m-story').textContent = m.story;
   $('#m-stations').innerHTML = zone.stations.map((st, i) => {

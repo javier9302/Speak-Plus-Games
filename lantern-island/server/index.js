@@ -8,13 +8,12 @@ import { createGroups } from './groups.js';
 import { createHttpHandler } from './http.js';
 import { createNetwork } from './net.js';
 import { createRooms } from './rooms.js';
-import { loadZone } from './world.js';
 import { loadAbilities } from './abilities.js';
 import { createCards } from './cards.js';
 import { createMissions } from './missions.js';
 import { loadMonster } from './monster.js';
 import { createSheets } from './sheet.js';
-import { checkObject } from './things.js';
+import { loadContent } from './content.js';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
@@ -23,23 +22,15 @@ export async function createApp(over = {}) {
   const storage = createStorage(config);
   await storage.check();                   // a wrong Supabase key or missing tables stop the server here, with the reason
   const groups = createGroups(storage);
-  const cards = createCards(storage, config.contentDir);
-  // Every file in data/zones is a zone. The beach comes first: it is where every group starts.
-  const zoneIds = (await fs.readdir(path.join(config.contentDir, 'zones'))).filter((f) => f.endsWith('.json')).map((f) => f.slice(0, -5)).sort((a, b) => (a === 'beach' ? -1 : b === 'beach' ? 1 : a.localeCompare(b)));
-  const zones = {};
-  for (const id of zoneIds) zones[id] = await loadZone(config.contentDir, id);
   const abilities = await loadAbilities(config.contentDir);
   const itemFile = JSON.parse(await fs.readFile(path.join(config.contentDir, 'items.json'), 'utf8'));
   const items = { list: itemFile.items, byId: Object.fromEntries(itemFile.items.map((i) => [i.id, i])), maxCarry: itemFile.maxCarry || 4 };
-  // Stop at start-up, with a clear message, if a zone file has a mistake.
-  for (const zone of Object.values(zones)) {
-    for (const o of zone.objects) {
-      const bad = checkObject(o, itemFile.items.map((i) => i.id), abilities.ids);
-      if (bad.length) throw new Error(`Zone ${zone.id}, object "${o.id}": ${bad.join('; ')}`);
-    }
-  }
-
-  const missions = createMissions(storage, config.contentDir, zones, items);
+  // The scenario packs (data/scenarios). Stop at start-up, with the reasons, if one has a mistake.
+  const content = await loadContent(config.contentDir, { abilities, items });
+  if (content.errors.length) throw Object.assign(new Error(`The scenario packs have mistakes:\n  - ${content.errors.join('\n  - ')}\nRun "npm run check" for details.`), { status: 400 });
+  const zones = content.zones;               // in pack order: the first pack's first map is where every group starts
+  const cards = createCards(storage, config.contentDir, () => content.cards);
+  const missions = createMissions(storage, zones, items, () => content.missions);
   const live = {};                         // filled in below, once the rooms exist
   const server = http.createServer(createHttpHandler({ config, groups, cards, missions, storage, live }));
   const wss = new WebSocketServer({ noServer: true, maxPayload: 64 * 1024 });
@@ -59,7 +50,7 @@ export async function createApp(over = {}) {
   });
 
   return {
-    config, port, network, groups, rooms, cards, missions,
+    config, port, network, groups, rooms, cards, missions, content,
     close() {
       rooms.close();
       for (const ws of wss.clients) ws.terminate();
