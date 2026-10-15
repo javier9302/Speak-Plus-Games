@@ -1,0 +1,33 @@
+{
+  "id": "show-the-way",
+  "title": "Show the way",
+  "story": "A cook is lost in the storehouse, and the sea fog is thick. Talk to the cook, and walk to the market together. The cook cannot jump!",
+  "minutes": 25,
+  "theme": "sea-fog",
+  "goal": {
+    "type": "escort",
+    "npc": "cook",
+    "to": "market",
+    "label": "Lost cook"
+  },
+  "rename": {
+    "harbor-master": "Worried harbor master"
+  },
+  "texts": {
+    "pier-sign": {
+      "read": "OLD PIER. The cook cannot jump: stand on the flat stone, so the cook can cross the broken pier."
+    }
+  },
+  "stations": [
+    {
+      "at": "store-tablet",
+      "filter": {
+        "tags": [
+          "harbor"
+        ],
+        "level": "group"
+      }
+    }
+  ],
+  "zone": "harbor"
+}

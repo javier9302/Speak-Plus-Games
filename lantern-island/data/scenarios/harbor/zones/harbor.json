@@ -1,0 +1,381 @@
+{
+  "id": "harbor",
+  "name": "Moonlight Harbor",
+  "theme": "sunset",
+  "legendHelp": "Base tiles, plus * stacks of crates (this pack's own tile, in pack.json).",
+  "goal": {
+    "label": "Lanterns",
+    "items": {
+      "lantern": 3
+    },
+    "deliver": "harbor-master",
+    "story": "The harbor lights are out. Bring three lanterns to the harbor master."
+  },
+  "rows": [
+    "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+    "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+    "~~~~~~~~~...~~~~~~~~~~~~~~~~~~~~~~~~",
+    "~~~~~~~~~~.~~~~~~~~~~~~~~~~~~~~~~~~~",
+    "~~....................~~~~~~~~~~~~~~",
+    "~~.,,,,,,,,,,,,,,,,,,.~~~~~~~~.....~",
+    "~~.,,,,,,,,,,,,,,,,,,.~~~~~~~~.....~",
+    "~~.,,,,,,,,,,,,,,,,,,.~~~~~~~~.....~",
+    "~~.,,,,,,,,,,,,,,,,,,.~~~~~~~~RR.RR~",
+    "~~.,,,,,,,,,,,,,,,,,,*~~~~~~~~.....~",
+    "~~.###################========#####~",
+    "~~.,,,,,,,,,,,,,,,,,,*~~~~~~~~.....~",
+    "~~.,,,ppp,,,,,,,,,,,,.~~~~~~~~.....~",
+    "~~.,,,ppp,,,,,,,,,,,,.~~~~~~~~.....~",
+    "~~.,,,,,,,,,,,,,,,,,,.~~~~~~~~.....~",
+    "~~..................*.~~~~~~~~~~~~~~",
+    "~~~~.~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+    "~~.....~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+    "~~.....~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+    "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+  ],
+  "places": [
+    {
+      "id": "market",
+      "name": "the market",
+      "x": 12,
+      "y": 12
+    },
+    {
+      "id": "quay",
+      "name": "the quay",
+      "x": 18,
+      "y": 7
+    },
+    {
+      "id": "pier",
+      "name": "the old pier",
+      "x": 26,
+      "y": 10
+    },
+    {
+      "id": "north-cove",
+      "name": "the north cove",
+      "x": 10,
+      "y": 3
+    },
+    {
+      "id": "sandbar",
+      "name": "the sandbar",
+      "x": 4,
+      "y": 18
+    },
+    {
+      "id": "islet",
+      "name": "the islet",
+      "x": 32,
+      "y": 12
+    }
+  ],
+  "landmarks": [
+    {
+      "id": "harbor-light",
+      "name": "the harbor light",
+      "art": "lighthouse",
+      "x": 34,
+      "y": 5,
+      "w": 1,
+      "h": 2,
+      "solid": true
+    },
+    {
+      "id": "fish-market",
+      "name": "the fish market",
+      "art": "market",
+      "x": 14,
+      "y": 12,
+      "w": 1,
+      "h": 1,
+      "solid": true
+    },
+    {
+      "id": "harbor-fountain",
+      "name": "the harbor fountain",
+      "art": "fountain",
+      "x": 9,
+      "y": 9,
+      "w": 1,
+      "h": 1,
+      "solid": true
+    },
+    {
+      "id": "boat-dock",
+      "name": "the boat dock",
+      "art": "dock",
+      "x": 5,
+      "y": 18,
+      "w": 2,
+      "h": 1,
+      "solid": false
+    }
+  ],
+  "slotsHelp": "The notice board and the bell stand on one of these tiles, a different one every mission.",
+  "slots": {
+    "board": [
+      [
+        12,
+        6
+      ],
+      [
+        15,
+        9
+      ],
+      [
+        18,
+        12
+      ]
+    ],
+    "bell": [
+      [
+        19,
+        13
+      ],
+      [
+        9,
+        6
+      ],
+      [
+        16,
+        14
+      ]
+    ]
+  },
+  "objects": [
+    {
+      "id": "board",
+      "kind": "sign",
+      "name": "Notice board",
+      "slot": "board",
+      "clues": {
+        "read": "HARBOR NEWS. The storehouse on the islet has a door with a code. Its first number is {d1}. The harbor master needs lanterns."
+      }
+    },
+    {
+      "id": "anchor",
+      "kind": "statue",
+      "name": "Stone anchor",
+      "x": 5,
+      "y": 8,
+      "clues": {
+        "look": "An old stone anchor. Somebody painted a number on it: {d2}. It is the second number of a code.",
+        "read": "\"Strong hands, kind hearts.\""
+      }
+    },
+    {
+      "id": "harbor-bell",
+      "kind": "bell",
+      "name": "Brass bell",
+      "slot": "bell",
+      "clues": {
+        "listen": "The wind rings the bell. A voice in the sound says: \"The last number is {d3}.\"",
+        "look": "A small brass bell. It is very old."
+      }
+    },
+    {
+      "id": "pier-sign",
+      "kind": "sign",
+      "name": "Pier sign",
+      "x": 20,
+      "y": 9,
+      "clues": {
+        "read": "OLD PIER. The gate is locked: the key is in the north cove, behind a crate. The pier is broken: jump, then stand on the flat stone so the others can cross."
+      }
+    },
+    {
+      "id": "lock-sign",
+      "kind": "sign",
+      "name": "Lock sign",
+      "x": 7,
+      "y": 14,
+      "clues": {
+        "read": "LOCK GATE. Fix it with a plank, then close it: the water goes down and you can walk to the sandbar."
+      }
+    },
+    {
+      "id": "harbor-master",
+      "kind": "npc",
+      "name": "Harbor master",
+      "x": 17,
+      "y": 11,
+      "clues": {
+        "talk": "\"Good evening! The harbor is dark. Please bring me three lanterns, all from one pair of hands.\""
+      },
+      "lines": [
+        "Good evening! What is your name?",
+        "How many lanterns do you have?",
+        "Where did you find them?",
+        "Can you say that again, please?",
+        "Thank you! The ships can see the harbor again."
+      ]
+    },
+    {
+      "id": "fisher",
+      "kind": "npc",
+      "name": "Fisher",
+      "x": 4,
+      "y": 11,
+      "clues": {
+        "talk": "\"I lost my lucky crystal in the storehouse. Can you help me?\""
+      },
+      "lines": [
+        "Hello! Do you like fish?",
+        "What did you find?",
+        "Thank you so much!"
+      ]
+    },
+    {
+      "id": "crate",
+      "kind": "boulder",
+      "name": "Heavy crate",
+      "x": 10,
+      "y": 3,
+      "to": {
+        "x": 11,
+        "y": 4
+      },
+      "clues": {
+        "look": "A heavy crate. There is something behind it."
+      }
+    },
+    {
+      "id": "net-chest",
+      "kind": "chest",
+      "name": "Net chest",
+      "x": 10,
+      "y": 2,
+      "holds": "key"
+    },
+    {
+      "id": "loose-plank",
+      "kind": "item",
+      "name": "Plank",
+      "x": 15,
+      "y": 5,
+      "item": "plank"
+    },
+    {
+      "id": "pier-gate",
+      "kind": "gate",
+      "name": "Pier gate",
+      "x": 23,
+      "y": 10,
+      "locked": true,
+      "key": "key"
+    },
+    {
+      "id": "broken-pier",
+      "kind": "gap",
+      "name": "Broken pier",
+      "x": 26,
+      "y": 10
+    },
+    {
+      "id": "pier-plate",
+      "kind": "plate",
+      "name": "Flat stone",
+      "x": 28,
+      "y": 10,
+      "target": "broken-pier"
+    },
+    {
+      "id": "store-gate",
+      "kind": "gate",
+      "name": "Storehouse door",
+      "x": 32,
+      "y": 8,
+      "locked": true,
+      "code": 3
+    },
+    {
+      "id": "to-store",
+      "kind": "exit",
+      "name": "Storehouse steps",
+      "x": 32,
+      "y": 6,
+      "to": "storehouse",
+      "arrive": "store-door"
+    },
+    {
+      "id": "lock-gate",
+      "kind": "sluice",
+      "name": "Lock gate",
+      "x": 6,
+      "y": 15,
+      "needs": "plank",
+      "floods": [
+        {
+          "x": 4,
+          "y": 16
+        }
+      ]
+    },
+    {
+      "id": "crane",
+      "kind": "machine",
+      "name": "Old crane",
+      "x": 31,
+      "y": 12,
+      "needs": "plank"
+    },
+    {
+      "id": "quay-tablet",
+      "kind": "station",
+      "name": "Quay tablet",
+      "x": 19,
+      "y": 6,
+      "card": {
+        "type": "choice",
+        "level": "group"
+      },
+      "reward": {
+        "item": "lantern"
+      }
+    },
+    {
+      "id": "market-tablet",
+      "kind": "station",
+      "name": "Market tablet",
+      "x": 12,
+      "y": 8,
+      "card": {
+        "type": "typed",
+        "level": "group"
+      },
+      "reward": {
+        "item": "lantern"
+      }
+    },
+    {
+      "id": "boat-tablet",
+      "kind": "station",
+      "name": "Sandbar tablet",
+      "x": 3,
+      "y": 18,
+      "card": {
+        "type": "spelling",
+        "level": "group"
+      },
+      "reward": {
+        "item": "lantern"
+      }
+    },
+    {
+      "id": "pier-tablet",
+      "kind": "station",
+      "name": "Islet tablet",
+      "x": 33,
+      "y": 12,
+      "card": {
+        "type": "code",
+        "level": "group"
+      },
+      "reward": {
+        "item": "lantern"
+      }
+    }
+  ]
+}

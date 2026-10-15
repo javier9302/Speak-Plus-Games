@@ -1,0 +1,49 @@
+{
+  "id": "harbor",
+  "name": "Moonlight Harbor",
+  "order": 3,
+  "story": "A harbor on the far side of the island, with an old pier and a storehouse under the rocks. The example pack: it uses every goal type, two maps, themes, slots and its own cards.",
+  "unlock": {
+    "landmarks": 4
+  },
+  "theme": "sunset",
+  "tiles": {
+    "*": {
+      "name": "stack of crates",
+      "solid": true,
+      "base": ",",
+      "pal": {
+        "w": "#a9713c",
+        "d": "#6e4423"
+      },
+      "art": [
+        "................",
+        "..kkkkkkkkkkkk..",
+        "..kwwwwdwwwwwk..",
+        "..kwdwwdwwdwwk..",
+        "..kwwwwdwwwwwk..",
+        "..kkkkkkkkkkkk..",
+        ".kkkkkkkkkkkkkk.",
+        ".kwwwwwdwwwwwwk.",
+        ".kwdwwwdwwwdwwk.",
+        ".kwwwwwdwwwwwwk.",
+        ".kdddddddddddddk",
+        ".kwwwwwdwwwwwwk.",
+        ".kwdwwwdwwwdwwk.",
+        ".kwwwwwdwwwwwwk.",
+        ".kkkkkkkkkkkkkk.",
+        "................"
+      ]
+    }
+  },
+  "themes": {
+    "sea-fog": {
+      "name": "Sea fog",
+      "tint": "rgba(205, 214, 224, 0.42)",
+      "palette": {
+        "#3b82d6": "#7f9cb8",
+        "#7fb6f0": "#b8c8d8"
+      }
+    }
+  }
+}

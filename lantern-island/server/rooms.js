@@ -204,7 +204,8 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
   // ---------- missions ----------
   // Gives a card to every tablet nobody has opened yet (mission start, or the level changed).
   async function drawCards(room) {
-    const all = await cards.all(), used = new Set(room.things.filter((t) => t.card && t.st !== 'new').map((t) => t.card.id)), drawn = [];
+    // A pack's own cards are only for its own missions; the library's cards are for every mission.
+    const all = (await cards.all()).filter((c) => !c.pack || c.pack === room.zone.pack), used = new Set(room.things.filter((t) => t.card && t.st !== 'new').map((t) => t.card.id)), drawn = [];
     for (const t of room.things.filter((x) => kindOf(x).card && x.st === 'new')) {
       const entry = room.mission.stations.find((s) => s.at === t.id);
       t.card = pickCard(all, entry?.card ? { id: entry.card } : entry?.filter, room.group.level, used);

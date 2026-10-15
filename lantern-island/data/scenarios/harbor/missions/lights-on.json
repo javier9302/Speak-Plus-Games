@@ -1,0 +1,27 @@
+{
+  "id": "lights-on",
+  "title": "Lights on",
+  "story": "The old crane and the big lamp in the storehouse are broken. Make them both work again.",
+  "theme": "night",
+  "minutes": 25,
+  "goal": {
+    "type": "restore",
+    "machines": [
+      "crane",
+      "store-lamp"
+    ],
+    "restore": "harbor-fountain"
+  },
+  "stations": [
+    {
+      "at": "store-tablet",
+      "filter": {
+        "tags": [
+          "harbor"
+        ],
+        "level": "group"
+      }
+    }
+  ],
+  "zone": "harbor"
+}

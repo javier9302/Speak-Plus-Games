@@ -1,0 +1,41 @@
+{
+  "id": "bell-song",
+  "title": "The stone song",
+  "story": "Three stones in the storehouse sing when you push them in the right order. The order is on a sign on the islet, and it changes every time.",
+  "minutes": 20,
+  "goal": {
+    "type": "sequence",
+    "order": [
+      "sun-stone",
+      "moon-stone",
+      "star-stone"
+    ],
+    "shuffle": true,
+    "label": "Stones",
+    "restore": "fish-market"
+  },
+  "add": [
+    {
+      "id": "order-sign",
+      "kind": "sign",
+      "name": "Stone sign",
+      "x": 30,
+      "y": 6,
+      "clues": {
+        "read": "In the storehouse, push the stones in this order: {order}."
+      }
+    }
+  ],
+  "stations": [
+    {
+      "at": "store-tablet",
+      "filter": {
+        "tags": [
+          "harbor"
+        ],
+        "level": "group"
+      }
+    }
+  ],
+  "zone": "harbor"
+}

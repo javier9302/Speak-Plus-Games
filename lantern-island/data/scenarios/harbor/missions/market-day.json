@@ -1,0 +1,53 @@
+{
+  "id": "market-day",
+  "title": "Market day",
+  "story": "Two people are waiting for deliveries, in the order on the market list. Hurry: the market closes in 20 minutes!",
+  "minutes": 20,
+  "timeLimit": 20,
+  "goal": {
+    "type": "deliver-order",
+    "order": [
+      {
+        "to": "fisher",
+        "item": "crystal"
+      },
+      {
+        "to": "harbor-master",
+        "item": "lantern"
+      }
+    ],
+    "shuffle": true,
+    "label": "Deliveries"
+  },
+  "add": [
+    {
+      "id": "market-list",
+      "kind": "sign",
+      "name": "Market list",
+      "x": 13,
+      "y": 6,
+      "clues": {
+        "read": "TODAY'S DELIVERIES, in this order: {deliveries}."
+      }
+    }
+  ],
+  "stations": [
+    {
+      "at": "quay-tablet",
+      "filter": {
+        "type": "choice",
+        "level": "group"
+      }
+    },
+    {
+      "at": "store-tablet",
+      "filter": {
+        "tags": [
+          "harbor"
+        ],
+        "level": "group"
+      }
+    }
+  ],
+  "zone": "harbor"
+}

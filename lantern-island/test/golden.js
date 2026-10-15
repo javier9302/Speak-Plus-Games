@@ -8,6 +8,7 @@ import { loadContent } from '../server/content.js';
 import { loadAbilities, dealPreset } from '../server/abilities.js';
 import { normalizeMission, zoneFor } from '../server/missions.js';
 import { solve } from '../server/solver.js';
+import { makeRun } from '../server/run.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const file = path.join(root, 'test', 'solver-golden.json');
@@ -21,7 +22,8 @@ export async function solverAnswers() {
   const out = {};
   for (const raw of content.missions) {
     const m = normalizeMission(raw, content.zones, items);
-    for (let n = 2; n <= 6; n++) { const r = solve(zoneFor(m, content.zones), m, dealPreset(abilities, n)); out[`${m.id} ${n}`] = { ok: r.ok, log: r.log, problems: r.problems }; }
+    const run = makeRun(zoneFor(m, content.zones), m, 0);         // the layout as written (seed 0)
+    for (let n = 2; n <= 6; n++) { const r = solve(run.zone, run.mission, dealPreset(abilities, n)); out[`${m.id} ${n}`] = { ok: r.ok, log: r.log, problems: r.problems }; }
   }
   return out;
 }

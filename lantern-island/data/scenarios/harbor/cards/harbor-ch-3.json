@@ -1,0 +1,20 @@
+{
+  "id": "harbor-ch-3",
+  "type": "choice",
+  "level": "B1",
+  "tags": [
+    "harbor"
+  ],
+  "prompt": "The storm was terrible, ___ the boats stayed in the harbor.",
+  "options": {
+    "A": "because",
+    "B": "so",
+    "C": "although"
+  },
+  "answer": "B",
+  "hints": [
+    "The second part is a result.",
+    "Which word means 'for this reason'?",
+    "It has two letters."
+  ]
+}

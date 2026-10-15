@@ -1,0 +1,36 @@
+{
+  "id": "the-lucky-jar",
+  "title": "The lucky jar",
+  "story": "The fisher kept a lucky crystal in one of three jars in the storehouse. A note on the islet says which one. Choose the right jar!",
+  "minutes": 20,
+  "goal": {
+    "type": "odd-one-out",
+    "answer": "random",
+    "label": "Lucky jar",
+    "restore": "boat-dock"
+  },
+  "add": [
+    {
+      "id": "jar-note",
+      "kind": "sign",
+      "name": "Fisher's note",
+      "x": 33,
+      "y": 6,
+      "clues": {
+        "read": "\"My lucky jar is the {odd}. Please find it!\" - the fisher"
+      }
+    }
+  ],
+  "stations": [
+    {
+      "at": "store-tablet",
+      "filter": {
+        "tags": [
+          "harbor"
+        ],
+        "level": "group"
+      }
+    }
+  ],
+  "zone": "harbor"
+}

@@ -6,8 +6,12 @@ const calm = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-mo
 // Pre-draws the whole zone once (two frames, for the water).
 export function createScene(zone) {
   setKindArt(zone.art);                  // pictures of kinds that bring their own
-  // Several maps joined (an atlas) have regions, each with its theme; one map is one region.
-  const regions = zone.regions || [{ x: 0, y: 0, w: zone.w, h: zone.h, theme: zone.theme }];
+  // Several maps joined (an atlas) have regions, each with its theme; one map is one region. Each region also
+  // takes half of the water between it and the next one, so no strip is left without a theme.
+  const regions = (zone.regions || [{ x: 0, y: 0, w: zone.w, h: zone.h, theme: zone.theme }]).map((r, i, all) => {
+    const x0 = i ? Math.floor((all[i - 1].x + all[i - 1].w + r.x) / 2) : 0, x1 = i < all.length - 1 ? Math.floor((r.x + r.w + all[i + 1].x) / 2) : zone.w;
+    return { ...r, x: x0, y: 0, w: x1 - x0, h: zone.h };
+  });
   const regionAt = (x) => regions.find((r) => x >= r.x && x < r.x + r.w) || regions[0];
   const make = (frame) => {
     const c = document.createElement('canvas');

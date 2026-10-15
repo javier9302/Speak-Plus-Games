@@ -1,0 +1,146 @@
+{
+  "id": "storehouse",
+  "name": "The storehouse",
+  "theme": "night",
+  "rowsHelp": "No player starts: players arrive through the steps on the islet.",
+  "rows": [
+    "RRRRRRRRRRRRRRRRRRRRRR",
+    "R####################R",
+    "R####################R",
+    "R####################R",
+    "R####################R",
+    "R####################R",
+    "R####################R",
+    "R####################R",
+    "R####################R",
+    "R####################R",
+    "R####################R",
+    "RRRRRRRRRRRRRRRRRRRRRR"
+  ],
+  "places": [
+    {
+      "id": "storehouse",
+      "name": "the storehouse",
+      "x": 11,
+      "y": 6
+    }
+  ],
+  "landmarks": [],
+  "objects": [
+    {
+      "id": "store-door",
+      "kind": "exit",
+      "name": "Steps up",
+      "x": 2,
+      "y": 6,
+      "to": "harbor",
+      "arrive": "to-store"
+    },
+    {
+      "id": "store-tablet",
+      "kind": "station",
+      "name": "Storehouse tablet",
+      "x": 6,
+      "y": 2,
+      "card": {
+        "type": "choice",
+        "level": "group"
+      },
+      "reward": {
+        "item": "lantern"
+      }
+    },
+    {
+      "id": "store-chest",
+      "kind": "chest",
+      "name": "Fisher's box",
+      "x": 10,
+      "y": 2,
+      "holds": "crystal"
+    },
+    {
+      "id": "spare-plank",
+      "kind": "item",
+      "name": "Spare plank",
+      "x": 4,
+      "y": 3,
+      "item": "plank"
+    },
+    {
+      "id": "store-lamp",
+      "kind": "machine",
+      "name": "Big lamp",
+      "x": 14,
+      "y": 2,
+      "needs": "key",
+      "clues": {
+        "look": "A big old lamp. It has a keyhole: it needs a key to start."
+      }
+    },
+    {
+      "id": "sun-stone",
+      "kind": "pad",
+      "name": "Sun stone",
+      "x": 6,
+      "y": 9
+    },
+    {
+      "id": "moon-stone",
+      "kind": "pad",
+      "name": "Moon stone",
+      "x": 10,
+      "y": 9
+    },
+    {
+      "id": "star-stone",
+      "kind": "pad",
+      "name": "Star stone",
+      "x": 14,
+      "y": 9
+    },
+    {
+      "id": "blue-jar",
+      "kind": "candidate",
+      "name": "Blue jar",
+      "x": 18,
+      "y": 3,
+      "clues": {
+        "look": "A jar with a blue lid."
+      }
+    },
+    {
+      "id": "red-jar",
+      "kind": "candidate",
+      "name": "Red jar",
+      "x": 18,
+      "y": 6,
+      "clues": {
+        "look": "A jar with a red lid."
+      }
+    },
+    {
+      "id": "green-jar",
+      "kind": "candidate",
+      "name": "Green jar",
+      "x": 18,
+      "y": 9,
+      "clues": {
+        "look": "A jar with a green lid."
+      }
+    },
+    {
+      "id": "cook",
+      "kind": "npc",
+      "name": "Cook",
+      "x": 12,
+      "y": 6,
+      "clues": {
+        "talk": "\"I am lost down here! Please take me to the market.\""
+      },
+      "lines": [
+        "Where is the market?",
+        "Thank you! I am so hungry."
+      ]
+    }
+  ]
+}

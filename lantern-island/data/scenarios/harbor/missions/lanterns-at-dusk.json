@@ -1,0 +1,39 @@
+{
+  "id": "lanterns-at-dusk",
+  "title": "Lanterns at dusk",
+  "story": "The harbor lights are out and the boats cannot come home. Find three lanterns, one of them in the storehouse, and bring them to the harbor master.",
+  "minutes": 25,
+  "goal": {
+    "label": "Lanterns",
+    "items": {
+      "lantern": 3
+    },
+    "restore": "harbor-light"
+  },
+  "stations": [
+    {
+      "at": "quay-tablet",
+      "filter": {
+        "type": "choice",
+        "level": "group"
+      }
+    },
+    {
+      "at": "market-tablet",
+      "filter": {
+        "type": "typed",
+        "level": "group"
+      }
+    },
+    {
+      "at": "store-tablet",
+      "filter": {
+        "tags": [
+          "harbor"
+        ],
+        "level": "group"
+      }
+    }
+  ],
+  "zone": "harbor"
+}

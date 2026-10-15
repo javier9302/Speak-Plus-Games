@@ -1,0 +1,20 @@
+{
+  "id": "harbor-ch-2",
+  "type": "choice",
+  "level": "A2",
+  "tags": [
+    "harbor"
+  ],
+  "prompt": "Where do ships stop to load and unload?",
+  "options": {
+    "A": "At a station",
+    "B": "At a harbor",
+    "C": "At an airport"
+  },
+  "answer": "B",
+  "hints": [
+    "It is next to the sea.",
+    "This pack is about one!",
+    "It starts with H."
+  ]
+}
