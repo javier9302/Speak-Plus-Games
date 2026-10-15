@@ -172,6 +172,16 @@ To add an effect (for example "slow"): add it to `EFFECTS` in `server/sabotage.j
 
 A match is not saved to the group's island (no stars, landmarks or sessions). The cooperative game is unchanged and can run on the same server at the same time.
 
+## Scenario packs
+
+All the adventures are data, one folder per pack in `data/scenarios/`: `beach`, `forest` (opens after 2 restored landmarks) and `harbor` (Moonlight Harbor, opens after 4: the example pack that uses every feature). A pack holds its maps, missions, its own challenge cards, tiles and themes.
+
+- **Writing a pack:** follow `docs/SCENARIO_GUIDE.md`. It covers every field, the object kinds and goal types, the design rules, and ends with a complete small pack to copy.
+- **Checking it:** `npm run check -- <pack>` lists every mistake in plain English, with the file and a suggestion for typos, and proves every mission can be finished with 2 to 6 players (and every shuffled run of it).
+- **Editing while the game runs:** the server reloads pack files by itself. The next mission uses them; running missions keep theirs. A file with a mistake keeps the last good version and shows the problem on the teacher panel.
+- **Variety:** missions can change their map (rename, new clue texts, move, add or remove objects), choose a theme (night, winter, rain, festival...), a goal type (collect, restore machines, press stones in order, find the odd one out, deliveries in order, escort a character) and a time limit. Objects in slots, shuffles and random goal parts make every run different.
+- Pack missions and cards appear in the teacher panel but are edited in their files only. The teacher's own templates and cards work as before.
+
 ## The teacher panel and the PIN
 
 **http://localhost:3000/teacher/** manages groups: level, monster setting, notes, and the save buttons below.

@@ -48,7 +48,7 @@ const has = (list, ...parts) => list.some((e) => parts.every((p) => e.includes(p
 async function main() {
   console.log('\nLoading the packs');
   const real = await load(path.join(root, 'data'));
-  check('the beach and forest packs load with no mistakes', !real.errors.length && Object.keys(real.packs).join() === 'beach,forest', real.errors.join(' | '));
+  check('every pack loads with no mistakes (beach and forest first)', !real.errors.length && Object.keys(real.packs).slice(0, 2).join() === 'beach,forest' && real.packs.harbor, real.errors.join(' | '));
   check('maps keep their ids and know their pack', real.zones.beach.pack === 'beach' && real.zones.forest.pack === 'forest' && real.zones.forest.unlock === 2);
 
   console.log('\nMistakes in a map, in plain English');
@@ -165,6 +165,30 @@ async function main() {
   check('a mission that names a card that does not exist', has(r.errors, 'no-such-card', 'does not exist'));
   r = await runCheck(path.join(root, 'data'), path.join(root, 'data'), 'forest');
   check('one pack can be checked alone', r.ok && r.report.includes('PACK forest') && !r.report.includes('PACK beach'));
+
+  console.log('\nThe scenario guide (docs/SCENARIO_GUIDE.md)');
+  const guide = await fs.readFile(path.join(root, 'docs', 'SCENARIO_GUIDE.md'), 'utf8');
+  const { KINDS } = await import('../server/kinds/index.js');
+  const { GOALS } = await import('../server/goals/index.js');
+  const { BASE_TILES, WEATHER } = await import('../server/tiles.js');
+  const { MISSION_FIELDS } = await import('../server/missions.js');
+  const { ZONE_FIELDS, PACK_FIELDS, SHUFFLE_FIELDS, GOAL_PLACEHOLDERS } = await import('../server/validate.js');
+  const { OVERRIDE_FIELDS } = await import('../server/overrides.js');
+  const themes = Object.keys(JSON.parse(await fs.readFile(path.join(root, 'data', 'themes.json'), 'utf8'))).filter((k) => !k.endsWith('Help'));
+  const names = [
+    ...Object.keys(KINDS), ...Object.values(KINDS).flatMap((k) => Object.keys(k.fields)), ...Object.keys(GOALS), ...Object.values(GOALS).flatMap((g) => Object.keys(g.fields)),
+    ...Object.keys(BASE_TILES), ...WEATHER, ...themes, ...MISSION_FIELDS, ...ZONE_FIELDS, ...PACK_FIELDS, ...SHUFFLE_FIELDS, ...OVERRIDE_FIELDS,
+    ...GOAL_PLACEHOLDERS.map((p) => `{${p}}`), '{d1}', '{where:<id>}', '{name:<id>}',
+  ];
+  const missing = [...new Set(names)].filter((n) => !guide.includes('`' + n + '`') && !guide.includes('`' + n + ' ') && !guide.includes(' ' + n + '`'));
+  check('the guide documents every kind, goal type, tile, theme, weather, field and placeholder', !missing.length, missing.join(', '));
+  // Its full example, taken from the page, must pass npm run check.
+  const example = await fs.mkdtemp(path.join(os.tmpdir(), 'lantern-guide-'));
+  for (const f of ['items.json', 'abilities.json', 'monster.json', 'seed-cards.json', 'themes.json']) await fs.copyFile(path.join(root, 'data', f), path.join(example, f));
+  const blocks = [...guide.matchAll(/```json (scenarios\/[^\n]+)\n([\s\S]*?)```/g)];
+  for (const [, rel, body] of blocks) { await fs.mkdir(path.dirname(path.join(example, rel)), { recursive: true }); await fs.writeFile(path.join(example, rel), body); }
+  const exampleCheck = await runCheck(example, example, 'tiny');
+  check('the guide\'s full example passes npm run check', blocks.length === 3 && exampleCheck.ok, exampleCheck.errors.join(' | '));
 
   console.log('\nEditing packs while the server runs');
   dir = await copy();
