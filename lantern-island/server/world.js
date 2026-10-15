@@ -22,12 +22,22 @@ export function parseZone(raw) {
   });
   if (spawns.length < 6) throw new Error(`Zone ${id}: needs 6 player starts ("p"), has ${spawns.length}`);
 
+  // Slots: named lists of tiles. An object with "slot" stands on one of them, a different one each run (run.js).
+  // Here it gets the first free tile of its slot: the layout as written (seed 0).
+  const slots = Object.fromEntries(Object.entries(raw.slots || {}).map(([k, tiles]) => [k, tiles.map(([x, y]) => ({ x, y }))]));
+  const nextOf = {};
   // Objects stand on a tile. What they are and do is in things.js.
   const objects = [], seen = new Set(), taken = new Set();
-  for (const o of raw.objects || []) {
+  for (const raw0 of raw.objects || []) {
+    const o = { ...raw0 };
     const where = `Zone ${id}, object "${o.id}"`;
     if (!o.id || seen.has(o.id)) throw new Error(`${where}: every object needs its own id`);
     seen.add(o.id);
+    if (o.slot) {
+      const tile = slots[o.slot]?.[nextOf[o.slot] = (nextOf[o.slot] ?? -1) + 1];
+      if (!tile) throw new Error(`${where}: the slot "${o.slot}" has no free tile left`);
+      o.x = tile.x; o.y = tile.y;
+    }
     for (const f of o.floods || []) { const tile = rows[f.y]?.[f.x]; if (!tile || SOLID.has(tile)) throw new Error(`${where}: flooded tile ${f.x},${f.y} must be ground`); }
     for (const at of [o, o.to].filter(Boolean)) {
       const tile = rows[at.y]?.[at.x];
@@ -51,7 +61,8 @@ export function parseZone(raw) {
   }
   const places = (raw.places || []).filter((p) => p.id && p.name && Number.isFinite(p.x) && Number.isFinite(p.y)).map((p) => ({ id: p.id, name: String(p.name), x: p.x, y: p.y }));
   // `pack` and `unlock` (landmarks a group must have restored before this zone opens) come from the pack (content.js).
-  return { id: raw.id, name: raw.name, w, h: rows.length, rows: rows.map((r) => r.replace(/p/g, ',')), spawns, objects, places, landmarks, fixed, goal: raw.goal || null };
+  return { id: raw.id, name: raw.name, w, h: rows.length, rows: rows.map((r) => r.replace(/p/g, ',')), spawns, objects, places, landmarks, fixed, goal: raw.goal || null,
+    slots, shuffle: Array.isArray(raw.shuffle) ? raw.shuffle : [] };
 }
 
 // `block` is a set of "x,y" tiles taken by things (closed gates, chests...). It changes during the game.

@@ -39,6 +39,9 @@ import { kindOf, KIND_ART } from './kinds/index.js';
 import { goalOf } from './goals/index.js';
 import { gameCtx } from './things.js';
 import { zoneFor } from './missions.js';
+import { makeRun, isRandom } from './run.js';
+
+const RUN_TRIES = 20;                     // seeds tried for a run that this team can finish
 import { whyNot, inspect } from './solver.js';
 import { pickCard, innerCard, publicCard, teacherCard, checkAnswer } from './cards.js';
 import { createChat } from './chat.js';
@@ -145,7 +148,7 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
   function sendQueue(room) {
     if (!room.teachers.size) return;
     const msg = JSON.stringify({
-      t: 'queue', room: room.code, phase: room.phase, stats: room.stats, found: room.found.size,
+      t: 'queue', room: room.code, phase: room.phase, stats: room.stats, found: room.found.size, seed: room.seed ?? null,
       stations: room.things.filter((t) => kindOf(t).card && t.card).map((t) => {
         const card = t.inner || t.card, name = (id) => room.players.find((p) => p.id === id)?.name || null;
         return {
@@ -211,12 +214,24 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
     if (!room.group) return fail(ws, 'no-group', 'Choose a group first (on the host screen).');
     if (room.players.length < 2) return fail(ws, 'few-players', `The game needs 2 to ${cfg.roomSize} players.`);
     // Never start a mission that cannot be finished: say why instead.
-    const zone = zoneFor(mission, zones), n = room.players.length;   // the map as this mission changes it
-    let stuck = whyNot(zone, mission, dealPreset(abilities, n));
+    const base = zoneFor(mission, zones), n = room.players.length, sets = dealPreset(abilities, n);   // the map as this mission changes it
+    const written = makeRun(base, mission, 0);                         // the layout as written
+    const stuck = whyNot(written.zone, written.mission, sets);
     if (stuck) return fail(ws, 'bad', `This mission cannot be finished with ${n} players. ${stuck}.`);
-    room.mission = mission;
+    // A new run each time (run.js): objects in slots, shuffles, the goal's random parts. Only a run this team can
+    // finish is used; after RUN_TRIES seeds, the layout as written. A mission with a "seed" always plays that run.
+    let run = written;
+    if (mission.seed != null) { const r = makeRun(base, mission, mission.seed); if (!whyNot(r.zone, r.mission, sets)) run = r; }
+    else if (isRandom(base, mission)) {
+      for (let tries = 0; tries < RUN_TRIES; tries++) {
+        const r = makeRun(base, mission, 1 + crypto.randomInt(2 ** 31 - 2));
+        if (!whyNot(r.zone, r.mission, sets)) { run = r; break; }
+      }
+    }
+    room.mission = run.mission;
+    room.seed = run.seed;
     room.missionRun++;
-    room.zone = zone;
+    room.zone = run.zone;
     room.gateCode = Array.from({ length: 6 }, () => 1 + crypto.randomInt(9)).join('');
     room.players.forEach((p) => { toSpawn(room, p); p.notes = []; p.items = []; });
     room.found.clear();
@@ -225,7 +240,7 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
     room.stats = { solved: 0, wrong: 0, hints: 0, acts: 0, stuns: 0, slays: 0 };
     room.clock = 0; room.paused = false; room.result = null; room.timeUp = false;
     room.things = buildThings(room.zone, mission.stations.map((s) => s.at));
-    room.goalState = goalOf(mission.goal).start(room, mission.goal);
+    room.goalState = goalOf(room.mission.goal).start(room, room.mission.goal);
     const drawn = await drawCards(room);
     cards.touch(drawn).catch(console.error);
     room.block = blockSet(room.things);
@@ -245,7 +260,7 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
     sendRoster(room);
     chat.pushInboxes(room);
     // A note for the teacher if, with this mission, some player has no ability the team needs.
-    const idle = inspect(room.zone, mission, room.players.map((p) => p.abilities), abilities.ids).idle;
+    const idle = inspect(room.zone, room.mission, room.players.map((p) => p.abilities), abilities.ids).idle;
     if (idle.length) for (const t of room.teachers) send(t, { t: 'error', code: 'note', msg: `Note: in this mission ${idle.map((i) => room.players[i].name).join(' and ')} ${idle.length > 1 ? 'have' : 'has'} no ability the team must use. Reshuffle, or add tablets.` });
   }
 

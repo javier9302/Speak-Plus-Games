@@ -10,6 +10,9 @@ import { loadContent } from '../server/content.js';
 import { loadAbilities, dealPreset } from '../server/abilities.js';
 import { normalizeMission } from '../server/missions.js';
 import { inspect, solve } from '../server/solver.js';
+import { makeRun } from '../server/run.js';
+import { runCheck } from '../server/check.js';
+import { zoneFor } from '../server/missions.js';
 import { client } from './client.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -23,6 +26,9 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 // The test map: grass with water around it, 24 x 14.
 const rows = Array.from({ length: 14 }, (_, y) => (y === 0 || y === 13 ? '~'.repeat(24) : `~${','.repeat(22)}~`));
 rows[6] = `~,,pppppp${','.repeat(14)}~`;
+// One tile nobody can reach (21,12), water all around: a slot that includes it makes some runs impossible.
+rows[11] = `${rows[11].slice(0, 20)}~~~${rows[11].slice(23)}`;
+rows[12] = `${rows[12].slice(0, 20)}~,~${rows[12].slice(23)}`;
 const testbed = {
   id: 'testbed', name: 'Test field', rows,
   goal: { type: 'restore', story: 'Make the machines work.' },
@@ -51,6 +57,19 @@ const missions = {
   'tb-odd': { goal: { type: 'odd-one-out', answer: 'c2' } },
   'tb-order': { goal: { type: 'deliver-order', order: [{ to: 'farmer', item: 'key' }, { to: 'cook', item: 'letter' }] } },
   'tb-escort': { goal: { type: 'escort', npc: 'cook', to: 'harbor' } },
+  'tb-random-odd': {
+    goal: { type: 'odd-one-out', answer: 'random' },
+    slots: { corner: [[2, 4], [3, 4], [4, 4], [2, 5]] },
+    add: [{ id: 'hint', kind: 'sign', name: 'Hint', slot: 'corner', clues: { read: 'Choose the {odd}.' } }],
+  },
+  'tb-random-seq': { goal: { type: 'sequence', order: ['moon', 'sun', 'star'], shuffle: true }, texts: { board: { read: 'Press {order}.' } } },
+  'tb-fixed': { goal: { type: 'sequence', order: ['moon', 'sun', 'star'], shuffle: true }, seed: 5 },
+  'tb-reroll': {
+    goal: { type: 'odd-one-out', answer: 'q2' },
+    remove: ['c1', 'c2', 'c3'],
+    slots: { pots: [[21, 12], [13, 11], [14, 11], [15, 11]] },
+    add: [1, 2, 3].map((n) => ({ id: `q${n}`, kind: 'candidate', name: `Pot ${n}`, slot: 'pots' })),
+  },
   'tb-override': { goal: { type: 'restore' }, rename: { board: 'Notice board' }, texts: { board: { read: 'TODAY: fix the pump first.' } }, add: [{ id: 'extra', kind: 'sign', name: 'New sign', x: 4, y: 4, clues: { read: 'Hello from the mission.' } }] },
 };
 
@@ -71,9 +90,9 @@ async function main() {
   const it = JSON.parse(await fs.readFile(path.join(dir, 'items.json'), 'utf8'));
   const items = { list: it.items, byId: Object.fromEntries(it.items.map((i) => [i.id, i])) };
   const content = await loadContent(dir, { abilities, items });
-  check('the test pack loads, with every goal type', !content.errors.length && content.missions.filter((m) => m.pack === 'testbed').length === 6, content.errors.join(' | '));
+  check('the test pack loads, with every goal type', !content.errors.length && content.missions.filter((m) => m.pack === 'testbed').length === 10, content.errors.join(' | '));
   const zone = content.zones.testbed;
-  for (const id of Object.keys(missions).filter((x) => x !== 'tb-override')) {
+  for (const id of ['tb-restore', 'tb-sequence', 'tb-odd', 'tb-order', 'tb-escort']) {
     const m = normalizeMission(content.missions.find((x) => x.id === id), content.zones, items);
     const results = [2, 3, 4, 5, 6].map((n) => inspect(zone, m, dealPreset(abilities, n), abilities.ids));
     check(`${m.goal.type}: can be finished with 2 to 6 players`, results.every((r) => r.ok), results.map((r) => r.problems.join(';')).join(' | '));
@@ -87,6 +106,21 @@ async function main() {
   check('escort: a character behind water cannot be brought, and the report says why', !esc.ok && esc.problems.some((p) => p.includes('nobody with Talk can get to the cook') || p.includes('cannot walk')), esc.problems.join(' | '));
   const order = solve(zone, norm({ type: 'deliver-order', order: [{ to: 'farmer', item: 'crystal' }] }), two);
   check('deliver-order: an item the map never gives is a dead end', !order.ok && order.problems.some((p) => p.includes('never gets the crystal')));
+
+  console.log('\nReplayability: slots, shuffles, seeds');
+  const nm = (id) => normalizeMission(content.missions.find((x) => x.id === id), content.zones, items);
+  const odd = nm('tb-random-odd'), oddZone = zoneFor(odd, content.zones);
+  const runs = Array.from({ length: 20 }, (_, i) => makeRun(oddZone, odd, i + 1));
+  const at = (run, id) => { const o = run.zone.objects.find((x) => x.id === id); return `${o.x},${o.y}`; };
+  check('seed 0 is the layout as written', at(makeRun(oddZone, odd, 0), 'hint') === '2,4' && makeRun(oddZone, odd, 0).mission.goal.answer === 'c1');
+  check('the same seed always gives the same run', JSON.stringify(makeRun(oddZone, odd, 7)) === JSON.stringify(makeRun(oddZone, odd, 7)));
+  check('different seeds move objects in slots, and change the odd one', new Set(runs.map((r) => at(r, 'hint'))).size >= 3 && new Set(runs.map((r) => r.mission.goal.answer)).size === 3);
+  check('the base map is never changed by a run', at({ zone: oddZone }, 'hint') === '2,4');
+  const seq = nm('tb-random-seq');
+  check('a shuffled sequence has a new order in different runs', new Set(Array.from({ length: 12 }, (_, i) => makeRun(zoneFor(seq, content.zones), seq, i + 1).mission.goal.order.join())).size >= 3);
+  const checked = await runCheck(dir, dir, 'testbed');
+  check('npm run check finds the runs that cannot be finished, with their seed', checked.errors.some((e) => e.includes('tb-reroll') && e.includes('shuffled runs cannot be finished') && /seed \d+/.test(e)), checked.errors.filter((e) => e.includes('tb-')).join(' | '));
+  check('and the other shuffled missions pass', !checked.errors.some((e) => e.includes('shuffled runs') && !e.includes('tb-reroll')));
 
   console.log('\nPlaying each goal');
   const app = await createApp({ port: 0, contentDir: dir, dataDir: await fs.mkdtemp(path.join(os.tmpdir(), 'lantern-goal-saves-')), publicUrl: '', pin: '2468', quiet: true, watch: false });
@@ -168,6 +202,31 @@ async function main() {
   const done = await ended(9000);
   guide.send({ t: 'input', x: 0, y: 0 });
   check('escort: walking to the place with it completes the mission', done?.result.completed === true, `cook at ${thing('cook').x},${thing('cook').y}`);
+
+  // a new run each time: the clue tells this run's odd one; the server never starts a run that cannot be finished
+  await start('tb-random-odd');
+  const answer = r.mission.goal.answer, hint = thing('hint');
+  check('a mission gets a seed, and its random parts are chosen', r.seed > 0 && ['c1', 'c2', 'c3'].includes(answer));
+  const reader2 = who('read');
+  await tp(reader2, hint.x, hint.y + 1 <= 12 ? hint.y + 1 : hint.y - 1); await act(reader2, 'read');
+  check('a clue placeholder gives this run\'s answer', reader2.all.filter((m) => m.t === 'clue').at(-1)?.text === `Choose the ${thing(answer).name.toLowerCase()}.`);
+  const chooser2 = who('use');
+  await tp(chooser2, thing(answer).x, thing(answer).y - 1); await act(chooser2, 'use');
+  check('choosing this run\'s answer completes the mission', (await ended())?.result.completed === true);
+  await start('tb-random-seq');
+  const runOrder = r.mission.goal.order;
+  await tp(reader2, 2, 3); await act(reader2, 'read');
+  check('{order} gives this run\'s order', reader2.all.filter((m) => m.t === 'clue').at(-1)?.text === `Press ${runOrder.map((id) => `the ${thing(id).name.toLowerCase()}`).join(', then ')}.`);
+  const pusher2 = who('push');
+  for (const id of runOrder) { await tp(pusher2, thing(id).x, thing(id).y); await act(pusher2, 'push'); }
+  check('pressing in this run\'s order completes the mission', (await ended())?.result.completed === true);
+  await start('tb-fixed');
+  const fixed1 = r.mission.goal.order.join();
+  await start('tb-fixed');
+  check('a mission with a "seed" plays the same run every time', r.seed === 5 && r.mission.goal.order.join() === fixed1);
+  let safe = true;
+  for (let i = 0; i < 8; i++) { await start('tb-reroll'); safe &&= !(thing('q2').x === 21 && thing('q2').y === 12); }
+  check('runs that cannot be finished are never started', safe);
 
   // a mission's overrides reach the phones
   await start('tb-override');

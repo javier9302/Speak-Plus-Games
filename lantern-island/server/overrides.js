@@ -6,6 +6,8 @@
 //   "move":   { "<object id>": { "x": 3, "y": 4 } }
 //   "remove": ["<object id>", ...]
 //   "add":    [ { a whole object, as in a map file } ]
+//   "slots":  { "<name>": [[x, y], ...] }   more slots, or other tiles for a slot (see run.js)
+//   "shuffle": [{ "objects": [...], "field": "holds" }]   more shuffles (added to the map's)
 //
 // The changed map is checked exactly like a map file (validate.js), so a mission cannot put a sign in the sea
 // or point a plate at nothing. Missions without overrides use their map as it is.
@@ -13,7 +15,7 @@ import { parseZone } from './world.js';
 import { zoneProblems } from './validate.js';
 import { didYouMean } from './words.js';
 
-export const OVERRIDE_FIELDS = ['rename', 'texts', 'lines', 'move', 'remove', 'add'];
+export const OVERRIDE_FIELDS = ['rename', 'texts', 'lines', 'move', 'remove', 'add', 'slots', 'shuffle'];
 const isObj = (v) => v && typeof v === 'object' && !Array.isArray(v);
 
 export const hasOverrides = (raw) => OVERRIDE_FIELDS.some((k) => raw?.[k] !== undefined);
@@ -79,8 +81,17 @@ export function applyOverrides(zone, raw, fail) {
     else objects.push(...raw.add.map((o) => structuredClone(o)));
     clean.add = raw.add;
   }
+  let slots = zone.raw.slots, shuffle = zone.raw.shuffle;
+  if (raw.slots !== undefined) {
+    if (!isObj(raw.slots)) fail('"slots" is { "<name>": [[x, y], ...] }');
+    else { slots = { ...(slots || {}), ...raw.slots }; clean.slots = raw.slots; }
+  }
+  if (raw.shuffle !== undefined) {
+    if (!Array.isArray(raw.shuffle)) fail('"shuffle" is a list: [{ "objects": [...], "field": "holds" }]');
+    else { shuffle = [...(shuffle || []), ...raw.shuffle]; clean.shuffle = raw.shuffle; }
+  }
   // The changed map must be as good as a map file.
-  const changed = { ...zone.raw, objects };
+  const changed = { ...zone.raw, objects, ...(slots ? { slots } : {}), ...(shuffle ? { shuffle } : {}) };
   const problems = zoneProblems(changed, zone.deps);
   for (const p of problems) fail(`with this mission's changes, ${p}`);
   if (problems.length) return { zone, overrides: clean };

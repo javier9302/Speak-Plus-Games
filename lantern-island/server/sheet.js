@@ -1,7 +1,7 @@
 // Data for the printable teacher sheets: one for a zone (before class), one for the mission
 // that is running (with its real cards, codes and players). The page is public/teacher/sheet.html.
 import { dealPreset } from './abilities.js';
-import { fillCode } from './things.js';
+import { fillText } from './things.js';
 import { solve } from './solver.js';
 import { KINDS } from './kinds/index.js';
 import { goalOf } from './goals/index.js';
@@ -12,9 +12,14 @@ const how = (o, itemName) => KINDS[o.kind].how(o, itemName);
 export function createSheets({ zones, abilities, items, missions, rooms }) {
   const itemName = (id) => (items.byId[id]?.name || id).toLowerCase();
   const ability = (id) => abilities.byId[id]?.name || id;
-  const puzzles = (zone, code, only) => zone.objects.filter((o) => !KINDS[o.kind].card || !only || only.includes(o.id)).map((o) => ({
+  // Before class, a clue's placeholders say what they will become (they change every mission).
+  const before = (text, zone) => text.replace(/\{d(\d)\}/g, (m, n) => `(number ${n} of the code)`)
+    .replace(/\{where:([^}]*)\}/g, (m, id) => `(near where the ${(zone.objects.find((o) => o.id === id)?.name || id).toLowerCase()} is)`)
+    .replace(/\{name:([^}]*)\}/g, (m, id) => zone.objects.find((o) => o.id === id)?.name || id)
+    .replace(/\{(order|odd|deliveries)\}/g, (m, k) => `(${{ order: 'the order of this mission', odd: 'the odd one of this mission', deliveries: 'the deliveries of this mission' }[k]})`);
+  const puzzles = (zone, room, only) => zone.objects.filter((o) => !KINDS[o.kind].card || !only || only.includes(o.id)).map((o) => ({
     name: o.name, kind: o.kind, how: how(o, itemName),
-    clues: Object.entries(o.clues || {}).map(([a, text]) => ({ ability: ability(a), text: code ? fillCode(text, code) : text.replace(/\{d(\d)\}/g, (m, n) => `(number ${n} of the code)`) })),
+    clues: Object.entries(o.clues || {}).map(([a, text]) => ({ ability: ability(a), text: room ? fillText(text, room, items) : before(text, zone) })),
   }));
 
   return {
@@ -46,7 +51,7 @@ export function createSheets({ zones, abilities, items, missions, rooms }) {
         teacherRoles: ['seer', 'healer', 'slayer'].filter((r) => room.mon && room.roles[r] === 'teacher'),
         players: room.players.map((p) => ({ name: p.name, abilities: p.abilities.map(ability), roles: roleOf(p) })),
         stations,
-        puzzles: puzzles(room.zone, room.gateCode, m.stations.map((s) => s.at)),
+        puzzles: puzzles(room.zone, room, m.stations.map((s) => s.at)),
         steps: solve(room.zone, m, room.players.map((p) => p.abilities)).log,
       };
     },

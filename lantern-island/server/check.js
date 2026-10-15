@@ -11,6 +11,10 @@ import { normalizeMission, zoneFor } from './missions.js';
 import { inspect, zoneRules, solve } from './solver.js';
 import { KINDS, progressOf, abilityOf } from './kinds/index.js';
 import { goalOf } from './goals/index.js';
+import { makeRun, isRandom } from './run.js';
+import { GOAL_PLACEHOLDERS } from './validate.js';
+
+const SEEDS = 30;                         // shuffled runs tried for each mission whose runs can differ
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -40,11 +44,18 @@ export async function runCheck(contentDir = path.join(root, 'data'), dataDir = c
     say(`PACK ${zone.pack}, MAP: ${zone.name}  (${zone.objects.length} objects, ${zone.landmarks.length} landmarks)`);
 
     // Reachability: two players who have every ability must be able to read every clue and finish every object.
-    const reach = solve(zone, normalizeMission({ id: 'reach', zone: zone.id, goal: goalOf(zone.goal).wholeZone(zone.goal), stations: zone.objects.filter((o) => KINDS[o.kind].card).map((o) => ({ at: o.id })) }, zones, items), [abilities.ids, abilities.ids], { explore: true });
-    for (const t of reach.things) {
-      for (const a of Object.keys(t.def.clues || {})) if (!reach.clues.has(`${t.id}:${a}`)) fail(`${zone.id}: object "${t.id}" (at ${t.x},${t.y}): its ${name(a)} clue can never be reached`);
-      const step = progressOf(t);
-      if (step) fail(`${zone.id}: object "${t.id}" (at ${t.x},${t.y}): the team can never ${name(abilityOf(step, t))} it (it cannot be reached, or what it needs never turns up)`);
+    // With slots or shuffles, every run is checked the same way (the seed in a message reproduces it).
+    const reachMission = normalizeMission({ id: 'reach', zone: zone.id, goal: goalOf(zone.goal).wholeZone(zone.goal), stations: zone.objects.filter((o) => KINDS[o.kind].card).map((o) => ({ at: o.id })) }, zones, items);
+    const unreached = new Set();
+    for (const seed of isRandom(zone, reachMission) ? [0, ...Array.from({ length: SEEDS }, (_, i) => i + 1)] : [0]) {
+      const run = makeRun(zone, reachMission, seed), at = seed ? ` with seed ${seed}` : '';
+      const reach = solve(run.zone, run.mission, [abilities.ids, abilities.ids], { explore: true });
+      for (const t of reach.things) {
+        const say1 = (msg) => { if (!unreached.has(t.id)) { unreached.add(t.id); fail(msg); } };
+        for (const a of Object.keys(t.def.clues || {})) if (!reach.clues.has(`${t.id}:${a}`)) say1(`${zone.id}: object "${t.id}" (at ${t.x},${t.y}${at}): its ${name(a)} clue can never be reached`);
+        const step = progressOf(t);
+        if (step) say1(`${zone.id}: object "${t.id}" (at ${t.x},${t.y}${at}): the team can never ${name(abilityOf(step, t))} it (it cannot be reached, or what it needs never turns up)`);
+      }
     }
 
     const all = normalizeMission({ id: 'whole-zone', title: `Whole zone: every tablet of ${zone.name}`, zone: zone.id, goal: goalOf(zone.goal).wholeZone(zone.goal), stations: zone.objects.filter((o) => KINDS[o.kind].card).map((o) => ({ at: o.id })) }, zones, items);
@@ -55,9 +66,15 @@ export async function runCheck(contentDir = path.join(root, 'data'), dataDir = c
       for (const s of mission.stations) if (s.card && !cardIds.has(s.card)) fail(`${mission.title}: tablet "${s.at}" asks for the card "${s.card}", which does not exist`);
       say();
       say(`  ${mission.title}  (${mission.stations.length} tablets, goal: ${goalOf(mission.goal).describe(mission.goal)})`);
+      const base = zoneFor(mission, zones), written = makeRun(base, mission, 0);   // the map as this mission changes it, as written
+      // Goal placeholders in clues ({order}...) must be ones this mission's goal fills in.
+      const gives = Object.keys(goalOf(written.mission.goal).placeholders?.(written.mission.goal, { name: (x) => x, itemName: (x) => x }) || {});
+      for (const o of written.zone.objects) for (const text of Object.values(o.clues || {})) for (const [, ph] of String(text).matchAll(/\{([^}]*)\}/g)) {
+        if (GOAL_PLACEHOLDERS.includes(ph) && !gives.includes(ph)) fail(`${mission.title}: the clue of "${o.id}" uses {${ph}}, but this mission's goal (${written.mission.goal.type}) does not fill it in`);
+      }
       for (let n = 2; n <= 6; n++) {
         const sets = dealPreset(abilities, n);
-        const r = inspect(zoneFor(mission, zones), mission, sets, abilities.ids);   // the map as this mission changes it
+        const r = inspect(written.zone, written.mission, sets, abilities.ids);
         if (!r.ok) { fail(`${mission.title}, ${n} players: cannot be finished. ${r.problems.join('; ')}`); continue; }
         const notes = [];
         if (r.idle.length) fail(`${mission.title}, ${n} players: player ${r.idle.map((i) => i + 1).join(' and ')} (${r.idle.map((i) => sets[i].map(name).join('/')).join('; ')}) is never needed`);
@@ -65,6 +82,16 @@ export async function runCheck(contentDir = path.join(root, 'data'), dataDir = c
         else if (r.required.length < abilities.ids.length) notes.push(`not needed here: ${abilities.ids.filter((a) => !r.required.includes(a)).map(name).join(', ')}`);
         for (const rule of mission === all ? zoneRules(zone, all, sets, abilities.ids) : []) fail(`${zone.name}, ${n} players: ${rule}`);
         say(`    ok    ${n} players: can be finished in ${r.log.length} steps; every player is needed${notes.length ? '  (' + notes.join('; ') + ')' : ''}`);
+      }
+      // Every run must be finishable too (the server never starts one that is not, but a pack should not have them).
+      if (mission !== all && isRandom(base, mission)) {
+        const bad = [];
+        for (let seed = 1; seed <= SEEDS; seed++) for (let n = 2; n <= 6; n++) {
+          const run = makeRun(base, mission, seed), r = solve(run.zone, run.mission, dealPreset(abilities, n));
+          if (!r.ok) bad.push(`seed ${seed}, ${n} players: ${r.problems.join('; ')}`);
+        }
+        if (bad.length) fail(`${mission.title}: ${bad.length} of ${SEEDS * 5} shuffled runs cannot be finished, for example ${bad.slice(0, 2).join(' | ')}. Check the slots and shuffles.`);
+        else say(`    ok    ${SEEDS} shuffled runs, 2 to 6 players: all can be finished`);
       }
     }
     say();

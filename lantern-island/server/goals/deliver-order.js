@@ -1,11 +1,12 @@
 // Bring items to characters in a given order ("order": [{ "to", "item" }]). A clue should say who comes first.
 // A character whose turn has not come says so; nothing is lost.
 import { KINDS } from '../kinds/index.js';
+import { shuffled } from '../random.js';
 export default {
   type: 'deliver-order',
   label: 'Deliveries',
   about: 'Bring items to characters in order: "order": [{ "to": a character, "item": an item }, ...]. Talk to the character while carrying the item. Clues should say the order.',
-  fields: { order: 'the deliveries in order: [{ "to": the id of a character, "item": an item id }]' },
+  fields: { order: 'the deliveries in order: [{ "to": the id of a character, "item": an item id }]', shuffle: 'true: a new order every run (clues give it with {deliveries})' },
   normalize(raw, c) {
     const npcs = c.objectsOf((k) => !!k.character).map((o) => o.id);
     const order = raw.order ?? c.base.order;
@@ -14,8 +15,11 @@ export default {
       if (!npcs.includes(d?.to)) c.fail(`goal: delivery ${i + 1}: "to" must be a character of this map.${c.didYouMean(d?.to, npcs)}`);
       if (!c.items.byId[d?.item]) c.fail(`goal: delivery ${i + 1}: "${d?.item}" is not an item.${c.didYouMean(d?.item, Object.keys(c.items.byId))}`);
     }
-    return { order: order.map((d) => ({ to: d.to, item: d.item })), label: raw.label };
+    return { order: order.map((d) => ({ to: d.to, item: d.item })), shuffle: !!raw.shuffle, label: raw.label };
   },
+  random: (goal) => goal.shuffle,
+  run: (goal, rnd) => (goal.shuffle && rnd ? { ...goal, order: shuffled(goal.order, rnd) } : goal),
+  placeholders: (goal, c) => ({ deliveries: goal.order.map((d) => `the ${c.itemName(d.item)} to the ${c.name(d.to)}`).join(', then ') }),
   describe: (goal) => `${goal.order.length} deliveries in order`,
   start: () => ({ next: 0 }),
   progress: (room, goal) => ({ have: room.goalState.next, need: goal.order.length, done: room.goalState.next >= goal.order.length }),

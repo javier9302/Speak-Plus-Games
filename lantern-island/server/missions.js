@@ -11,7 +11,7 @@ import { applyOverrides, OVERRIDE_FIELDS } from './overrides.js';
 const played = new WeakMap();
 export const zoneFor = (mission, zones) => played.get(mission) || zones[mission.zone];
 
-export const MISSION_FIELDS = ['id', 'title', 'story', 'zone', 'minutes', 'timeLimit', 'goal', 'stations', 'monster', ...OVERRIDE_FIELDS];
+export const MISSION_FIELDS = ['id', 'title', 'story', 'zone', 'minutes', 'timeLimit', 'seed', 'goal', 'stations', 'monster', ...OVERRIDE_FIELDS];
 export const GOAL_FIELDS = ['type', 'label', 'restore', 'story'];       // every goal type has these; the rest is in its file
 
 // The clean goal of a mission (or of a map, with stations = null). Mistakes go to `fail`.
@@ -64,6 +64,7 @@ export function normalizeMission(raw, zones, items) {
   if (!stations.length && !problems.length) fail('needs at least one tablet');
   const goal = normalizeGoal(raw.goal, { zone, items, stations, fail });
   if (raw.monster !== undefined && !MONSTERS.includes(raw.monster)) fail(`"monster" must be one of ${MONSTERS.join(', ')}`);
+  if (raw.seed != null && !(Number.isInteger(raw.seed) && raw.seed >= 0)) fail('"seed" is a whole number: every run uses that layout (0 = the layout as written)');
   if (raw.timeLimit != null && !(Number.isInteger(raw.timeLimit) && raw.timeLimit >= 1 && raw.timeLimit <= 90)) fail('"timeLimit" is a number of minutes, 1 to 90: the mission ends when the time is up');
   stop();
   const mission = {
@@ -71,6 +72,7 @@ export function normalizeMission(raw, zones, items) {
     title: text(raw.title, 60) || 'Mission', story: text(raw.story, 400), zone: zone.id,
     minutes: Math.max(5, Math.min(90, Math.round(Number(raw.minutes) || 25))),
     timeLimit: raw.timeLimit || null,      // minutes; when the time is up the mission ends (not finished)
+    seed: raw.seed ?? null,                // a fixed run (run.js); null: a new one every time
     goal,
     stations, monster: ['off', 'gentle', 'normal', 'hard'].includes(raw.monster) ? raw.monster : 'group-setting',
     pack: raw.pack || null,                // the scenario pack it comes from; null for the teacher's own templates

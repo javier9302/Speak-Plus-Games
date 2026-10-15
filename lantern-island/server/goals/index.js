@@ -17,6 +17,9 @@
 //   tick(room, dt, ctx)  20 times a second; returns true if something on the map changed
 //   solver(s)           { step(), done(), why(problems) } run inside the solver (see solver.js for what s offers)
 //   sheet(goal, ctx)    one sentence for the teacher's sheet
+//   random(goal)        true if the goal changes from run to run (npm run check then tries many seeds)
+//   run(goal, rnd, zone)  the goal for one run (rnd() gives numbers 0..1; rnd is null for the layout as written)
+//   placeholders(goal, c)  { name: text } for clue placeholders like {order} (c.name(id), c.itemName(id))
 // }
 import fs from 'node:fs';
 import path from 'node:path';

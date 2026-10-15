@@ -4,6 +4,7 @@
 import { REACH } from './world.js';
 import { KINDS as REGISTRY, kindOf, abilityOf, actionFor } from './kinds/index.js';
 import { didYouMean } from './words.js';
+import { goalOf } from './goals/index.js';
 
 export const KINDS = Object.keys(REGISTRY);
 
@@ -82,6 +83,27 @@ const tileOf = (p) => `${Math.floor(p.x)},${Math.floor(p.y)}`;
 // {d1} {d2} ... in a clue become the digits of this mission's gate code.
 export const fillCode = (text, code) => String(text).replace(/\{d(\d)\}/g, (m, n) => code?.[n - 1] ?? '?');
 
+// A clue's text for this run: {d1}... the code's digits, {where:<id>} "near <the closest named place>",
+// {name:<id>} an object's name, and the goal's own ({order}, {odd}, {deliveries}).
+export function fillText(text, room, items) {
+  const find = (id) => room.things.find((t) => t.id === id) || room.zone.objects.find((o) => o.id === id);
+  const c = { name: (id) => (find(id)?.name || id).toLowerCase(), itemName: (id) => (items?.byId[id]?.name || id).toLowerCase() };
+  const goal = room.mission?.goal, own = goal ? goalOf(goal).placeholders?.(goal, c) || {} : {};
+  return String(text).replace(/\{([^}]*)\}/g, (m, ph) => {
+    const d = /^d(\d)$/.exec(ph);
+    if (d) return room.gateCode?.[d[1] - 1] ?? '?';
+    const ref = /^(where|name):(.*)$/.exec(ph);
+    if (ref) {
+      const t = find(ref[2]);
+      if (!t) return '?';
+      if (ref[1] === 'name') return t.name;
+      const place = (room.zone.places || []).map((p) => [Math.hypot(p.x - (t.x + 0.5), p.y - (t.y + 0.5)), p]).sort((a, b) => a[0] - b[0])[0]?.[1];
+      return place ? `near ${place.name}` : 'somewhere on the island';
+    }
+    return Object.hasOwn(own, ph) ? own[ph] : m;
+  });
+}
+
 // What a kind's rules may look at in a running game.
 export function gameCtx(room, items, player = null) {
   return {
@@ -145,7 +167,7 @@ export function useAbility(room, p, ability, items, msg = {}) {
   }
 
   if (t.def.clues?.[ability.id]) {
-    return { clue: { key: `${t.id}:${ability.id}`, o: t.id, a: ability.id, name: t.name, text: fillCode(t.def.clues[ability.id], room.gateCode) } };
+    return { clue: { key: `${t.id}:${ability.id}`, o: t.id, a: ability.id, name: t.name, text: fillText(t.def.clues[ability.id], room, items) } };
   }
 
   const act = actionFor(t, ability.id);
