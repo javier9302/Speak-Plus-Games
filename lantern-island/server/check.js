@@ -50,6 +50,25 @@ export async function runCheck(contentDir = path.join(root, 'data'), dataDir = c
     for (const r of atlas.regions || [zone]) reached.add(r.id);
     say(`PACK ${zone.pack}, MAP: ${zone.name}${atlas.regions ? ` (with ${atlas.regions.slice(1).map((r) => r.name).join(', ')}, through exits)` : ''}  (${atlas.objects.length} objects, ${atlas.landmarks.length} landmarks)`);
 
+    // Ways back. An exit needs a free tile next to the exit it leads to (players land there), or nobody comes back.
+    // A timed door needs a lever its players can reach from each side, or whoever crosses can never cross back.
+    for (const e of atlas.objects.filter((o) => o.kind === 'exit')) if (!e.land) fail(`${zone.pack}/${e.zone || zone.id}: the exit "${e.id}" leads to "${e.arrive}" in "${e.to}", but there is no free tile next to "${e.arrive}" to land on (move what blocks it). Players could never come back that way.`);
+    {
+      const ground = (x, y) => x >= 0 && y >= 0 && x < atlas.w && y < atlas.h && !atlas.solidTiles.has(atlas.rows[y][x]);
+      for (const door of atlas.objects.filter((o) => o.kind === 'timed-door')) {
+        const levers = atlas.objects.filter((o) => o.kind === 'lever' && o.target === door.id);
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const sx = door.x + dx, sy = door.y + dy;
+          if (!ground(sx, sy)) continue;
+          // Everything this side can walk to with the door shut (other doors and gates counted as open: a generous guess).
+          const seen = new Set([`${door.x},${door.y}`]), todo = [[sx, sy]], side = new Set();
+          while (todo.length) { const [x, y] = todo.pop(), k = `${x},${y}`; if (seen.has(k) || !ground(x, y)) continue; seen.add(k); side.add(k); todo.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]); }
+          const near = (l) => [-1, 0, 1].some((ax) => [-1, 0, 1].some((ay) => side.has(`${l.x + ax},${l.y + ay}`)));
+          if (side.size > 1 && !levers.some(near)) fail(`${zone.pack}: the timed door "${door.id}" (at ${door.x},${door.y}) has no lever on its side at ${sx},${sy}: players who cross it can never open it to come back. Put a lever on each side.`);
+        }
+      }
+    }
+
     // Reachability: two players who have every ability must be able to read every clue and finish every object.
     // With slots or shuffles, every run is checked the same way (the seed in a message reproduces it).
     const reachMission = normalizeMission({ id: 'reach', zone: zone.id, goal: goalOf(zone.goal).wholeZone(zone.goal), stations: tablets }, zones, items);

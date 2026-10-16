@@ -1,8 +1,11 @@
 // Escort a character to a named place: after a player talks to it, it follows that player. It cannot jump or
-// swim: the team must fix bridges or hold plates for it. It arrives within 1.5 tiles of the place.
+// swim: the team must fix bridges or hold plates for it. It arrives when it is within 2 tiles of the place.
 import { KINDS } from '../kinds/index.js';
 const STEP = 0.22;                                   // seconds per tile it walks
 const tile = (p) => [Math.floor(p.x), Math.floor(p.y)];
+// Arrived: within 2 tiles of the place's tile (a place's x, y name a tile). The character walks behind its leader, so
+// when the leader stands at the place, it is a tile or two away.
+const arrivedAt = (x, y, place) => Math.abs(x - Math.floor(place.x)) <= 2 && Math.abs(y - Math.floor(place.y)) <= 2;
 export default {
   type: 'escort',
   label: 'Escort',
@@ -38,6 +41,11 @@ export default {
     while (st.trail.length && st.trail[0][0] === npc.x && st.trail[0][1] === npc.y) st.trail.shift();
     const next = st.trail[0];
     if (!next) return false;
+    // The leader went through an exit (a bus, a door to another map): when it gets to that exit, it goes too.
+    if (Math.abs(next[0] - npc.x) > 1 || Math.abs(next[1] - npc.y) > 1) {
+      const exit = room.things.find((e) => e.kind === 'exit' && e.def.land && Math.abs(e.x - npc.x) + Math.abs(e.y - npc.y) <= 1 && Math.abs(e.def.land.x - next[0]) <= 1 && Math.abs(e.def.land.y - next[1]) <= 1);
+      if (exit) { npc.x = exit.def.land.x; npc.y = exit.def.land.y; st.trail.shift(); st.wait = STEP; return true; }
+    }
     // Only to a tile next to it (it cannot jump), and only where nothing blocks the way.
     if (Math.abs(next[0] - npc.x) > 1 || Math.abs(next[1] - npc.y) > 1 || room.solid(next[0] + 0.5, next[1] + 0.5)) {
       if (!st.told) { st.told = true; ctx.tell?.(leader, `The ${npc.name.toLowerCase()} cannot get there! Fix the way, or hold a plate for it.`); }
@@ -47,17 +55,17 @@ export default {
     st.trail.shift();
     npc.x = next[0]; npc.y = next[1]; st.wait = STEP; st.told = false;
     const place = room.zone.places.find((p) => p.id === goal.to);
-    if (place && Math.hypot(npc.x + 0.5 - place.x, npc.y + 0.5 - place.y) <= 1.5) { st.arrived = true; npc.following = false; }
+    if (place && arrivedAt(npc.x, npc.y, place)) { st.arrived = true; npc.following = false; }
     return true;
   },
   solver(s) {
     let started = false;
     const goal = s.mission.goal, npc = () => s.byId[goal.npc], place = () => s.zone.places.find((p) => p.id === goal.to);
-    const near = (seen) => [...seen].some((k) => { const [x, y] = k.split(',').map(Number); return Math.hypot(x + 0.5 - place().x, y + 0.5 - place().y) <= 1.5; });
+    const near = (seen) => [...seen].some((k) => { const [x, y] = k.split(',').map(Number); return arrivedAt(x, y, place()); });
     return {
       step() {
         if (started) return false;
-        for (const i of s.owners('talk')) if (s.reach(i, npc())) { started = true; s.used.add('talk'); s.log.push(`Talk: the ${npc().name.toLowerCase()} (it follows)`); return true; }
+        for (const i of s.owners('talk')) if (s.reach(i, npc())) { started = true; s.used.add('talk'); s.log.push(`Talk: the ${npc().name.toLowerCase()} (it follows)`); s.record({ k: 'escort-start', i, thing: npc().id }); return true; }
         return false;
       },
       done() {
@@ -65,6 +73,7 @@ export default {
         const walk = s.walkFrom([[npc().x, npc().y]]);
         if (!near(walk)) return false;
         s.log.push(`Walk: the ${npc().name.toLowerCase()} to ${place().name}`);
+        s.record({ k: 'escort-walk', thing: npc().id, place: goal.to });
         return true;
       },
       why: () => [!started ? `nobody with Talk can get to the ${npc().name.toLowerCase()}` : `the ${npc().name.toLowerCase()} cannot walk to ${place().name} (it cannot jump or swim)`],

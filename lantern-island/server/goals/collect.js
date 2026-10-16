@@ -47,7 +47,7 @@ export default {
         for (const i of s.owners('talk')) {
           if (!s.reach(i, npc) || !s.pool.filter((it) => it.item === item).every((it) => s.closure(it.holder).has(i))) continue;
           for (const it of s.pool) if (it.item === item && it.holder !== i) { if (s.has(it.holder, 'give')) s.used.add('give'); else if (s.has(i, 'pickup')) s.used.add('pickup'); else { s.used.add('give'); s.used.add('pickup'); } }
-          s.used.add('talk'); s.log.push(`Talk: the ${npc.name.toLowerCase()}, with the ${item}s`);
+          s.used.add('talk'); s.log.push(`Talk: the ${npc.name.toLowerCase()}, with the ${item}s`); s.record({ k: 'deliver', i, thing: npc.id, item, need });
           return true;
         }
         return false;

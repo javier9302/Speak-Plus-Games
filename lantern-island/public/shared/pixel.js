@@ -305,7 +305,8 @@ const things = new Map();
 // The picture of a thing in its current state: { kind, st, holds }.
 export function thingSprite(t) {
   if (t.look) return personSprite(t.look);
-  if (t.skin && skinArt[t.skin]) return artSprite(skinArt[t.skin], `skin:${t.skin}`, t.st);
+  // A skin may have a "held" picture: what a gap or a gate looks like while a plate (or a lever) holds it open.
+  if (t.skin && skinArt[t.skin]) return artSprite(skinArt[t.skin], `skin:${t.skin}`, t.held && skinArt[t.skin].states.held ? 'held' : t.st);
   if (kindArt[t.kind]) return artSprite(kindArt[t.kind], t.kind, t.st);
   const flags = (t.held ? 'h' : '') + (t.keypad ? 'k' : '') + (t.red ? 'r' : '');
   const key = `${t.kind}/${t.st}/${t.holds || ''}/${flags}`;

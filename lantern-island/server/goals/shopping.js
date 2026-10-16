@@ -56,6 +56,7 @@ export default {
           s.used.add('use'); s.pool.push({ item, holder: buyer }); coins -= shop.def.price; bought[item] = (bought[item] || 0) + 1;
           if (shop.left !== null) shop.left--;
           s.log.push(`Use: buy ${item} at the ${shop.name.toLowerCase()} (${plural(shop.def.price, 'coin')})`);
+          s.record({ k: 'buy', hearer, buyer, thing: shop.id, item });
           return true;
         }
         return false;

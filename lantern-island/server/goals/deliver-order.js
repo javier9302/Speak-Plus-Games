@@ -43,7 +43,7 @@ export default {
         const d = order[next], npc = s.byId[d.to];
         for (const i of s.owners('talk')) {
           if (!s.reach(i, npc) || !s.canGet(i, d.item)) continue;
-          s.take(i, d.item); s.used.add('talk'); s.log.push(`Talk: the ${npc.name.toLowerCase()}, with the ${d.item}`); next++;
+          s.take(i, d.item); s.used.add('talk'); s.log.push(`Talk: the ${npc.name.toLowerCase()}, with the ${d.item}`); s.record({ k: 'give-npc', i, thing: npc.id, item: d.item }); next++;
           return true;
         }
         return false;

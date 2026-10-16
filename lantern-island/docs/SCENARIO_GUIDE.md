@@ -150,6 +150,8 @@ The houses are numbered 1, 2, 3... from the left; 3 to 5 houses and the same num
 
 The gate asks for house numbers: `"code": { "type": "digits", "length": 2, "answer": "{pos:street.doctor}{pos:street.baker}" }` is the doctor's house number and the baker's (here 3 and 1: the code is 31). Clues show the rules: `"read": "Tom says: {rule:street.r1}"`. Each rule goes in a different clue, ideally for different abilities, so the team must share them. The check proves that the rules give exactly one answer, and that **no rule can be left out**; it names the one that is not needed. The arrangement is the same every mission (the houses do not shuffle), so use a new puzzle for each map.
 
+**Ways back.** `npm run check` also fails when an exit has no free tile next to the exit it leads to (players could never come back that way) and when a timed door has a lever on one side only.
+
 **Every clue must be needed.** `npm run check` takes each clue away, one at a time, and tries the mission again. A clue that can go without changing the result is "not needed": a note, or a FAIL when the pack has `"strictClues": true` (new packs should). Fix it by making the clue part of a puzzle, or by deleting it. Atmosphere on purpose (a shell that says "Waves.")? List its ability in the object's `extra`: `"extra": ["listen"]`. Do not make players hunt for clues they do not need: design the puzzle so that every clue is a piece they must have.
 
 ## 3c. Make anything: items, pictures and barriers
@@ -164,7 +166,7 @@ Nothing here needs code. Write JSON, run `npm run check -- <pack>`.
 
 The picture is 16 rows of 16 letters: `.` is clear, `k` the dark outline, any other letter a colour from `pal`. The id works in every object of that pack (`holds`, `item`, `requires`...) and must not be used by another item or pack. The five base items are written the same way in `data/items.json`.
 
-**Pictures for objects.** In `pack.json`: `"sprites": { "shop-door": { "pal": { "a": "#9db4e0" }, "states": { "default": [16 rows], "open": [16 rows] } } }`. Then any object of the pack can wear it: `"skin": "shop-door"`. The object is drawn with the picture of its state (`locked`, `closed`, `open` for a gate or a barrier; `broken`, `fixed` for a gap...) or `default` if it has none. So a gate in a city looks like a shop door and a gap in a jungle like a rope bridge, with the same rules.
+**Pictures for objects.** In `pack.json`: `"sprites": { "shop-door": { "pal": { "a": "#9db4e0" }, "states": { "default": [16 rows], "open": [16 rows] } } }`. Then any object of the pack can wear it: `"skin": "shop-door"`. The object is drawn with the picture of its state (`locked`, `closed`, `open` for a gate or a barrier; `broken`, `fixed` for a gap; `x`, `down` for a plate...) or `default` if it has none. A `held` picture is used while a plate or a lever holds a gap or a gate open: give your road works or rope bridge one, so the team can SEE when it is safe to cross. So a gate in a city looks like a shop door and a gap in a jungle like a rope bridge, with the same rules.
 
 **Barriers.** A `barrier` blocks the way until its `requires` are all met. `requires` is one rule or a list; a rule has exactly one of:
 
@@ -188,7 +190,7 @@ The design rules apply as always: a barrier must need abilities of two different
 
 Three ways to make the team talk, all written in JSON.
 
-**A timed door.** A `timed-door` is shut. A `lever` opens it for `seconds` (3 to 60). Put the lever **far from the door**: one player pulls it and calls "Go!", the others run through before it shuts. The lever's player cannot also be at the door, so a team of one can never pass (the check knows). The clock stops when the teacher pauses. A lever can also open a `gap` or a `gate`.
+**A timed door.** A `timed-door` is shut. A `lever` opens it for `seconds` (3 to 60). Players must be able to come back: put a lever on **each side** of the door (the check fails if one side has none). A lever far from the door makes one player pull it and call "Go!" while the others run through. The lever's player cannot also be at the door, so a team of one can never pass (the check knows). The clock stops when the teacher pauses. A lever can also open a `gap` or a `gate`.
 
 ```json
 { "id": "iron-door", "kind": "timed-door", "name": "Iron door", "x": 14, "y": 6 },
@@ -403,7 +405,8 @@ Other types: `typed` (`accepted`: answers, `allowTypos`), `spelling` (`word`), `
 4. `npm run check -- <pack>`: fix every FAIL. It names the file, the object and the reason, and suggests names for typos.
 5. Read the talk score the check prints: a note means the mission can be done with little talking.
 6. For a code gate, check that no clue gives the whole answer and that each clue is a piece players must have (section 3b).
-7. Start the server (`npm start`) and play a mission on the host screen with test players (the lobby's "Open a test player window").
+7. Run `node test/playthrough.js <pack>`: bots play every mission in a real room (walking, crossing, typing codes, handing items over) and say where they get stuck.
+8. Start the server (`npm start`) and play a mission on the host screen with test players (the lobby's "Open a test player window").
 
 ## 12. A full example: Maple City
 

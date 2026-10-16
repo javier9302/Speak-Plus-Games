@@ -53,7 +53,7 @@ async function main() {
   const world = host.last.world.zone;
   check('the screens get the city\'s pictures: its door skin and its items', !!world.skins['flat-door'] && world.itemArt.some((i) => i.id === 'parcel') && host.last.things.list.find((t) => t.id === 'flat-door').skin === 'flat-door');
   await tp(reader, 11, 6); await act(reader, 'read');
-  await tp(listener, 15, 6); await act(listener, 'listen');
+  await tp(listener, 14, 7); await act(listener, 'listen');
   await tp(looker, 15, 7); await act(looker, 'look');
   await tp(talker, 20, 15); await act(talker, 'talk');
   check('Mrs Lee wants a question first: the phone gets the question frames, no clue yet', talker.all.filter((x) => x.t === 'ask').at(-1)?.frames.includes('Where does the baker live?') && !clues(talker).some((t) => t.includes('Mrs Lee')));
@@ -63,7 +63,7 @@ async function main() {
   check('no single clue gives the number', !/\b31\b/.test(seen) && r.secrets.answers['flat-door'] === '31');
 
   // The avenue's light: the button opens it for a few seconds.
-  await tp(user, 14, 15); await act(user, 'use');
+  await tp(user, 11, 13); await act(user, 'use');
   check('the crossing button turns the light green for a while', thing('light-avenue').held === true && !r.block.has('8,10') && last(user, 'say', 'msg').includes('Go'), last(user, 'say', 'msg'));
   check('and the screens see it', host.last.things.list.find((t) => t.id === 'light-avenue').held === true);
 
@@ -147,7 +147,7 @@ async function main() {
   await tp(picker, 22, 12); await act(picker, 'pickup');
   check('the kiosk gives a ticket', player(picker).items.some((i) => i.item === 'ticket'));
   if (picker !== user) { cmd('give', { p: user.me.id, item: 'ticket' }); await sleep(100); }
-  await tp(user, 32, 14); await act(user, 'use');
+  await tp(user, 31, 14); await act(user, 'use');
   check('the ticket opens the bus gate (and stays in the pocket)', thing('bus-gate').st === 'closed' && player(user).items.some((i) => i.item === 'ticket'), last(user, 'nope', 'msg'));
   await act(opener, 'open');
   check('Open lifts the bar', thing('bus-gate').st === 'open');

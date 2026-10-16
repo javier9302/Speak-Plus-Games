@@ -93,8 +93,18 @@ export default {
     for (const [i, r] of rules(t).entries()) {
       if (!isPlates(r) || t.met.includes(i)) continue;
       const tiles = r.playersOn.map((id) => s.byId[id]).map((p) => p && `${p.x},${p.y}`);
-      const assign = (k, used) => k === tiles.length || s.regs.some((reg, j) => !used.has(j) && tiles[k] && reg.has(tiles[k]) && assign(k + 1, new Set([...used, j])));
-      if (assign(0, new Set())) { meet(t, i); return `${r.playersOn.length} players stand on the plates of the ${t.name.toLowerCase()}`; }
+      // Each plate needs a different player who can reach it.
+      const assign = (k, used) => {
+        if (k === tiles.length) return [];
+        for (let j = 0; j < s.regs.length; j++) {
+          if (used.has(j) || !tiles[k] || !s.regs[j].has(tiles[k])) continue;
+          const rest = assign(k + 1, new Set([...used, j]));
+          if (rest) return [[r.playersOn[k], j], ...rest];
+        }
+        return null;
+      };
+      const stand = assign(0, new Set());
+      if (stand) { meet(t, i); return { text: `${r.playersOn.length} players stand on the plates of the ${t.name.toLowerCase()}`, stand }; }
     }
     return null;
   },

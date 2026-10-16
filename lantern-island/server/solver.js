@@ -34,6 +34,7 @@ export function solve(zone, mission, sets, { without = [], explore = false, skip
   const pool = [];                       // items picked up: { item, holder }
   const clues = new Set();               // "thing:ability" found
   const used = new Set(), log = [];
+  const plan = [];                       // what the perfect team does, in order, so a test can play it in a real room (test/playthrough.js)
   const trace = [], clueAt = {}, clueBy = {}, handOvers = new Set(), factPasses = new Set();   // for the talk score and the time estimate
   let depsNow = [], isClue = false;      // the earlier steps the step being done uses (an item, a clue); is it a clue being read
   let done = false;
@@ -158,7 +159,7 @@ export function solve(zone, mission, sets, { without = [], explore = false, skip
     return seen;
   }
   // What a goal type's solver part may use (server/goals/<type>.js, "solver").
-  const s = { mission, things, byId, pool, used, log, clues, owners, has, canGet, take, key, zone, regs: null, regions, walkFrom, closure,
+  const s = { mission, things, byId, pool, used, log, clues, owners, has, canGet, take, key, zone, regs: null, regions, walkFrom, closure, record: (e) => plan.push(e),
     reach: (i, t) => reach(s.regs, i, t) };
   const goal = goalOf(mission.goal).solver(s);
 
@@ -167,31 +168,33 @@ export function solve(zone, mission, sets, { without = [], explore = false, skip
     s.regs = regs;
     let progress = false;
     // The owner of ability `a` does something to thing `t`, if they can get to it (and `ok` agrees).
-    const act = (a, t, what, effect, ok = () => true) => {
+    const act = (a, t, what, effect, ok = () => true, info = {}) => {
       for (const i of owners(a)) {
         if (!reach(regs, i, t) || !ok(i)) continue;
         depsNow = []; isClue = false;
         effect(i); used.add(a); log.push(`${NAMES[a]}: ${what}`); progress = true;
+        plan.push({ ...info, i, thing: t.id, a });
         trace.push({ i, x: t.x, y: t.y, deps: depsNow, clue: isClue });
         return true;
       }
       return false;
     };
     for (const t of things) {
-      for (const a of Object.keys(t.def.clues || {})) if (!clues.has(`${t.id}:${a}`) && !skipClues?.has(`${t.id}:${a}`)) act(a, t, `clue on the ${t.name.toLowerCase()}`, (i) => { isClue = true; clues.add(`${t.id}:${a}`); clueAt[`${t.id}:${a}`] = trace.length; clueBy[`${t.id}:${a}`] = i; });
+      for (const a of Object.keys(t.def.clues || {})) if (!clues.has(`${t.id}:${a}`) && !skipClues?.has(`${t.id}:${a}`)) act(a, t, `clue on the ${t.name.toLowerCase()}`, (i) => { isClue = true; clues.add(`${t.id}:${a}`); clueAt[`${t.id}:${a}`] = trace.length; clueBy[`${t.id}:${a}`] = i; }, () => true, { k: 'clue' });
       // The kind's next step forward, done the way the game does it.
       const step = progressOf(t);
       if (!step) continue;
       const what = step.log ? step.log(t) : step.gives ? `the ${t.holds} from the ${t.name.toLowerCase()}` : `the ${t.name.toLowerCase()}`;
+      const info = { k: 'step', kind: t.kind, item: step.needs?.item ? step.needs.item(t) : null, keep: !!step.needs?.keep, code: !!step.needs?.code, card: !!step.needs?.card, gives: !!step.gives };
       act(abilityOf(step, t), t, what, (i) => {
         if (step.gives) pool.push({ item: t.holds, holder: i, at: trace.length });
         if (step.needs?.item) { const it = take(i, step.needs.item(t)); if (step.needs.keep) pool.push({ ...it, holder: i }); }
         if (step.needs?.code) passClues(t, i);
         step.do(t, ctx);
-      }, (i) => allowed(step, t, i));
+      }, (i) => allowed(step, t, i), info);
     }
     // Things that settle by themselves once players are in place (players standing on plates).
-    for (const t of things) { const did = kindOf(t).settle?.(t, { regs, byId }); if (did) { log.push(`Stand: ${did}`); progress = true; } }
+    for (const t of things) { const did = kindOf(t).settle?.(t, { regs, byId }); if (did) { log.push(`Stand: ${did.text}`); plan.push({ k: 'stand', thing: t.id, stand: did.stand }); progress = true; } }
     // Abilities used just by walking somewhere (jumping over a gap).
     for (const t of things) for (const a of kindOf(t).markUsed?.(t, { owners, regs }) || []) used.add(a);
 
@@ -225,7 +228,7 @@ export function solve(zone, mission, sets, { without = [], explore = false, skip
     s.regs = regions();
     problems.push(...goal.why(problems));
   }
-  return { ok: done, used, log, problems, things, clues, stats: estimate() };
+  return { ok: done, used, log, problems, things, clues, plan, stats: estimate() };
 
   // How much talking the mission needs (clues and items that pass between players), and how long a perfect team would take.
   // The time is rough: a walk in a straight line (plus a third), 4 seconds for each ability, 12 more to read and understand a clue, 15 for each thing passed on to another player. "fast" lets

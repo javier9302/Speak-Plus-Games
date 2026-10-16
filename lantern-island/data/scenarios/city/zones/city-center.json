@@ -89,9 +89,9 @@
     "brrrrrrrwrrrrrrrrrrrrrrrrrrrrrrrrrrb",
     "bsbsbssssssssssssssssbsbsssssssssssb",
     "bsbsbssssssssssssssssbsbsssssssssssb",
-    "bT,,,,,,,,sssssssssssssssssssssssbbb",
+    "bT,,,,,,,,ssssssssssssssssssssssbbbb",
     "b,,,,,,,,,sssssssssssssssssssssssssb",
-    "b,,pppppp,sssssssssssssssssssssssbbb",
+    "b,,pppppp,ssssssssssssssssssssssbbbb",
     "b,,,,,,,,,sssssssssssssssssssssssssb",
     "b,,,,,,,,,sssssssssssssssssssssssssb",
     "bT,,,,,,,Tsssssssssssssssssssssssssb",
@@ -192,11 +192,34 @@
       "id": "button-avenue",
       "kind": "lever",
       "name": "Crossing button",
-      "x": 14,
-      "y": 14,
+      "x": 11,
+      "y": 12,
       "target": "light-avenue",
-      "seconds": 10,
+      "seconds": 12,
       "skin": "pedestrian-button"
+    },
+    {
+      "id": "button-avenue-n",
+      "kind": "lever",
+      "name": "Crossing button",
+      "x": 9,
+      "y": 8,
+      "target": "light-avenue",
+      "seconds": 12,
+      "skin": "pedestrian-button"
+    },
+    {
+      "id": "crossing-sign",
+      "kind": "sign",
+      "name": "Crossing sign",
+      "x": 7,
+      "y": 12,
+      "clues": {
+        "read": "CENTRAL AVENUE. Cars! Cross only on the green light. Use the button (there is one on each side), then cross quickly together."
+      },
+      "extra": [
+        "read"
+      ]
     },
     {
       "id": "dairy",
@@ -301,7 +324,7 @@
       "id": "bus-gate",
       "kind": "barrier",
       "name": "Bus gate",
-      "x": 33,
+      "x": 32,
       "y": 14,
       "skin": "turnstile",
       "requires": {
@@ -448,10 +471,20 @@
       "id": "button-maple",
       "kind": "lever",
       "name": "Crossing button",
-      "x": 13,
-      "y": 8,
+      "x": 15,
+      "y": 6,
       "target": "light-maple",
-      "seconds": 10,
+      "seconds": 12,
+      "skin": "pedestrian-button"
+    },
+    {
+      "id": "button-maple-e",
+      "kind": "lever",
+      "name": "Crossing button",
+      "x": 20,
+      "y": 6,
+      "target": "light-maple",
+      "seconds": 12,
       "skin": "pedestrian-button"
     },
     {

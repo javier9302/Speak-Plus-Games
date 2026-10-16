@@ -676,7 +676,9 @@
       "pal": {
         "o": "#ff9e2c",
         "w": "#f7f4ee",
-        "e": "#2b2f45"
+        "e": "#2b2f45",
+        "p": "#d9b27a",
+        "g": "#38b764"
       },
       "states": {
         "default": [
@@ -696,13 +698,32 @@
           "..kkkkkkkkkkkk..",
           "................",
           "................"
+        ],
+        "held": [
+          "................",
+          ".............kkk",
+          ".............kgk",
+          ".............kkk",
+          "................",
+          "................",
+          "..kkkkkkkkkkkk..",
+          ".kppppppppppppk.",
+          ".kkkkkkkkkkkkkk.",
+          "..keeeeeeeeeek..",
+          ".kppppppppppppk.",
+          ".kkkkkkkkkkkkkk.",
+          "..keeeeeeeeeek..",
+          "..kkkkkkkkkkkk..",
+          "................",
+          "................"
         ]
       }
     },
     "manhole": {
       "pal": {
         "a": "#8b93a7",
-        "b": "#5a6275"
+        "b": "#5a6275",
+        "g": "#38b764"
       },
       "states": {
         "x": [
@@ -727,18 +748,18 @@
           "................",
           "................",
           "................",
-          "................",
-          "................",
-          "...kbbbbbbbbk...",
-          "..kbbbbbbbbbbk..",
-          "..kbbkbbkbbkbk..",
-          "..kbbkbbkbbkbk..",
-          "..kbbkbbkbbkbk..",
-          "..kbbkbbkbbkbk..",
-          "..kbbbbbbbbbbk..",
-          "...kkkkkkkkkk...",
-          "................",
-          "................",
+          "gggggggggggggggg",
+          "g..............g",
+          "g..kbbbbbbbbk..g",
+          "g.kbbbbbbbbbbk.g",
+          "g.kbbkbbkbbkbk.g",
+          "g.kbbkbbkbbkbk.g",
+          "g.kbbkbbkbbkbk.g",
+          "g.kbbkbbkbbkbk.g",
+          "g.kbbbbbbbbbbk.g",
+          "g..kkkkkkkkkk..g",
+          "g..............g",
+          "gggggggggggggggg",
           "................"
         ],
         "default": [
