@@ -79,14 +79,18 @@ Every object: `{ "id", "kind", "name", "x", "y", "clues"? }`, or `"slot"` instea
 | `gap` | A broken bridge. Jump crosses it (only the jumper). Fix mends it for everybody, if it names the item it needs. A plate can let the others cross. | jump, fix | `needs`: the item that fixes it (optional; without it, it cannot be fixed) |
 | `gate` | A gate. Locked: Use unlocks it with its key, or by typing its code (the digits are in clues). Then Open; Close shuts it. | use, open, close | `locked`: true: it starts locked<br>`key`: the item that unlocks it (default "key")<br>`code`: a code gate: a number of digits (2 to 6; the old way, clues give them as {d1}, {d2}...) or an object (section 3b) |
 | `item` | An item lying on the ground. Pick up takes it. | pickup | `item`: the item (an id from the items list) |
+| `lever` | A lever. A player uses it and its target (a timed door, a bridge or a gate) is open for a few seconds. Far from the door, so the team must call "Go!". | use (or its `by`) | `target`: the id of the timed door (or gap, or gate) it opens<br>`seconds`: how long it stays open, 3 to 60 (default 10)<br>`by`: the ability that pulls it (default `use`) |
 | `machine` | A broken machine (a pump, a clock, a lamp). Fix it, with the item it names if it needs one; then it works. A "restore" goal counts the machines that work. | its "by" ability | `needs`: the item that fixes it (optional)<br>`by`: the ability that fixes it (default "fix") |
 | `npc` | A character. Talk gives its "talk" clue; the teacher can answer as it, and a goal can ask for items to be brought to it. | talk | `lines`: sentences the teacher can send as this character (a list) |
 | `pad` | A flat stone that lights up when pressed (default ability Push). A "sequence" goal asks for pads in an order the clues reveal. | its "by" ability | `by`: the ability that presses it (default "push") |
 | `plate` | A flat stone. While a player stands on it, its target (a broken bridge or a gate) lets everybody else through. No ability needed. | none (stand on it) | `target`: the id of the gap or gate it holds open (leave it out for a plate that a barrier lists in `playersOn`) |
 | `shell` | A shell. It can hold clues for Listen and Look. | its clues |  |
+| `shop` | A shop. It sells one item at a price. Talk tells the price; Use buys one with the team's coins (a `shopping` mission). | talk, use | `sells`: the item it sells<br>`price`: its price in coins, 1 to 99<br>`stock`: how many it has, 1 to 20 (default: as many as you like) |
 | `sign` | A sign. Its words are clues for Read. | its clues |  |
 | `sluice` | A water gate. Broken: Fix it with the item it needs. Then Close: the tiles it floods fall dry. Open floods them again. | fix, close, open | `needs`: the item that fixes it<br>`floods`: the tiles under water while it is not closed: [{ "x": 1, "y": 2 }, ...] |
 | `station` | A stone tablet with a challenge card. Its ability ("by", default Use) shows the card; the right answer solves it and its reward appears. | its "by" ability, pickup | `by`: the ability that opens the card (default "use")<br>`reward`: { "item": an item that appears when solved, "open": the id of a gate it opens }<br>`card`: the card it prefers: { "type", "level" } (a mission can choose another) |
+| `timed-door` | A shut door. A lever opens it for a few seconds: one player pulls the lever and the others must run through in time. | none (a lever opens it) |  |
+| `trader` | A trader. Talk, with the item it wants in your pocket, trades it for another item to Pick up. Without the item, Talk says what it wants. Chain them. | talk, pickup | `wants`: the item it wants<br>`gives`: the item it gives back<br>`says`: what it says when you come without the item (default: "I would like a <item>, please.")<br>`thanks`: what it says after the trade |
 | `statue` | A statue. It can hold clues for Look and Read. | its clues |  |
 | `stump` | A tree stump. It can hold clues for any ability. | its clues |  |
 
@@ -180,6 +184,30 @@ Item, code and ability rules are done in the order of the list. Plates can be do
 
 The design rules apply as always: a barrier must need abilities of two different players (here Use and Open), and a `playersOn` rule needs that many players on the team, so combine it with other rules for 2-player games to pass. The check says which rule is missing.
 
+## 3d. Timed doors, trades and shopping
+
+Three ways to make the team talk, all written in JSON.
+
+**A timed door.** A `timed-door` is shut. A `lever` opens it for `seconds` (3 to 60). Put the lever **far from the door**: one player pulls it and calls "Go!", the others run through before it shuts. The lever's player cannot also be at the door, so a team of one can never pass (the check knows). The clock stops when the teacher pauses. A lever can also open a `gap` or a `gate`.
+
+```json
+{ "id": "iron-door", "kind": "timed-door", "name": "Iron door", "x": 14, "y": 6 },
+{ "id": "lever-1", "kind": "lever", "name": "Lever", "x": 2, "y": 10, "target": "iron-door", "seconds": 8 }
+```
+
+**A trading chain.** A `trader` wants one item and gives another: Talk with the item in your pocket makes the trade, then somebody Picks up what it gives. Without the item, Talk shows the player what the trader says (`says`, in the trader's own words; make it a request that students must repeat to the team). Chain them: A wants a letter and gives a key; B wants the key and gives a plank. Never give a trader a `talk` clue: it would replace this.
+
+```json
+{ "id": "tom", "kind": "trader", "name": "Old Tom", "x": 15, "y": 3, "wants": "letter", "gives": "key", "says": "I have a key. Do you have a letter for me?" }
+```
+
+**Shopping.** A mission with `"goal": { "type": "shopping", "list": { "bread": 2, "milk": 1 }, "coins": 9 }`. Each `shop` sells one item at a price; two shops can sell the same item for different prices, so the team must compare. A player with Talk hears the price (it also tells the coins left), a player with Use pays for one. The coins are shared and the screens show them. Rules the check follows: every item on the list is sold by some shop; the cheapest shops must be reachable; the team has enough coins if it always buys at the cheapest shop; it warns you when the coins are enough even at the dearest shops ("prices do not matter"). Do not also put the items you sell on the ground. Items for a shop need a picture: add them to the pack's `items` (section 3c).
+
+```json
+{ "id": "bakery", "kind": "shop", "name": "Bakery", "x": 4, "y": 2, "sells": "bread", "price": 3 },
+{ "id": "market", "kind": "shop", "name": "Market", "x": 8, "y": 2, "sells": "bread", "price": 2 }
+```
+
 ## 4. Abilities, and the design rules
 
 The 12 abilities: `look`, `read`, `talk`, `listen`, `pickup`, `give`, `open`, `close`, `jump`, `push`, `use`, `fix`. The game shares them among the players (`data/abilities.json`):
@@ -242,6 +270,7 @@ Goal types (`"goal": { "type": "<type>", ... }`, default `collect`):
 | `odd-one-out` | Several look-alike objects (kind "candidate"); clues point to the right one ("answer"). Choosing it finishes the mission. A wrong choice costs nothing. | `answer`: the id of the right candidate, or "random": a different one every run (clues name it with {odd}) |
 | `restore` | Make machines work again: Fix them (some need an item). Counts the machines named in "machines", or all of the map's. | `machines`: the ids of the machines that count (default: every machine of the map)<br>`count`: how many must work (default: all of them) |
 | `sequence` | Press pads in the right order ("order": their ids). Clues must reveal the order. A wrong pad makes them all go dark; the team starts again. | `order`: the ids of the pads, in the order to press them (2 or more)<br>`shuffle`: true: a new order every run (clues give it with {order}) |
+| `shopping` | Buy everything on a shopping list with the team's coins. Shops sell items at different prices; Talk tells the price, Use buys one. | `list`: `{ "bread": 2, "milk": 1 }`, up to 5 items and 8 things in all<br>`coins`: the coins the team has, 1 to 999 |
 
 Every goal also takes `label` (the word on the screens) and `restore`. Machines count for `restore` with kind `machine`; pads for `sequence` with kind `pad`; look-alikes for `odd-one-out` with kind `candidate`.
 

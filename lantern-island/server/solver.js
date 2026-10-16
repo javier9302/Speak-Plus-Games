@@ -43,7 +43,9 @@ export function solve(zone, mission, sets, { without = [], explore = false, skip
       const at = new Map(things.map((t) => [key(t.x, t.y), t]));
       const flooded = new Set(things.flatMap((t) => (kindOf(t).floods?.(t) || []).map((f) => key(f.x, f.y))));
       // Held open: somebody else stands on a plate (any kind with holdsOpen) that targets it.
-      const held = (i, t) => things.some((p) => kindOf(p).holdsOpen?.(p) === t.id && regs.some((r, j) => j !== i && r.has(key(p.x, p.y))));
+      const held = (i, t) => things.some((p) => kindOf(p).holdsOpen?.(p) === t.id && regs.some((r, j) => j !== i && r.has(key(p.x, p.y))))
+        // A lever: somebody else with its ability can get to it and pull it while player i waits at the door.
+        || things.some((p) => kindOf(p).opens?.(p) === t.id && owners(kindOf(p).opensWith(p)).some((j) => j !== i && reach(regs, j, p)));
       const s = { has, held };
       const free = (i, x, y) => {
         if (!ground(x, y) || flooded.has(key(x, y))) return false;

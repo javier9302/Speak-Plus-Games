@@ -9,7 +9,10 @@
 //   check(o, v)         problems with a zone object: v.item(id, field), v.ability(id, field), v.problem(text)
 //   start(def)          its state when a mission starts: { st, holds? } (holds = the item it holds)
 //   solid(t)            true if nobody can walk through it now (default: always)
-//   holdable            true if a plate can hold it open while somebody stands on the plate
+//   holdable            true if a plate can hold it open while somebody stands on the plate (or a lever, for a while)
+//   consumes(def)       the items it uses up, one per use: ['plank'] (the shopping goal counts them to know how many to buy)
+//   opens(t) / opensWith(t)   for the solver: the id of the holdable thing this one opens for the other players, and the ability that does it (a lever)
+//   settle(t, s)        for the solver: it settles by itself once players are in place (plates); returns a log line or null
 //   pass(t, i, s)       for the solver: can player i walk through it? (default: not solid, or held open)
 //   floods(t)           tiles it floods now, which nobody can walk on
 //   view(t)             extra fields every screen may see (never clue text or answers)

@@ -5,6 +5,7 @@ export default {
   about: 'A broken bridge. Jump crosses it (only the jumper). Fix mends it for everybody, if it names the item it needs. A plate can let the others cross.',
   fields: { needs: 'the item that fixes it (optional; without it, it cannot be fixed)' },
   check: (o, v) => { if (o.needs) v.item(o.needs, 'needs'); },
+  consumes: (o) => (o.needs ? [o.needs] : []),
   start: () => ({ st: 'broken' }),
   solid: (t) => t.st !== 'fixed',
   holdable: true,

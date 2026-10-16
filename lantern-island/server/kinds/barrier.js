@@ -60,6 +60,7 @@ export default {
     });
     if (codes > 1) v.problem('a barrier can ask for only one code');
   },
+  consumes: (o) => [].concat(o.requires ?? []).filter((r) => r.item && r.consume).map((r) => r.item),
   start: () => ({ st: 'locked', met: [] }),
   solid: (t) => t.st !== 'open',
   view: (t) => ({ keypad: nextKey(t) === 'code' || nextKey(t) === 'word' ? true : undefined, red: t.redUntil > Date.now() ? true : undefined }),

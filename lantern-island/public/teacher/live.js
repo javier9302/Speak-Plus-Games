@@ -157,7 +157,7 @@ function renderGame() {
 function renderStats() {
   const r = roster, q = queue, p = r?.progress;
   if (!r || r.phase === 'lobby') { $('#live-stats').textContent = ''; return; }
-  $('#live-stats').textContent = [p && `${p.label}: ${p.have} of ${p.need}`, q && `Solved ${q.stats.solved}`, q && `Wrong answers ${q.stats.wrong}`, q && `Hints ${q.stats.hints}`, q && `Clues found ${q.found}`, r.group && `Team stars ${r.group.island.stars}`].filter(Boolean).join(' · ');
+  $('#live-stats').textContent = [p && `${p.label}: ${p.have} of ${p.need}${p.coins === undefined ? '' : ` · ${p.coins} coins`}`, q && `Solved ${q.stats.solved}`, q && `Wrong answers ${q.stats.wrong}`, q && `Hints ${q.stats.hints}`, q && `Clues found ${q.found}`, r.group && `Team stars ${r.group.island.stars}`].filter(Boolean).join(' · ');
 }
 
 document.querySelector('#tab-live').addEventListener('click', (e) => {

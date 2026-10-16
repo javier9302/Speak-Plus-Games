@@ -89,6 +89,7 @@ export async function runCheck(contentDir = path.join(root, 'data'), dataDir = c
         for (const rule of mission === all ? zoneRules(atlas, all, sets, abilities.ids) : []) fail(`${zone.name}, ${n} players: ${rule}`);
         say(`    ok    ${n} players: can be finished in ${r.log.length} steps; every player is needed${notes.length ? '  (' + notes.join('; ') + ')' : ''}`);
       }
+      for (const n of goalOf(written.mission.goal).notes?.(written.zone, written.mission.goal) || []) say(`    note  ${n}`);
       // Every clue must be needed: take each one away and the mission must no longer be finishable. A clue that carries
       // a goal placeholder ({order}...) counts as needed. Other clues are flavour: a note, or a FAIL in a pack with
       // "strictClues": true. An object can list the abilities of its flavour clues in "extra": ["look"].

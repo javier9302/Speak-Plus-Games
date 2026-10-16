@@ -19,6 +19,7 @@ export default {
   about: 'A broken machine (a pump, a clock, a lamp). Fix it, with the item it names if it needs one; then it works. A "restore" goal counts the machines that work.',
   fields: { needs: 'the item that fixes it (optional)', by: 'the ability that fixes it (default "fix")' },
   check(o, v) { if (o.needs) v.item(o.needs, 'needs'); if (o.by) v.ability(o.by, 'by'); },
+  consumes: (o) => (o.needs ? [o.needs] : []),
   start: () => ({ st: 'broken' }),
   working: (t) => t.st === 'running',
   force: (t) => { if (t.st === 'running') return null; t.st = 'running'; return 'fixed'; },

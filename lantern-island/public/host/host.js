@@ -113,7 +113,7 @@ function renderLobby() {
   const pr = roster.progress;
   $('#goal').hidden = !pr;
   if (pr) {
-    $('#goal-text').textContent = `${pr.label}: ${pr.have} of ${pr.need}` + (pr.ready && pr.bringTo ? ` · carry them all to the ${pr.bringTo.toLowerCase().split(' ').pop()}!` : '');
+    $('#goal-text').textContent = `${pr.label}: ${pr.have} of ${pr.need}` + (pr.coins === undefined ? '' : ` · ${pr.coins} coin${pr.coins === 1 ? '' : 's'}`) + (pr.ready && pr.bringTo ? ` · carry them all to the ${pr.bringTo.toLowerCase().split(' ').pop()}!` : '');
     $('#goal-fill').style.width = `${(100 * pr.have) / pr.need}%`;
   }
 

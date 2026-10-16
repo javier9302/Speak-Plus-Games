@@ -7,6 +7,7 @@ export default {
     v.item(o.needs, 'needs');
     if (!Array.isArray(o.floods) || !o.floods.length) v.problem('a sluice needs "floods": [{ x, y }, ...]');
   },
+  consumes: (o) => (o.needs ? [o.needs] : []),
   start: () => ({ st: 'broken' }),
   floods: (t) => (t.st !== 'closed' ? t.def.floods : []),
   view: (t) => ({ floods: t.st !== 'closed' ? t.def.floods : undefined }),
