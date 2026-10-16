@@ -1,10 +1,139 @@
 {
-  "items": [
-    { "id": "lantern", "name": "Lantern" },
-    { "id": "key", "name": "Key" },
-    { "id": "plank", "name": "Plank" },
-    { "id": "letter", "name": "Letter" },
-    { "id": "crystal", "name": "Crystal" }
-  ],
-  "maxCarry": 4
+ "items": [
+  {
+   "id": "lantern",
+   "name": "Lantern",
+   "art": [
+    "......kkkk......",
+    "......kaak......",
+    "......kkkk......",
+    "....kkkkkkkk....",
+    "....kbbbbbbk....",
+    "....kcccccck....",
+    "....kccddcck....",
+    "....kccddcck....",
+    "....kccddcck....",
+    "....kccddcck....",
+    "....kccddcck....",
+    "....kccddcck....",
+    "....kcccccck....",
+    "....kbbbbbbk....",
+    "....kkkkkkkk....",
+    "................"
+   ],
+   "pal": {
+    "a": "#b4bccd",
+    "b": "#6e4423",
+    "c": "#ffd166",
+    "d": "#fff7c2"
+   }
+  },
+  {
+   "id": "key",
+   "name": "Key",
+   "art": [
+    "................",
+    "................",
+    "................",
+    "................",
+    ".kkkkkkk........",
+    ".kaaaaak........",
+    ".kaaaaakkkkkkkk.",
+    ".kakkkakaaaaaak.",
+    ".kakkkakaaaaaak.",
+    ".kaaaaakkkkakak.",
+    ".kaaaaak..kakak.",
+    ".kkkkkkk..kakak.",
+    "..........kkkkk.",
+    "................",
+    "................",
+    "................"
+   ],
+   "pal": {
+    "a": "#ffd166"
+   }
+  },
+  {
+   "id": "plank",
+   "name": "Plank",
+   "art": [
+    "................",
+    "................",
+    "................",
+    "................",
+    "................",
+    "kkkkkkkkkkkkkkkk",
+    "kaaabaaaaaaaaaak",
+    "kaaabaaaaaaaaaak",
+    "kbbbbbbbbbbbbbbk",
+    "kaaaaaaaaaabaaak",
+    "kaaaaaaaaaabaaak",
+    "kkkkkkkkkkkkkkkk",
+    "................",
+    "................",
+    "................",
+    "................"
+   ],
+   "pal": {
+    "a": "#a9713c",
+    "b": "#6e4423"
+   }
+  },
+  {
+   "id": "letter",
+   "name": "Letter",
+   "art": [
+    "................",
+    "................",
+    "................",
+    ".kkkkkkkkkkkkkk.",
+    ".kabbbbbbbbbbak.",
+    ".kbabbbbbbbbabk.",
+    ".kbbabbbbbbabbk.",
+    ".kbbbabbbbabbbk.",
+    ".kbbbbaccabbbbk.",
+    ".kbbbbbccbbbbbk.",
+    ".kbbbbbbbbbbbbk.",
+    ".kbbbbbbbbbbbbk.",
+    ".kkkkkkkkkkkkkk.",
+    "................",
+    "................",
+    "................"
+   ],
+   "pal": {
+    "a": "#c9b98a",
+    "b": "#fff7e0",
+    "c": "#E8483B"
+   }
+  },
+  {
+   "id": "crystal",
+   "name": "Crystal",
+   "art": [
+    "................",
+    "......kkkk......",
+    "....kkaaaakk....",
+    "....kkaaaakk....",
+    "...kbccbbbbbk...",
+    "...kbccbbbbbk...",
+    "...kbccbbbbbk...",
+    "...kbbbbbbbbk...",
+    "...kbbbbbbbbk...",
+    "....kddddddk....",
+    "....kddddddk....",
+    ".....kddddk.....",
+    ".....kddddk.....",
+    ".......dd.......",
+    ".......kk.......",
+    "................"
+   ],
+   "pal": {
+    "a": "#bfe9ff",
+    "b": "#5cc8f2",
+    "c": "#e8f8ff",
+    "d": "#2f9fd0"
+   }
+  }
+ ],
+ "maxCarry": 4
 }

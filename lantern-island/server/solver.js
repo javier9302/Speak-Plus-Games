@@ -150,6 +150,8 @@ export function solve(zone, mission, sets, { without = [], explore = false, skip
         step.do(t, ctx);
       }, (i) => allowed(step, t, i));
     }
+    // Things that settle by themselves once players are in place (players standing on plates).
+    for (const t of things) { const did = kindOf(t).settle?.(t, { regs, byId }); if (did) { log.push(`Stand: ${did}`); progress = true; } }
     // Abilities used just by walking somewhere (jumping over a gap).
     for (const t of things) for (const a of kindOf(t).markUsed?.(t, { owners, regs }) || []) used.add(a);
 

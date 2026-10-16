@@ -26,6 +26,8 @@ Ids: small letters, numbers and dashes. A file's name is its `id`. Map, mission,
 | `story` | a sentence for teachers |
 | `unlock` | `{ "landmarks": N }`: the pack opens for a group once it has restored N landmarks (all packs together) |
 | `theme` | the default theme of its maps (section 7) |
+| `items` | its own items, with their pictures (section 3c) |
+| `sprites` | its own pictures for objects, chosen with an object's `skin` (section 3c) |
 | `strictClues` | `true`: `npm run check` fails when a clue is not needed to finish a mission (section 3b). Default: it only notes it |
 | `tiles` | its own tiles (section 7) |
 | `themes` | its own themes (section 7) |
@@ -67,6 +69,7 @@ Every object: `{ "id", "kind", "name", "x", "y", "clues"? }`, or `"slot"` instea
 
 | Kind | What it does | Abilities | Fields |
 |---|---|---|---|
+| `barrier` | Anything that blocks the way until its `requires` are met: a door, turnstile, laser, vine wall or guard. Rules: an item, a code or word, an ability, players standing on plates. Then Open. | use, open, close, or the ability it asks for | `requires`: what opens it, one rule or a list (section 3c)<br>`finish`: `"open"` (default: somebody Opens it) or `"auto"` (it opens by itself) |
 | `bell` | A bell. It can hold clues for Listen and Look. | its clues |  |
 | `bottle` | A bottle with a message. It can hold clues for Look and Read. | its clues |  |
 | `boulder` | A big rock. Push moves it to its "to" tile, and back. | push | `to`: where Push moves it: { "x": 1, "y": 2 } |
@@ -79,7 +82,7 @@ Every object: `{ "id", "kind", "name", "x", "y", "clues"? }`, or `"slot"` instea
 | `machine` | A broken machine (a pump, a clock, a lamp). Fix it, with the item it names if it needs one; then it works. A "restore" goal counts the machines that work. | its "by" ability | `needs`: the item that fixes it (optional)<br>`by`: the ability that fixes it (default "fix") |
 | `npc` | A character. Talk gives its "talk" clue; the teacher can answer as it, and a goal can ask for items to be brought to it. | talk | `lines`: sentences the teacher can send as this character (a list) |
 | `pad` | A flat stone that lights up when pressed (default ability Push). A "sequence" goal asks for pads in an order the clues reveal. | its "by" ability | `by`: the ability that presses it (default "push") |
-| `plate` | A flat stone. While a player stands on it, its target (a broken bridge or a gate) lets everybody else through. No ability needed. | none (stand on it) | `target`: the id of the gap or gate it holds open |
+| `plate` | A flat stone. While a player stands on it, its target (a broken bridge or a gate) lets everybody else through. No ability needed. | none (stand on it) | `target`: the id of the gap or gate it holds open (leave it out for a plate that a barrier lists in `playersOn`) |
 | `shell` | A shell. It can hold clues for Listen and Look. | its clues |  |
 | `sign` | A sign. Its words are clues for Read. | its clues |  |
 | `sluice` | A water gate. Broken: Fix it with the item it needs. Then Close: the tiles it floods fall dry. Open floods them again. | fix, close, open | `needs`: the item that fixes it<br>`floods`: the tiles under water while it is not closed: [{ "x": 1, "y": 2 }, ...] |
@@ -87,7 +90,7 @@ Every object: `{ "id", "kind", "name", "x", "y", "clues"? }`, or `"slot"` instea
 | `statue` | A statue. It can hold clues for Look and Read. | its clues |  |
 | `stump` | A tree stump. It can hold clues for any ability. | its clues |  |
 
-Items (an object's `holds`, `needs`, `item`, a reward): `lantern`, `key`, `plank`, `letter`, `crystal` (`data/items.json`; a player carries 4 at most). New items need a picture in code, so packs use these.
+Items (an object's `holds`, `needs`, `item`, a reward, a barrier's `item`): `lantern`, `key`, `plank`, `letter`, `crystal` (`data/items.json`), and the ones a pack adds with its own picture (section 3c). A player carries 4 at most.
 
 A **station** (tablet) holds a challenge card. Its `card` is a preference; the mission decides (section 5). Its reward appears when the card is answered; somebody must Pick it up.
 
@@ -144,6 +147,38 @@ The houses are numbered 1, 2, 3... from the left; 3 to 5 houses and the same num
 The gate asks for house numbers: `"code": { "type": "digits", "length": 2, "answer": "{pos:street.doctor}{pos:street.baker}" }` is the doctor's house number and the baker's (here 3 and 1: the code is 31). Clues show the rules: `"read": "Tom says: {rule:street.r1}"`. Each rule goes in a different clue, ideally for different abilities, so the team must share them. The check proves that the rules give exactly one answer, and that **no rule can be left out**; it names the one that is not needed. The arrangement is the same every mission (the houses do not shuffle), so use a new puzzle for each map.
 
 **Every clue must be needed.** `npm run check` takes each clue away, one at a time, and tries the mission again. A clue that can go without changing the result is "not needed": a note, or a FAIL when the pack has `"strictClues": true` (new packs should). Fix it by making the clue part of a puzzle, or by deleting it. Atmosphere on purpose (a shell that says "Waves.")? List its ability in the object's `extra`: `"extra": ["listen"]`. Do not make players hunt for clues they do not need: design the puzzle so that every clue is a piece they must have.
+
+## 3c. Make anything: items, pictures and barriers
+
+Nothing here needs code. Write JSON, run `npm run check -- <pack>`.
+
+**Items with their own picture.** In `pack.json`:
+
+```json
+"items": [{ "id": "id-card", "name": "ID card", "art": ["................", "...16 rows of 16 letters..."], "pal": { "a": "#ffffff", "b": "#1f2f5c" } }]
+```
+
+The picture is 16 rows of 16 letters: `.` is clear, `k` the dark outline, any other letter a colour from `pal`. The id works in every object of that pack (`holds`, `item`, `requires`...) and must not be used by another item or pack. The five base items are written the same way in `data/items.json`.
+
+**Pictures for objects.** In `pack.json`: `"sprites": { "shop-door": { "pal": { "a": "#9db4e0" }, "states": { "default": [16 rows], "open": [16 rows] } } }`. Then any object of the pack can wear it: `"skin": "shop-door"`. The object is drawn with the picture of its state (`locked`, `closed`, `open` for a gate or a barrier; `broken`, `fixed` for a gap...) or `default` if it has none. So a gate in a city looks like a shop door and a gap in a jungle like a rope bridge, with the same rules.
+
+**Barriers.** A `barrier` blocks the way until its `requires` are all met. `requires` is one rule or a list; a rule has exactly one of:
+
+| Rule | A player... |
+|---|---|
+| `{ "item": "id-card" }` | has the item and Uses it on the barrier. The item stays in the pocket; add `"consume": true` to use it up |
+| `{ "word": "MOON" }` or `{ "code": { "type": "symbols", "length": 4 } }` | types the code (section 3b: words, digits, pictures, the red lock). Clues use `{code:<barrier id>:<n>}`. One code per barrier |
+| `{ "ability": "fix" }` | with that ability does it (Fix the vine wall, Push the crate...) |
+| `{ "playersOn": ["plate-a", "plate-b"] }` | 2 to 4 players stand on all these plates at the same time. The plates are `plate` objects without a `target`. Once it has happened, it stays done |
+
+Item, code and ability rules are done in the order of the list. Plates can be done at any time. When every rule is met, the barrier unlocks and somebody must **Open** it (`"finish": "auto"` opens it by itself). Example: a shop door that needs the ID card, then the code, then Open:
+
+```json
+{ "id": "shop-door", "kind": "barrier", "name": "Shop door", "x": 14, "y": 6, "skin": "shop-door",
+  "requires": [{ "item": "id-card" }, { "word": "OPEN" }] }
+```
+
+The design rules apply as always: a barrier must need abilities of two different players (here Use and Open), and a `playersOn` rule needs that many players on the team, so combine it with other rules for 2-player games to pass. The check says which rule is missing.
 
 ## 4. Abilities, and the design rules
 

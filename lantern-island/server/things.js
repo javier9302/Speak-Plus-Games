@@ -67,7 +67,7 @@ const hidden = (t) => !!kindOf(t).hidden?.(t);
 export const publicThings = (things) => things
   .filter((t) => !hidden(t))
   .map((t) => ({ id: t.id, kind: t.kind, name: t.name, x: t.x, y: t.y, st: t.st, needs: needsOf(t), holds: kindOf(t).hidesHolds?.(t) ? null : t.holds,
-    held: t.held || undefined, ...kindOf(t).view?.(t) }));
+    held: t.held || undefined, skin: t.def.skin, ...kindOf(t).view?.(t) }));
 
 const dist = (t, p) => Math.hypot(t.x + 0.5 - p.x, t.y + 0.5 - (p.y - 0.1));
 export function nearestThing(things, p, wanted = () => true) {

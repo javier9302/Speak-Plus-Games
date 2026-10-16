@@ -6,7 +6,7 @@ import { checkObject } from './things.js';
 import { tileSet, solidSet } from './tiles.js';
 import { didYouMean } from './words.js';
 import { normalizeGoal } from './missions.js';
-import { codeProblems, factProblems, specOf, needTokens, clueTokens } from './codes.js';
+import { codeProblems, factProblems, specOf, codeOf, needTokens, clueTokens } from './codes.js';
 import { logicProblems } from './logic.js';
 
 export { didYouMean };
@@ -18,17 +18,17 @@ export function unknownFields(rec, allowed, where, out) {
 }
 
 const isInt = (v) => Number.isInteger(v);
-const OBJECT_FIELDS = ['id', 'kind', 'name', 'x', 'y', 'slot', 'clues', 'extra'];
+const OBJECT_FIELDS = ['id', 'kind', 'name', 'x', 'y', 'slot', 'clues', 'extra', 'skin'];
 export const ZONE_FIELDS = ['id', 'name', 'theme', 'legend', 'goal', 'rows', 'places', 'landmarks', 'objects', 'slots', 'shuffle', 'facts', 'logic'];
 // What a shuffle can swap between objects, each run (run.js).
 export const SHUFFLE_FIELDS = ['holds', 'reward', 'item', 'clues', 'name'];
 // Clue placeholders filled in each run (besides {d1}... the code digits): {where:<id>} {name:<id>}, and the goal's.
 export const GOAL_PLACEHOLDERS = ['order', 'odd', 'deliveries'];
-export const PACK_FIELDS = ['id', 'name', 'order', 'story', 'unlock', 'theme', 'tiles', 'themes', 'strictClues'];
+export const PACK_FIELDS = ['id', 'name', 'order', 'story', 'unlock', 'theme', 'tiles', 'themes', 'strictClues', 'items', 'sprites'];
 
 // Everything wrong with one zone file. `items`: the item ids; `abilities`: the ability ids; `tiles`: its pack's
 // tiles (tiles.js); `themes`: the names of the themes it may use.
-export function zoneProblems(raw, { items, abilities, tiles = tileSet(), themes = null }) {
+export function zoneProblems(raw, { items, abilities, tiles = tileSet(), themes = null, sprites = null }) {
   const out = [];
   const TILES = new Set(Object.keys(tiles)), SOLID_TILES = solidSet(tiles);
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return ['a zone file is one JSON object: { "id": ..., "rows": [...], ... }'];
@@ -102,6 +102,7 @@ export function zoneProblems(raw, { items, abilities, tiles = tileSet(), themes 
     }
     for (const f of mapOk && Array.isArray(o.floods) ? o.floods : []) if (!ground(f.x, f.y)) out.push(`${where}: the flooded tile ${f.x},${f.y} must be ground`);
     for (const p of checkObject(o, items, abilities, objects)) out.push(`${where}: ${p}`);
+    if (o.skin !== undefined && sprites && !sprites.includes(o.skin)) out.push(`${where}: "skin" is "${o.skin}", which is not a sprite of this pack.${didYouMean(o.skin, sprites)} Sprites: ${sprites.join(', ') || '(none; add "sprites" to pack.json)'}`);
     if (o.clues !== undefined && (typeof o.clues !== 'object' || Array.isArray(o.clues))) out.push(`${where}: "clues" is { "ability": "text", ... }, for example { "read": "WELCOME!" }`);
     for (const [a, text] of Object.entries(o.clues && typeof o.clues === 'object' ? o.clues : {})) if (typeof text !== 'string' || !text.trim()) out.push(`${where}: its "${a}" clue has no text`);
   }
@@ -116,7 +117,7 @@ export function zoneProblems(raw, { items, abilities, tiles = tileSet(), themes 
   for (const [pid, p] of Object.entries(logic)) { const bad = logicProblems(pid, p); if (bad.length) logicBad.add(pid); out.push(...bad.map((b) => `logic: ${b}`)); }
   const texts = objects.flatMap((o) => Object.values(o?.clues && typeof o.clues === 'object' ? o.clues : {}).filter((t) => typeof t === 'string').map((t) => [o.id, t]));
   const longest = Math.max(0, ...objects.filter((o) => o?.code).map((o) => (specOf(o)?.legacy ? specOf(o).length : 0)));
-  const gates = objects.filter((o) => o?.code && specOf(o));
+  const gates = objects.filter((o) => o && specOf(o));
   for (const [id, text] of texts) for (const [, ph] of text.matchAll(/\{([^}]*)\}/g)) {
     const d = /^d(\d)$/.exec(ph), ref = /^(where|name):(.*)$/.exec(ph), fact = /^fact:(.*)$/.exec(ph), rule = /^rule:([^.]*)\.(.*)$/.exec(ph), code = /^code:([^:]*)(?::(\d))?$/.exec(ph);
     if (ref) { if (!objects.some((o) => o?.id === ref[2])) out.push(`object "${id}": {${ph}} in a clue, but "${ref[2]}" is not an object of this map.${didYouMean(ref[2], objects.map((o) => o?.id))}`); }
@@ -134,7 +135,7 @@ export function zoneProblems(raw, { items, abilities, tiles = tileSet(), themes 
   }
   const given = new Set(texts.flatMap(([, t]) => [...clueTokens(t)]));
   for (const g of gates) {
-    for (const p of codeProblems(g.code, facts, logic)) out.push(`object "${g.id}": ${p}`);
+    for (const p of codeProblems(codeOf(g), facts, logic)) out.push(`object "${g.id}": ${p}`);
     const spec = specOf(g);
     if (given.has(`code:${g.id}:*`)) continue;
     for (const tok of needTokens(g, g.id, logic)) if (!given.has(tok)) {

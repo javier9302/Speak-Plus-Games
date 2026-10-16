@@ -95,7 +95,7 @@ export function applyOverrides(zone, raw, fail) {
   const problems = zoneProblems(changed, zone.deps);
   for (const p of problems) fail(`with this mission's changes, ${p}`);
   if (problems.length) return { zone, overrides: clean };
-  const out = Object.assign(parseZone(changed, zone.tiles), { pack: zone.pack, unlock: zone.unlock, themeName: zone.themeName });
+  const out = Object.assign(parseZone(changed, zone.tiles), { pack: zone.pack, unlock: zone.unlock, themeName: zone.themeName, sprites: zone.sprites });
   Object.defineProperties(out, { raw: { value: changed }, deps: { value: zone.deps }, themes: { value: zone.themes } });
   return { zone: out, overrides: clean };
 }

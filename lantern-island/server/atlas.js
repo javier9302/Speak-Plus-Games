@@ -34,7 +34,7 @@ export function atlasFor(start, zones) {
   w -= GAP;
   const rows = Array.from({ length: h }, (_, y) => maps.map((z) => (z.rows[y] ?? '~'.repeat(z.w))).join('~'.repeat(GAP)));
   const shift = (ox) => (p) => ({ ...p, x: p.x + ox });
-  const objects = [], places = [], landmarks = [], fixed = new Set(), slots = {}, regions = [], tiles = {}, facts = {}, logic = {};
+  const objects = [], places = [], landmarks = [], fixed = new Set(), slots = {}, regions = [], tiles = {}, facts = {}, logic = {}, sprites = {};
   for (const z of maps) {
     const ox = offsets.get(z.id);
     for (const o of z.objects) {
@@ -50,6 +50,7 @@ export function atlasFor(start, zones) {
     Object.assign(tiles, z.tiles);
     Object.assign(facts, z.facts);
     Object.assign(logic, z.logic);
+    Object.assign(sprites, z.sprites);
     regions.push({ id: z.id, name: z.name, x: ox, y: 0, w: z.w, h: z.h, themeName: z.themeName });
   }
   // Exits: where each one lands, and the links the solver walks through.
@@ -66,7 +67,7 @@ export function atlasFor(start, zones) {
     links.set(`${e.x},${e.y}`, land);
   }
   const atlas = {
-    ...start, w, h, rows, objects, places, landmarks, fixed, slots, tiles, facts, logic, solidTiles: solid,
+    ...start, w, h, rows, objects, places, landmarks, fixed, slots, tiles, facts, logic, sprites, solidTiles: solid,
     shuffle: maps.flatMap((z) => z.shuffle || []), regions, links,
   };
   Object.defineProperties(atlas, { themes: { value: start.themes }, raw: { value: start.raw }, deps: { value: start.deps } });

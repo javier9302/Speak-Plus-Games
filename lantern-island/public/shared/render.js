@@ -1,11 +1,13 @@
 // Draws the map and the characters. Used by the host screen and the phones.
-import { TILE, PLAYER_COLORS, charSprite, drawTile, thingSprite, iconCanvas, monsterSprite, landmarkSprite, setKindArt, setTiles } from './pixel.js';
+import { TILE, PLAYER_COLORS, charSprite, drawTile, thingSprite, iconCanvas, monsterSprite, landmarkSprite, setKindArt, setItemArt, setSkins, setTiles } from './pixel.js';
 
 const calm = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;   // no weather moving about
 
 // Pre-draws the whole zone once (two frames, for the water).
 export function createScene(zone) {
   setKindArt(zone.art);                  // pictures of kinds that bring their own
+  setItemArt(zone.itemArt);              // pictures of items
+  setSkins(zone.skins);                  // the pack's own pictures for objects
   // Several maps joined (an atlas) have regions, each with its theme; one map is one region. Each region also
   // takes half of the water between it and the next one, so no strip is left without a theme.
   const regions = (zone.regions || [{ x: 0, y: 0, w: zone.w, h: zone.h, theme: zone.theme }]).map((r, i, all) => {

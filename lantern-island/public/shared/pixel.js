@@ -158,6 +158,29 @@ export function drawTile(g, ch, x, y, frame, onGrass = false) {
 }
 
 // ---------- objects and items ----------
+// Items bring their own pictures (data/items.json and packs): [{ id, art: 16 rows of 16 letters, pal }], sent with the map.
+let itemArt = {};
+const itemCanvases = new Map();
+export function setItemArt(list) {
+  const next = Object.fromEntries((list || []).filter((i) => i.art).map((i) => [i.id, i]));
+  if (JSON.stringify(next) === JSON.stringify(itemArt)) return;
+  itemArt = next; itemCanvases.clear(); things.clear(); itemUrls.clear();
+}
+// The picture of an item: its own, or a pink square if it has none.
+function itemCanvas(id) {
+  if (itemCanvases.has(id)) return itemCanvases.get(id);
+  const c = document.createElement('canvas');
+  c.width = c.height = TILE;
+  const g = c.getContext('2d'), a = itemArt[id];
+  if (a) paintRows(g, a.art, a.pal);
+  else { g.fillStyle = OUTLINE; g.fillRect(3, 3, 10, 10); g.fillStyle = '#ff9ecb'; g.fillRect(4, 4, 8, 8); }
+  itemCanvases.set(id, c);
+  return c;
+}
+// Letters to pixels: "." is clear, "k" the outline, any other letter a colour of `pal`.
+function paintRows(g, rows, pal) {
+  rows.forEach((row, y) => { for (let x = 0; x < TILE; x++) { const ch = row[x]; if (ch !== '.') { g.fillStyle = ch === 'k' ? OUTLINE : pal[ch]; g.fillRect(x, y, 1, 1); } } });
+}
 // Things you can use have a dark outline so they stand out from the scenery.
 // Everything is drawn on a 16x16 canvas with a clear background.
 function paint(kind, st, holds, flags = '') {
@@ -166,14 +189,7 @@ function paint(kind, st, holds, flags = '') {
   const g = c.getContext('2d');
   const r = (a, b, w, h, col) => { g.fillStyle = col; g.fillRect(a, b, w, h); };
   const GOLD = '#ffd166', WOOD = '#a9713c', DARK = '#6e4423', STONE = '#8b93a7', LIGHT = '#b4bccd';
-  const item = (id) => {
-    if (id === 'lantern') { r(6, 0, 4, 3, OUTLINE); r(7, 1, 2, 1, LIGHT); r(4, 3, 8, 12, OUTLINE); r(5, 4, 6, 10, GOLD); r(7, 6, 2, 6, '#fff7c2'); r(5, 4, 6, 1, DARK); r(5, 13, 6, 1, DARK); }
-    else if (id === 'key') { r(1, 4, 7, 8, OUTLINE); r(2, 5, 5, 6, GOLD); r(3, 7, 3, 2, OUTLINE); r(7, 6, 8, 4, OUTLINE); r(8, 7, 6, 2, GOLD); r(10, 9, 5, 4, OUTLINE); r(11, 9, 1, 3, GOLD); r(13, 9, 1, 3, GOLD); }
-    else if (id === 'letter') { r(1, 3, 14, 10, OUTLINE); r(2, 4, 12, 8, '#fff7e0'); r(2, 4, 1, 1, '#c9b98a'); r(3, 5, 1, 1, '#c9b98a'); r(4, 6, 1, 1, '#c9b98a'); r(5, 7, 1, 1, '#c9b98a'); r(6, 8, 4, 1, '#c9b98a'); r(10, 7, 1, 1, '#c9b98a'); r(11, 6, 1, 1, '#c9b98a'); r(12, 5, 1, 1, '#c9b98a'); r(13, 4, 1, 1, '#c9b98a'); r(7, 8, 2, 2, '#E8483B'); }
-    else if (id === 'crystal') { r(6, 1, 4, 1, OUTLINE); r(4, 2, 8, 2, OUTLINE); r(3, 4, 10, 5, OUTLINE); r(4, 9, 8, 2, OUTLINE); r(5, 11, 6, 2, OUTLINE); r(7, 13, 2, 2, OUTLINE); r(6, 2, 4, 2, '#bfe9ff'); r(4, 4, 8, 5, '#5cc8f2'); r(5, 9, 6, 2, '#2f9fd0'); r(6, 11, 4, 2, '#2f9fd0'); r(7, 13, 2, 1, '#2f9fd0'); r(5, 4, 2, 3, '#e8f8ff'); }
-    else if (id === 'plank') { r(0, 5, 16, 7, OUTLINE); r(1, 6, 14, 5, WOOD); r(1, 8, 14, 1, DARK); r(4, 6, 1, 2, DARK); r(11, 9, 1, 2, DARK); }
-    else { r(3, 3, 10, 10, OUTLINE); r(4, 4, 8, 8, '#ff9ecb'); }
-  };
+  const item = (id) => g.drawImage(itemCanvas(id), 0, 0);
   switch (kind) {
     case 'item': item(holds); break;
     case 'sign':
@@ -288,7 +304,8 @@ export function monsterSprite() {
 const things = new Map();
 // The picture of a thing in its current state: { kind, st, holds }.
 export function thingSprite(t) {
-  if (kindArt[t.kind]) return artSprite(t.kind, t.st);
+  if (t.skin && skinArt[t.skin]) return artSprite(skinArt[t.skin], `skin:${t.skin}`, t.st);
+  if (kindArt[t.kind]) return artSprite(kindArt[t.kind], t.kind, t.st);
   const flags = (t.held ? 'h' : '') + (t.keypad ? 'k' : '') + (t.red ? 'r' : '');
   const key = `${t.kind}/${t.st}/${t.holds || ''}/${flags}`;
   if (!things.has(key)) things.set(key, paint(t.kind, t.st, t.holds, flags));
@@ -299,13 +316,15 @@ export function thingSprite(t) {
 let kindArt = {};
 const arts = new Map();
 export function setKindArt(art) { if (JSON.stringify(art || {}) !== JSON.stringify(kindArt)) { kindArt = art || {}; arts.clear(); } }
-function artSprite(kind, st) {
-  const a = kindArt[kind], rows = a.states[st] || a.states.default, key = `${kind}/${a.states[st] ? st : 'default'}`;
+// A pack's own pictures for objects (pack.json "sprites"), chosen by an object's "skin": same format as a kind's art.
+let skinArt = {};
+export function setSkins(skins) { if (JSON.stringify(skins || {}) !== JSON.stringify(skinArt)) { skinArt = skins || {}; arts.clear(); } }
+function artSprite(a, name, st) {
+  const rows = a.states[st] || a.states.default, key = `${name}/${a.states[st] ? st : 'default'}`;
   if (arts.has(key)) return arts.get(key);
   const c = document.createElement('canvas');
   c.width = c.height = TILE;
-  const g = c.getContext('2d');
-  rows.forEach((row, y) => { for (let x = 0; x < TILE; x++) { const ch = row[x]; if (ch !== '.') { g.fillStyle = ch === 'k' ? OUTLINE : a.pal[ch]; g.fillRect(x, y, 1, 1); } } });
+  paintRows(c.getContext('2d'), rows, a.pal);
   arts.set(key, c);
   return c;
 }

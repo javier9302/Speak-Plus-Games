@@ -2,7 +2,7 @@
 // that is running (with its real cards, codes and players). The page is public/teacher/sheet.html.
 import { dealPreset } from './abilities.js';
 import { fillText } from './things.js';
-import { answerText } from './codes.js';
+import { answerText, specOf } from './codes.js';
 import { solve } from './solver.js';
 import { KINDS } from './kinds/index.js';
 import { goalOf } from './goals/index.js';
@@ -46,13 +46,13 @@ export function createSheets({ zones, abilities, items, missions, rooms }) {
     room(code) {
       const data = rooms.sheetData(code);
       if (!data) return null;
-      const { room, stations } = data, m = room.mission, gate = room.things.find((t) => t.def.code);
+      const { room, stations } = data, m = room.mission, gate = room.things.find((t) => specOf(t.def));
       const roleOf = (p) => [...['seer', 'healer', 'slayer'].filter((r) => room.mon && room.roles[r] === p.id), ...Object.keys(room.helpers).filter((h) => room.helpers[h] === p.id).map((h) => `${h} helper`)];
       return {
         kind: 'mission', title: m.title, story: m.story, minutes: m.minutes, group: room.group.name, level: room.group.level, room: room.code,
         goal: goalOf(m.goal).sheet(m.goal, { itemName, name: (id) => room.things.find((t) => t.id === id)?.name.toLowerCase() || id }),
         gateCode: gate ? { name: gate.name, code: answerText(room.secrets.answers[gate.id]) } : null,
-        codes: room.things.filter((t) => t.def.code).map((t) => ({ name: t.name, code: answerText(room.secrets.answers[t.id]) })),
+        codes: room.things.filter((t) => specOf(t.def)).map((t) => ({ name: t.name, code: answerText(room.secrets.answers[t.id]) })),
         monster: room.mon ? room.mon.level : 'off',
         teacherRoles: ['seer', 'healer', 'slayer'].filter((r) => room.mon && room.roles[r] === 'teacher'),
         players: room.players.map((p) => ({ name: p.name, abilities: p.abilities.map(ability), roles: roleOf(p) })),

@@ -41,6 +41,7 @@ import { gameCtx } from './things.js';
 import { zoneFor } from './missions.js';
 import { makeRun, isRandom } from './run.js';
 import { customTiles } from './tiles.js';
+import { itemArt } from './items.js';
 import { makeSecrets, specOf, judge, keypadOf, answerText } from './codes.js';
 
 const RUN_TRIES = 20;                     // seeds tried for a run that this team can finish
@@ -136,7 +137,7 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
   });
   const worldMsg = (room) => ({
     t: 'world', reach: REACH,
-    zone: { id: room.zone.id, name: room.zone.name, w: room.zone.w, h: room.zone.h, rows: room.zone.rows, places: room.zone.places, landmarks: room.zone.landmarks, art: KIND_ART,
+    zone: { id: room.zone.id, name: room.zone.name, w: room.zone.w, h: room.zone.h, rows: room.zone.rows, places: room.zone.places, landmarks: room.zone.landmarks, art: KIND_ART, itemArt: itemArt(items), skins: room.zone.sprites || {},
       tiles: customTiles(room.zone.tiles || {}), theme: themeOf(room), regions: regionsOf(room) },
   });
   const stateMsg = (room) => ({ t: 'state', p: room.players.map((p) => [p.id, Math.round(p.x * 100) / 100, Math.round(p.y * 100) / 100, p.dir, p.moving ? 1 : 0, p.stun > 0 ? 1 : 0]) });
@@ -173,8 +174,8 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
         };
       }),
       messages: chat.forTeacher(room),
-      talks: room.talks, zone: room.zone.id, gateName: room.things.find((t) => t.def.code)?.name || null, gateCode: room.things.some((t) => t.def.code) ? answerText(room.secrets.answers[room.things.find((t) => t.def.code).id]) : null,
-      codes: room.things.filter((t) => t.def.code).map((t) => ({ o: t.id, name: t.name, answer: answerText(room.secrets.answers[t.id]), st: t.st })),
+      talks: room.talks, zone: room.zone.id, gateName: room.things.find((t) => specOf(t.def))?.name || null, gateCode: room.things.some((t) => specOf(t.def)) ? answerText(room.secrets.answers[room.things.find((t) => specOf(t.def)).id]) : null,
+      codes: room.things.filter((t) => specOf(t.def)).map((t) => ({ o: t.id, name: t.name, answer: answerText(room.secrets.answers[t.id]), st: t.st })),
       npcs: room.things.filter((t) => kindOf(t).character).map((t) => ({ o: t.id, name: t.name, lines: t.def.lines || [] })),
       things: room.things.filter(canForce).map((t) => ({ o: t.id, name: t.name, kind: t.kind, st: t.st })),
     });
@@ -405,7 +406,7 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
   function onAnswer(room, p, m) {
     if (room.phase !== 'play') return;
     // A gate with a code: the digits are in clues around the island.
-    const gate = room.things.find((x) => x.id === m.o && x.def.code && waitingAbility(x, 'code'));
+    const gate = room.things.find((x) => x.id === m.o && specOf(x.def) && waitingAbility(x, 'code'));
     if (gate) {
       if (!p.abilities.includes(waitingAbility(gate, 'code')) || p.stun > 0 || room.paused) return;
       const now = Date.now(), spec = specOf(gate.def), res = (msg) => send(p.ws, { t: 'result', o: gate.id, ok: false, msg });

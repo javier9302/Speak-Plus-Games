@@ -17,6 +17,8 @@ import { parseZone } from './world.js';
 import { validateCard } from './cards.js';
 import { normalizeMission } from './missions.js';
 import { zoneProblems, packProblems } from './validate.js';
+import { itemProblems, dropPackItems, addPackItems } from './items.js';
+import { spriteProblems } from './art.js';
 import { tileSet, tileProblems, themeProblems } from './tiles.js';
 
 const ID = /^[a-z0-9][a-z0-9-]{0,63}$/;
@@ -45,6 +47,11 @@ export async function loadContent(contentDir, { abilities, items }) {
     for (const [name, def] of Object.entries(builtIn)) for (const p of themeProblems(name, def, tileSet())) errors.push(`themes.json: ${p}`);
   } catch (e) { if (e.code !== 'ENOENT') errors.push(`themes.json: ${e.message}`); }
 
+  // Items: the base ones (data/items.json) and each pack's own, added to the same registry.
+  dropPackItems(items);
+  const baseIds = items.list.map((i) => i.id);
+  for (const p of itemProblems(items.list, 'items.json', new Set(), false)) errors.push(p);
+
   const loaded = [], failed = new Set();
   for (const id of folders) {
     const where = (f) => `scenarios/${id}/${f}`;
@@ -53,6 +60,11 @@ export async function loadContent(contentDir, { abilities, items }) {
     if (!ID.test(id)) { errors.push(`scenarios/${id}: a pack folder name uses small letters, numbers and dashes only`); continue; }
     const meta = await read('pack.json');
     if (meta) for (const p of packProblems(meta, id)) problems.push(`${where('pack.json')}: ${p}`);
+    const ownIds = meta?.items === undefined ? [] : addPackItems(items, id, meta.items, where('pack.json'), problems);
+    const itemIds = [...baseIds, ...ownIds];
+    const sprites = meta?.sprites && typeof meta.sprites === 'object' && !Array.isArray(meta.sprites) ? Object.fromEntries(Object.entries(meta.sprites).filter(([k]) => !k.endsWith('Help'))) : {};
+    if (meta?.sprites !== undefined && (!meta.sprites || typeof meta.sprites !== 'object' || Array.isArray(meta.sprites))) problems.push(`${where('pack.json')}: "sprites" is { "<id>": { "pal", "states" } }`);
+    for (const [sid, sp] of Object.entries(sprites)) for (const p of spriteProblems(sid, sp)) problems.push(`${where('pack.json')}: ${p}`);
     const pack = { id, name: String(meta?.name || id), story: String(meta?.story || ''), order: Number(meta?.order) || 0, unlock: Math.max(0, Number(meta?.unlock?.landmarks) || 0), strictClues: meta?.strictClues === true, zones: [] };
     // Its tiles (the base ones and its own) and the themes its maps and missions may use (the built-in ones and its own).
     for (const p of tileProblems(meta?.tiles)) problems.push(`${where('pack.json')}: ${p}`);
@@ -64,14 +76,14 @@ export async function loadContent(contentDir, { abilities, items }) {
     for (const f of await jsonFiles(path.join(dir, id, 'zones'))) {
       const raw = await read(`zones/${f}`);
       if (!raw) continue;
-      const found = zoneProblems(raw, { items: items.list.map((i) => i.id), abilities: abilities.ids, tiles, themes: Object.keys(themes) });
+      const found = zoneProblems(raw, { items: itemIds, abilities: abilities.ids, tiles, themes: Object.keys(themes), sprites: Object.keys(sprites) });
       if (raw.id !== f.slice(0, -5)) found.unshift(`"id" must be "${f.slice(0, -5)}", the name of the file`);
       if (found.length) { problems.push(...found.map((p) => `${where(`zones/${f}`)}: ${p}`)); continue; }
-      const zone = Object.assign(parseZone(raw, tiles), { pack: id, unlock: pack.unlock, themeName: raw.theme || meta?.theme || 'day' });
+      const zone = Object.assign(parseZone(raw, tiles), { pack: id, unlock: pack.unlock, themeName: raw.theme || meta?.theme || 'day', sprites });
       // A mission's overrides start from the map file and are checked the same way (overrides.js).
       Object.defineProperties(zone, {
         raw: { value: raw }, themes: { value: themes },
-        deps: { value: { items: items.list.map((i) => i.id), abilities: abilities.ids, tiles, themes: Object.keys(themes) } },
+        deps: { value: { items: itemIds, abilities: abilities.ids, tiles, themes: Object.keys(themes), sprites: Object.keys(sprites) } },
       });
       zones.push(zone);
       pack.zones.push(raw.id);

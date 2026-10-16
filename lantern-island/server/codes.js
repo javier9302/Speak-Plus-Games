@@ -42,7 +42,16 @@ export function codeSpec(code) {
     lock: Number.isFinite(code.lock) ? Math.min(60, Math.max(30, code.lock)) : DEFAULT_LOCK,
   };
 }
-export const specOf = (def) => codeSpec(def?.code);
+// The code an object asks for: a gate's "code", or the code (or word) rule in a barrier's "requires".
+export function codeOf(def) {
+  if (def?.code !== undefined) return def.code;
+  for (const r of [].concat(def?.requires ?? [])) {
+    if (r?.code !== undefined) return r.code;
+    if (r?.word !== undefined) return Array.isArray(r.word) ? { type: 'word', words: r.word } : { type: 'word', word: r.word };
+  }
+  return undefined;
+}
+export const specOf = (def) => codeSpec(codeOf(def));
 
 // The facts a formula uses.
 export const factsIn = (formula) => [...String(formula).matchAll(FORMULA)].flatMap(([, , args]) => args.split(','));
