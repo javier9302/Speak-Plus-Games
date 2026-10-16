@@ -67,7 +67,7 @@ const hidden = (t) => !!kindOf(t).hidden?.(t);
 export const publicThings = (things) => things
   .filter((t) => !hidden(t))
   .map((t) => ({ id: t.id, kind: t.kind, name: t.name, x: t.x, y: t.y, st: t.st, needs: needsOf(t), holds: kindOf(t).hidesHolds?.(t) ? null : t.holds,
-    held: t.held || undefined, skin: t.def.skin, ...kindOf(t).view?.(t) }));
+    held: t.held || undefined, skin: t.def.skin, look: t.def.look, ...kindOf(t).view?.(t) }));
 
 const dist = (t, p) => Math.hypot(t.x + 0.5 - p.x, t.y + 0.5 - (p.y - 0.1));
 export function nearestThing(things, p, wanted = () => true) {
@@ -84,7 +84,7 @@ const tileOf = (p) => `${Math.floor(p.x)},${Math.floor(p.y)}`;
 // {d1} {d2} ... in a clue become the digits of this mission's gate code.
 export const fillCode = (text, code) => String(text).replace(/\{d(\d)\}/g, (m, n) => code?.[n - 1] ?? '?');
 
-// A clue's text for this run: {d1}... the code's digits, {fact:<id>} a fact, {code:<gate>:<n>} a piece of a code, {where:<id>} "near <the closest named place>",
+// A clue's text for this run: {d1}... the code's digits, {fact:<id>} a fact, {wrong:<fact>} a number that is not the fact, {code:<gate>:<n>} a piece of a code, {where:<id>} "near <the closest named place>",
 // {name:<id>} an object's name, and the goal's own ({order}, {odd}, {deliveries}).
 export function fillText(text, room, items) {
   const find = (id) => room.things.find((t) => t.id === id) || room.zone.objects.find((o) => o.id === id);
@@ -93,6 +93,8 @@ export function fillText(text, room, items) {
   return String(text).replace(/\{([^}]*)\}/g, (m, ph) => {
     const d = /^d(\d)$/.exec(ph);
     if (d) return room.gateCode?.[d[1] - 1] ?? '?';
+    const wrong = /^wrong:(.*)$/.exec(ph);
+    if (wrong) return String(room.secrets?.wrong?.[wrong[1]] ?? '?');
     const fact = /^fact:(.*)$/.exec(ph), code = /^code:([^:]*)(?::(\d))?$/.exec(ph);
     const rule = /^rule:([^.]*)\.(.*)$/.exec(ph);
     if (rule) return room.zone.logic?.[rule[1]]?.rules?.[rule[2]]?.text ?? '?';
@@ -108,6 +110,25 @@ export function fillText(text, room, items) {
     }
     return Object.hasOwn(own, ph) ? own[ph] : m;
   });
+}
+
+// A clue's words for this run, and the pictures in it: {look:<object id>} shows that person, {look:odd} the right one of an
+// odd-one-out goal. The pictures go to the phone as appearances (looks.js); the words are what is left.
+export function fillClue(text, room, items) {
+  const pics = [];
+  const rest = String(text).replace(/\{look:([a-z0-9-]+)\}/g, (m, id) => {
+    const goal = room.mission?.goal, target = id === 'odd' && goal?.answer ? goal.answer : id;
+    const look = room.zone.objects.find((o) => o.id === target)?.look;
+    if (look) pics.push(look);
+    return '';
+  });
+  return { text: fillText(rest.replace(/\s+/g, ' ').trim(), room, items), pics };
+}
+
+// The clue an object gives for an ability, as it goes to a phone.
+export function clueOf(room, t, abilityId, items) {
+  const c = fillClue(t.def.clues[abilityId], room, items);
+  return { key: `${t.id}:${abilityId}`, o: t.id, a: abilityId, name: t.name, text: c.text, pic: c.pics.length ? c.pics : undefined };
 }
 
 // What a kind's rules may look at in a running game.
@@ -173,7 +194,9 @@ export function useAbility(room, p, ability, items, msg = {}) {
   }
 
   if (t.def.clues?.[ability.id]) {
-    return { clue: { key: `${t.id}:${ability.id}`, o: t.id, a: ability.id, name: t.name, text: fillText(t.def.clues[ability.id], room, items) } };
+    // A character that must be asked a question first (its "ask"): the phone shows the question frames.
+    if (ability.id === 'talk' && t.def.ask && !(p.notes || []).some((n) => n.key === `${t.id}:talk`)) return { ask: t };
+    return { clue: clueOf(room, t, ability.id, items) };
   }
 
   const act = actionFor(t, ability.id);

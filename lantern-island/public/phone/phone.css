@@ -156,3 +156,10 @@ input {
 .symbols-row { display: flex; gap: 10px; }
 .symbols-row .big { flex: 1 1 0 !important; width: auto; }
 .symbols-row .big:disabled { opacity: .4; }
+
+/* A picture clue: a person to describe */
+.pic { display: block; width: 160px; height: 160px; margin: 8px auto; image-rendering: pixelated; background: #fff; border: 3px solid #1F2F5C; border-radius: 14px; }
+
+/* Question frames for a character that wants to be asked */
+.frames { display: flex; flex-direction: column; gap: 10px; }
+.frames .linkbtn { width: 100%; text-align: left; justify-content: flex-start; }

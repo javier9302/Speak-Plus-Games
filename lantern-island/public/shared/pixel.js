@@ -304,6 +304,7 @@ export function monsterSprite() {
 const things = new Map();
 // The picture of a thing in its current state: { kind, st, holds }.
 export function thingSprite(t) {
+  if (t.look) return personSprite(t.look);
   if (t.skin && skinArt[t.skin]) return artSprite(skinArt[t.skin], `skin:${t.skin}`, t.st);
   if (kindArt[t.kind]) return artSprite(kindArt[t.kind], t.kind, t.st);
   const flags = (t.held ? 'h' : '') + (t.keypad ? 'k' : '') + (t.red ? 'r' : '');
@@ -328,6 +329,32 @@ function artSprite(a, name, st) {
   arts.set(key, c);
   return c;
 }
+// ---------- people (picture clues) ----------
+// A person drawn from parts (server/looks.js): hat, hair, glasses, beard, shirt.
+const HAT_COLORS = { red: '#e8483b', blue: '#41a6f6', green: '#38b764', yellow: '#f4b41b', purple: '#a05fd6' };
+const HAIR_COLORS = { black: '#2b2f45', brown: '#7a4a21', blond: '#f4d35e', grey: '#b4bccd', red: '#c23a2f' };
+const SHIRT_COLORS = { red: '#e8483b', blue: '#41a6f6', green: '#38b764', yellow: '#f4b41b', orange: '#f08a3c', purple: '#a05fd6', pink: '#ff9ecb', white: '#f7f4ee' };
+const people = new Map();
+export function personSprite(look) {
+  const key = JSON.stringify(look);
+  if (people.has(key)) return people.get(key);
+  const c = document.createElement('canvas');
+  c.width = c.height = TILE;
+  const g = c.getContext('2d'), r = (a, b, w, h, col) => { g.fillStyle = col; g.fillRect(a, b, w, h); };
+  const hair = look.hair && look.hair !== 'none' ? HAIR_COLORS[look.hair] : null, hat = look.hat && look.hat !== 'none' ? HAT_COLORS[look.hat] : null;
+  r(4, 13, 3, 3, OUTLINE); r(5, 13, 1, 2, '#3a3f5c'); r(9, 13, 3, 3, OUTLINE); r(10, 13, 1, 2, '#3a3f5c');       // legs
+  r(2, 8, 12, 6, OUTLINE); r(3, 9, 10, 4, SHIRT_COLORS[look.shirt] || '#f7f4ee'); r(1, 9, 2, 4, OUTLINE); r(13, 9, 2, 4, OUTLINE); r(1, 10, 1, 2, SKIN); r(14, 10, 1, 2, SKIN);   // body
+  r(3, 1, 10, 8, OUTLINE); r(4, 2, 8, 6, SKIN);                                                                   // head
+  if (hair) { r(4, 2, 8, 2, hair); r(3, 3, 1, 4, hair); r(12, 3, 1, 4, hair); r(4, 4, 1, 2, hair); r(11, 4, 1, 2, hair); }
+  if (hat) { r(3, 0, 10, 3, OUTLINE); r(4, 0, 8, 2, hat); r(2, 3, 12, 1, OUTLINE); r(3, 3, 10, 1, hat); }
+  r(6, 5, 1, 1, OUTLINE); r(9, 5, 1, 1, OUTLINE);                                                                 // eyes
+  if (look.glasses) { r(5, 4, 3, 3, OUTLINE); r(6, 5, 1, 1, '#ffffff'); r(8, 4, 3, 3, OUTLINE); r(9, 5, 1, 1, '#ffffff'); r(7, 5, 1, 1, OUTLINE); r(6, 5, 1, 1, OUTLINE); r(9, 5, 1, 1, OUTLINE); }
+  if (look.beard) { r(5, 7, 6, 2, hair || '#2b2f45'); r(7, 7, 2, 1, SKIN); } else r(7, 7, 2, 1, '#c98a7a');          // beard, or a mouth
+  people.set(key, c);
+  return c;
+}
+export const personUrl = (look) => personSprite(look).toDataURL();
+
 // ---------- landmarks ----------
 // What missions restore on the island. Each one is drawn as a ruin until a mission restores it.
 // The canvas is as big as the landmark (w x h tiles).

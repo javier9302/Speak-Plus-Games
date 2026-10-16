@@ -118,7 +118,7 @@ export async function runCheck(contentDir = path.join(root, 'data'), dataDir = c
     {
       const loose = [];
       for (const o of atlas.objects) for (const [a, text] of Object.entries(o.clues || {})) {
-        if (neededClues.has(`${o.id}:${a}`) || (o.extra || []).includes(a) || GOAL_PLACEHOLDERS.some((p) => String(text).includes(`{${p}}`))) continue;
+        if (neededClues.has(`${o.id}:${a}`) || (o.extra || []).includes(a) || /\{wrong:/.test(String(text)) || GOAL_PLACEHOLDERS.some((p) => String(text).includes(`{${p}}`))) continue;
         loose.push(`${o.id} (${name(a)})`);
       }
       const many = loose.length > 1;

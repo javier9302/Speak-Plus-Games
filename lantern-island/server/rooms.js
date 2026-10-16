@@ -23,6 +23,7 @@
 //                     beam {dir, at} (the monster fired along a row or column)
 //   server -> one     joined {id, token, hero, abilities, items} | notes {list} | clue {o, a, name, text}
 //                     card {o, name, card, wrong, hints} | hint {o, hints} | result {o, ok, msg}
+//                     ask {o, name, frames, teacher} (a character wants a question: answered with asked {o, i})
 //                     keypad {o, name, digits} (a gate asks for its code; answered with answer {o, value})
 //                     npc {name, text} | say {msg} | nope {msg} | error {code, msg} | kicked
 //                     inbox {list} (messages from the teacher, letters) | cool {slayer: seconds}
@@ -34,7 +35,7 @@ import QRCode from 'qrcode';
 import { isTeacher } from './http.js';
 import { dealPreset, dealRandom } from './abilities.js';
 import { stepPlayer, solidAt, REACH } from './world.js';
-import { buildThings, blockSet, publicThings, useAbility, returnItems, pressPlates, completeAction, waitingAbility, canForce } from './things.js';
+import { buildThings, blockSet, publicThings, useAbility, clueOf, returnItems, pressPlates, completeAction, waitingAbility, canForce } from './things.js';
 import { kindOf, KIND_ART } from './kinds/index.js';
 import { goalOf } from './goals/index.js';
 import { gameCtx } from './things.js';
@@ -61,7 +62,7 @@ const CODE_LETTERS = 'ABCDEFGHJKLMNPQRSTUVWXYZ';   // no I or O
 const ROOM_IDLE_MS = 30 * 60 * 1000;
 const ACT_GAP_MS = 250;                   // a phone cannot use abilities faster than this
 const ANSWER_GAP_MS = 1200;               // or answer a card faster than this (no guessing by hammering)
-const DEFAULT_SETTINGS = { view: 9, phrases: true, hostDetails: false, timer: true, rotateMinutes: 0, hintCost: false };   // the teacher changes these live
+const DEFAULT_SETTINGS = { view: 9, phrases: true, hostDetails: false, timer: true, rotateMinutes: 0, hintCost: false, audio: false, fog: 0 };   // the teacher changes these live
 
 const send = (ws, msg) => { if (ws && ws.readyState === 1) ws.send(JSON.stringify(msg)); };
 const fail = (ws, code, msg) => send(ws, { t: 'error', code, msg });
@@ -96,6 +97,7 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
       secrets: { facts: {}, answers: {} },  // facts and every code gate's answer: new every mission (codes.js)
       messages: [], helpers: { listening: null, reading: null },
       roles: { seer: null, healer: null, slayer: null }, roleTurn: -1, rotateClock: 0, mon: null,
+      navigator: null,                      // a player who sees the whole map, cannot move or act, and gives directions (navigator.js idea: see deal())
       things: [], block: new Set(), talks: [], stats: { solved: 0, wrong: 0, hints: 0, acts: 0, stuns: 0, slays: 0 },
       qr: null, touched: Date.now(), missionRun: 0,
       match: null, team: null,              // competitive mode: the match this room is a team in (match.js)
@@ -109,6 +111,11 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
   const everyone = (room) => [...room.hosts, ...room.teachers, ...room.players.map((p) => p.ws)];
   const broadcast = (room, msg) => { const s = JSON.stringify(msg); for (const ws of everyone(room)) if (ws && ws.readyState === 1) ws.send(s); };
 
+  // How many tiles around them players see (0: the whole map). A mission can force it; else the teacher's setting.
+  const fogOf = (room) => room.mission?.fog ?? room.settings.fog ?? 0;
+  // The players who move and act (everybody but the Navigator).
+  const actives = (room) => room.players.filter((p) => p.id !== room.navigator);
+
   function sendRoster(room) {
     const m = room.mission;
     if (room.match) M.observe(room);         // score what changed since the last roster
@@ -117,7 +124,7 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
       deal: room.deal, dealMode: room.dealMode,
       progress: progress(room), settings: room.settings,
       mission: m && { id: m.id, title: m.title, story: m.story, minutes: m.minutes, timeLimit: m.timeLimit },
-      clock: Math.round(room.clock), paused: room.paused, result: room.result, helpers: room.helpers,
+      clock: Math.round(room.clock), paused: room.paused, result: room.result, helpers: room.helpers, fog: fogOf(room), navigator: room.navigator,
       // The monster: who has which role, and its mood (-1 none, 0 wandering, 1 chasing, 2 shooting). Never where it is.
       roles: room.roles, monster: !!room.mon, mood: monster.mood(room),
       players: room.players.map((p) => ({ id: p.id, name: p.name, ci: p.ci, hero: p.hero, online: !!p.ws, abilities: p.abilities, items: p.items.map((it) => it.item) })),
@@ -185,7 +192,7 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
   // Shares the 12 abilities among the players in the room. Called at the start, when the
   // number of players changes, and when the teacher reshuffles (mix = true: must change).
   function deal(room, mix = false) {
-    const n = room.players.length, before = JSON.stringify(room.players.map((p) => p.abilities));
+    const team = actives(room), n = team.length, before = JSON.stringify(team.map((p) => p.abilities));
     // Only a way of sharing that lets the team finish the mission is accepted (see solver.js).
     const playable = (s) => !room.mission || n < 2 || !whyNot(room.zone, room.mission, s);
     let sets;
@@ -195,7 +202,8 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
       sets = null;
     }
     if (!sets) sets = dealPreset(abilities, n);                   // the plain preset is the safe choice
-    room.players.forEach((p, i) => { p.abilities = sets[i] || []; });
+    team.forEach((p, i) => { p.abilities = sets[i] || []; });
+    for (const p of room.players) if (p.id === room.navigator) p.abilities = [];     // the Navigator has none: tells the team where to go
     room.deal++;
     chat.fixCouriers(room);                                       // a letter always stays with a player who has Give
   }
@@ -229,9 +237,9 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
 
   async function startMission(room, mission, ws) {
     if (!room.group) return fail(ws, 'no-group', 'Choose a group first (on the host screen).');
-    if (room.players.length < 2) return fail(ws, 'few-players', `The game needs 2 to ${cfg.roomSize} players.`);
+    if (actives(room).length < 2) return fail(ws, 'few-players', `The game needs 2 to ${cfg.roomSize} players${room.navigator ? ' besides the Navigator' : ''}.`);
     // Never start a mission that cannot be finished: say why instead.
-    const base = zoneFor(mission, zones), n = room.players.length, sets = dealPreset(abilities, n);   // the map as this mission changes it
+    const base = zoneFor(mission, zones), n = actives(room).length, sets = dealPreset(abilities, n);   // the map as this mission changes it
     const written = makeRun(base, mission, 0);                         // the layout as written
     const stuck = whyNot(written.zone, written.mission, sets);
     if (stuck) return fail(ws, 'bad', `This mission cannot be finished with ${n} players. ${stuck}.`);
@@ -308,6 +316,7 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
   // ---------- players' buttons ----------
   function onAct(room, p, m) {
     if (room.phase !== 'play') return;
+    if (room.navigator === p.id) return send(p.ws, { t: 'nope', msg: 'You are the Navigator: you see the whole map. Tell your team where to go!' });
     if (room.paused) return send(p.ws, { t: 'nope', msg: 'The game is paused.' });
     if (p.stun > 0) return send(p.ws, { t: 'nope', msg: 'You are stunned! Call the Healer.' });
     const now = Date.now();
@@ -322,18 +331,10 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
     monster.event(room, 'act');
     broadcast(room, { t: 'fx', by: p.id, a: ability.id });        // everyone sees that it was used, never what it showed
     if (r.clue) {
-      if (!p.notes.some((n) => n.key === r.clue.key)) p.notes.push(r.clue);
-      send(p.ws, { t: 'clue', ...r.clue });                       // the text goes to this phone only
-      if (!room.found.has(r.clue.key)) { room.found.add(r.clue.key); monster.event(room, 'clue'); sendRoster(room); }
-      // Talking to a character: the teacher sees it and can answer as that character.
-      const t = room.things.find((x) => x.id === r.clue.o);
-      // The goal may care (bringing the items to their character...).
-      if (goalAct(room, p, t, ability.id)) return;
-      if (kindOf(t).character && ability.id === 'talk') {
-        room.talks = room.talks.filter((k) => !(k.p === p.id && k.o === t.id));
-        room.talks.push({ id: `k${++room.seq}`, p: p.id, who: p.name, o: t.id, npc: t.name });
-      }
-      sendQueue(room);
+      deliverClue(room, p, ability.id, r.clue);
+    } else if (r.ask) {
+      // This character wants a question first: the phone shows the question frames (onAsked).
+      send(p.ws, { t: 'ask', o: r.ask.id, name: r.ask.name, frames: r.ask.def.ask.frames, teacher: !!r.ask.def.ask.teacher });
     } else if (r.card) {
       const t = r.card;
       if (t.st === 'new') { t.st = 'open'; t.by = p.name; t.byId = p.id; }
@@ -358,6 +359,49 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
       changed(room);
     }
   }
+  // A clue reaches one phone: it is remembered there, the team's count goes up, the goal and the teacher may react.
+  function deliverClue(room, p, abilityId, clue) {
+    if (!p.notes.some((n) => n.key === clue.key)) p.notes.push(clue);
+    send(p.ws, { t: 'clue', ...clue });                           // the text goes to this phone only
+    if (!room.found.has(clue.key)) { room.found.add(clue.key); monster.event(room, 'clue'); sendRoster(room); }
+    // Talking to a character: the teacher sees it and can answer as that character.
+    const t = room.things.find((x) => x.id === clue.o);
+    // The goal may care (bringing the items to their character...).
+    if (goalAct(room, p, t, abilityId)) return;
+    if (kindOf(t).character && abilityId === 'talk') {
+      room.talks = room.talks.filter((k) => !(k.p === p.id && k.o === t.id));
+      room.talks.push({ id: `k${++room.seq}`, p: p.id, who: p.name, o: t.id, npc: t.name });
+    }
+    sendQueue(room);
+  }
+  // The teacher said yes to a question: the character answers (its clue goes to the player who asked).
+  function grantClue(room, p, t) {
+    if (!t?.def.clues?.talk) return;
+    room.talks = room.talks.filter((k) => !(k.p === p.id && k.o === t.id && k.question));
+    deliverClue(room, p, 'talk', clueOf(room, t, 'talk', items));
+  }
+  // A player chose a question for a character that wants one ("ask" in the map file). The right question gets the clue
+  // (at once, or when the teacher says yes); another one gets a polite "I do not understand". Nothing is lost.
+  function onAsked(room, p, m) {
+    if (room.phase !== 'play' || room.paused || p.stun > 0 || room.navigator === p.id || !p.abilities.includes('talk')) return;
+    const t = room.things.find((x) => x.id === m.o && x.def.ask && x.def.clues?.talk);
+    if (!t) return;
+    if (Math.hypot(t.x + 0.5 - p.x, t.y + 0.5 - (p.y - 0.1)) > REACH + 0.5) return send(p.ws, { t: 'nope', msg: 'Go closer to the character first.' });
+    const now = Date.now();
+    if (now - p.answerAt < ANSWER_GAP_MS) return send(p.ws, { t: 'nope', msg: 'Wait a moment, then ask again.' });
+    p.answerAt = now;
+    const ask = t.def.ask, i = Number(m.i);
+    if (!Number.isInteger(i) || i < 0 || i >= ask.frames.length) return;
+    if (i !== ask.right) return send(p.ws, { t: 'npc', name: t.name, text: 'Sorry, I do not understand. Can you ask me something else?' });
+    if (ask.teacher) {
+      room.talks = room.talks.filter((k) => !(k.p === p.id && k.o === t.id));
+      room.talks.push({ id: `k${++room.seq}`, p: p.id, who: p.name, o: t.id, npc: t.name, question: ask.frames[i] });
+      send(p.ws, { t: 'say', msg: 'Good question! Wait for the teacher to answer.' });
+      return sendQueue(room);
+    }
+    grantClue(room, p, t);
+  }
+
   // The goal's reaction to an ability used on thing t. Returns true if the mission ended.
   function goalAct(room, p, t, ability) {
     const out = goalOf(room.mission.goal).afterAct?.(room, p, t, ability, gameCtx(room, items, p));
@@ -404,7 +448,7 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
 
   // A player answers the card of a station. A wrong card answer never locks anything; a wrong code does (30 to 60 seconds, nothing else).
   function onAnswer(room, p, m) {
-    if (room.phase !== 'play') return;
+    if (room.phase !== 'play' || room.navigator === p.id) return;
     // A gate with a code: the digits are in clues around the island.
     const gate = room.things.find((x) => x.id === m.o && specOf(x.def) && waitingAbility(x, 'code'));
     if (gate) {
@@ -474,6 +518,7 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
     for (const m of room.messages) { m.to = m.to.filter((x) => x !== p.id); m.shared = m.shared.filter((x) => x !== p.id); }
     room.messages = room.messages.filter((m) => m.to.length);
     for (const role of Object.keys(room.helpers)) if (room.helpers[role] === p.id) room.helpers[role] = null;
+    if (room.navigator === p.id || room.players.length < 3) room.navigator = null;     // the Navigator left (or the team is too small)
     // A letter's challenge that only this player could answer goes back to everybody who can open the tablet.
     for (const t of room.things) if (t.answerer === p.id) t.answerer = null;
     monster.fixRoles(room);
@@ -524,7 +569,7 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
     network: () => ({ ok: net.ok, urls: net.urls }),
   });
   const fromTeacher = createTeacherCommands({
-    send, fail, broadcast, sendRoster, sendQueue, changed, deal, kick, toSpawn, drawCards, startMission, endMission, solveStation, chat, delivered, monster,
+    send, fail, broadcast, sendRoster, sendQueue, changed, deal, kick, toSpawn, drawCards, startMission, endMission, solveStation, grantClue, actives, chat, delivered, monster,
     fromHost, thingsMsg, items, abilities, groups, missions, cards, zones,
   });
 
@@ -618,9 +663,10 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
         if (m.t === 'host') await onHostHello(ws, m);
         else if (m.t === 'teacher') onTeacherHello(ws, m);
         else if (m.t === 'join') onJoin(ws, m);
-        else if (role === 'player' && m.t === 'input') { player.ix = num(m.x); player.iy = num(m.y); }
+        else if (role === 'player' && m.t === 'input') { const still = room.navigator === player.id; player.ix = still ? 0 : num(m.x); player.iy = still ? 0 : num(m.y); }
         else if (role === 'player' && m.t === 'act') onAct(room, player, m);
         else if (role === 'player' && m.t === 'answer') onAnswer(room, player, m);
+        else if (role === 'player' && m.t === 'asked') onAsked(room, player, m);
         else if (role === 'player' && m.t === 'share') chat.share(room, player, m);
         else if (role === 'player' && m.t === 'power') monster.power(room, player, m.k);
         else if (role === 'player' && m.t === 'sabotage:send') M.sabotage(room, player, m);

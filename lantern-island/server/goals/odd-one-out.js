@@ -5,7 +5,7 @@ export default {
   type: 'odd-one-out',
   label: 'The odd one',
   about: 'Several look-alike objects (kind "candidate"); clues point to the right one ("answer"). Choosing it finishes the mission. A wrong choice costs nothing.',
-  fields: { answer: 'the id of the right candidate, or "random": a different one every run (clues name it with {odd})' },
+  fields: { answer: 'the id of the right candidate, or "random": a different one every run (clues name it with {odd}, or show it with {look:odd})' },
   normalize(raw, c) {
     const cands = c.objectsOf((k) => !!k.candidate).map((o) => o.id);
     if (cands.length < 2) c.fail('goal: an "odd-one-out" goal needs 2 or more candidates (kind "candidate") on the map');
@@ -20,7 +20,7 @@ export default {
     const cands = zone.objects.filter((o) => KINDS[o.kind].candidate);
     return { ...goal, answer: cands[rnd ? Math.floor(rnd() * cands.length) : 0].id };
   },
-  placeholders: (goal, c) => ({ odd: c.name(goal.answer) }),
+  placeholders: (goal, c) => ({ odd: c.name(goal.answer), 'look:odd': '' }),
   describe: () => 'the odd one out',
   start: () => ({ found: false }),
   progress: (room) => ({ have: room.goalState.found ? 1 : 0, need: 1, done: room.goalState.found }),
@@ -32,9 +32,12 @@ export default {
   },
   solver(s) {
     const t = () => s.byId[s.mission.goal.answer];
+    // The clues that point to it ({odd} or {look:odd}). If there are any, the team must have read one: no guessing.
+    const pointers = () => s.things.flatMap((c) => Object.entries(c.def.clues || {}).filter(([, text]) => /\{odd\}|\{look:odd\}/.test(text)).map(([a]) => `${c.id}:${a}`));
+    const told = () => !pointers().length || pointers().some((k) => s.clues.has(k));
     return {
-      done: () => t().st === 'checked',
-      why: () => [`nobody can get to the ${t().name.toLowerCase()} to choose it`],
+      done: () => t().st === 'checked' && told(),
+      why: () => (t().st === 'checked' ? ['nobody can read a clue that says which one is right'] : [`nobody can get to the ${t().name.toLowerCase()} to choose it`]),
     };
   },
   sheet: (goal, c) => `find the odd one out: the right one is the ${c.name(goal.answer)}`,

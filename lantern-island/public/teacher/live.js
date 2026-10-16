@@ -130,6 +130,8 @@ $('#sabotage-on').addEventListener('change', (e) => matchCmd('sabotage:toggle', 
 
 // ---------- game controls and settings ----------
 $('#set-level').innerHTML = LEVELS.map((l) => `<option>${l}</option>`).join('');
+$('#set-fog').innerHTML = [[0, 'No fog'], [3, 'Thick: 3 tiles'], [4, '4 tiles'], [5, '5 tiles'], [7, '7 tiles']].map(([n, t]) => `<option value="${n}">${t}</option>`).join('');
+$('#set-fog').addEventListener('change', (e) => cmd('set', { key: 'fog', value: Number(e.target.value) }));
 $('#set-view').innerHTML = [5, 7, 9, 11, 13, 15].map((n) => `<option value="${n}">${n} tiles across</option>`).join('');
 
 function renderGame() {
@@ -145,6 +147,7 @@ function renderGame() {
   if (![...$('#set-level').options].some((o) => o.value === level)) $('#set-level').add(new Option(level, level));
   $('#set-level').value = level;
   $('#set-view').value = String(r.settings.view);
+  $('#set-fog').value = String(r.settings.fog || 0);
   for (const box of document.querySelectorAll('[data-set]')) box.checked = !!r.settings[box.dataset.set];
   renderChatTargets();
   renderRoles();
@@ -229,12 +232,14 @@ function renderChatTargets() {
   const r = roster, players = r.players.map((p) => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
   const name = (id) => r.players.find((p) => p.id === id)?.name;
   keep($('#chat-to'), `<option value="all">Everyone</option>${Object.keys(HELPER).map((k) => `<option value="${k}">${HELPER[k]}${name(r.helpers[k]) ? ' (' + esc(name(r.helpers[k])) + ')' : ' (nobody yet)'}</option>`).join('')}<option value="random">A random student</option>${players}`);
+  $('#set-navigator').innerHTML = `<option value="">Nobody</option>${players}`;
+  $('#set-navigator').value = r.navigator || '';
   for (const sel of document.querySelectorAll('[data-helper]')) {
     sel.innerHTML = `<option value="">Nobody</option><option value="random">Choose at random</option>${players}`;
     sel.value = r.helpers[sel.dataset.helper] || '';
   }
 }
-document.querySelector('#tab-live').addEventListener('change', (e) => { if (e.target.dataset.helper) cmd('helper', { role: e.target.dataset.helper, p: e.target.value || null }); });
+document.querySelector('#tab-live').addEventListener('change', (e) => { if (e.target.id === 'set-navigator') cmd('navigator', { p: e.target.value || null }); if (e.target.dataset.helper) cmd('helper', { role: e.target.dataset.helper, p: e.target.value || null }); });
 function chatKind() {
   const kind = $('#chat-kind').value;
   $('#chat-url-row').hidden = kind === 'text';
@@ -323,6 +328,7 @@ function renderQueue() {
     const lines = q.npcs.find((n) => n.o === k.o)?.lines || [];
     return `<article class="talk" data-talk="${esc(k.id)}">
       <h3>${esc(k.who)} is talking to the ${esc(k.npc)}</h3>
+      ${k.question ? `<p class="small"><b>${esc(k.who)} asks: "${esc(k.question)}"</b> Is it a good question, said in English? Then say yes.</p><div class="row"><button class="btn btn-small" type="button" data-npc="clue">Yes: the ${esc(k.npc.toLowerCase())} answers</button></div>` : ''}
       <p class="small">Answer as the ${esc(k.npc.toLowerCase())}. It shows on ${esc(k.who)}'s phone only.</p>
       <div class="row">${lines.map((l) => `<button class="btn btn-small" type="button" data-line="${esc(l)}">${esc(l)}</button>`).join('')}</div>
       <form class="row"><input class="field grow" maxlength="300" placeholder="Or type what the character says" aria-label="What the character says"><button class="btn btn-small" type="submit">Say</button></form>
@@ -379,6 +385,7 @@ $('#talks').addEventListener('click', (e) => {
   if (line) cmd('npc', { talk, text: line.dataset.line });
   if (act?.dataset.npc === 'item') cmd('npc', { talk, item: box.querySelector('select').value });
   if (act?.dataset.npc === 'approve') cmd('npc', { talk, approve: true });
+  if (act?.dataset.npc === 'clue') cmd('npc', { talk, clue: true });
   if (act?.dataset.npc === 'done') cmd('npc', { talk, done: true });
 });
 $('#talks').addEventListener('submit', (e) => {

@@ -1,7 +1,8 @@
 // Data for the printable teacher sheets: one for a zone (before class), one for the mission
 // that is running (with its real cards, codes and players). The page is public/teacher/sheet.html.
 import { dealPreset } from './abilities.js';
-import { fillText } from './things.js';
+import { fillText, fillClue } from './things.js';
+import { describeLook } from './looks.js';
 import { answerText, specOf } from './codes.js';
 import { solve } from './solver.js';
 import { KINDS } from './kinds/index.js';
@@ -18,13 +19,18 @@ export function createSheets({ zones, abilities, items, missions, rooms }) {
     .replace(/\{code:([^:}]*):(\d)\}/g, (m, id, n) => `(piece ${n} of the code of the ${(zone.objects.find((o) => o.id === id)?.name || id).toLowerCase()})`)
     .replace(/\{code:([^:}]*)\}/g, (m, id) => `(the whole code of the ${(zone.objects.find((o) => o.id === id)?.name || id).toLowerCase()})`)
     .replace(/\{rule:([^.}]*)\.([^}]*)\}/g, (m, p, r) => zone.logic?.[p]?.rules?.[r]?.text ?? '?')
+    .replace(/\{look:odd\}/g, '(a picture of the right one)')
+    .replace(/\{look:([^}]*)\}/g, (m, id) => { const l = zone.objects.find((o) => o.id === id)?.look; return l ? `(a picture of ${describeLook(l)})` : '(a picture)'; })
+    .replace(/\{wrong:([^}]*)\}/g, (m, id) => `(a wrong number for "${id}", on purpose: this clue lies)`)
     .replace(/\{fact:([^}]*)\}/g, (m, id) => `(the number "${id}", new every mission)`)
     .replace(/\{where:([^}]*)\}/g, (m, id) => `(near where the ${(zone.objects.find((o) => o.id === id)?.name || id).toLowerCase()} is)`)
     .replace(/\{name:([^}]*)\}/g, (m, id) => zone.objects.find((o) => o.id === id)?.name || id)
     .replace(/\{(order|odd|deliveries)\}/g, (m, k) => `(${{ order: 'the order of this mission', odd: 'the odd one of this mission', deliveries: 'the deliveries of this mission' }[k]})`);
+  // A running mission: the clue's words, then the pictures in words (the phone shows them as pictures).
+  const withPictures = (text, room, items) => { const c = fillClue(text, room, items); return [c.text, ...c.pics.map((l) => `(a picture of ${describeLook(l)})`)].filter(Boolean).join(' '); };
   const puzzles = (zone, room, only) => zone.objects.filter((o) => !KINDS[o.kind].card || !only || only.includes(o.id)).map((o) => ({
     name: o.name, kind: o.kind, how: how(o, itemName),
-    clues: Object.entries(o.clues || {}).map(([a, text]) => ({ ability: ability(a), text: room ? fillText(text, room, items) : before(text, zone) })),
+    clues: Object.entries(o.clues || {}).map(([a, text]) => ({ ability: ability(a), text: room ? withPictures(text, room, items) : before(text, zone) })),
   }));
 
   return {

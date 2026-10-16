@@ -86,7 +86,8 @@ export function smooth(players, dt) {
 //           beams: [{ dir, at, until }] shots that were just fired,
 //           restored: ids of the landmarks this group has restored (the others are drawn as ruins),
 //           fresh: id of the landmark that was just restored (it sparkles),
-//           monster: { x, y, frozen } and warn: { dir, at }: only the Seer's phone and the teacher's map pass these }
+//           monster: { x, y, frozen } and warn: { dir, at }: only the Seer's phone and the teacher's map pass these,
+//           fog: { radius, centers: [{ x, y }] }: everything farther than `radius` tiles from every center is dark }
 export function drawScene(g, scene, rect, view, players, time, extra = {}) {
   const { zone } = scene;
   const ppt = Math.min(rect.w, rect.h) / view.tiles;              // pixels per tile
@@ -164,12 +165,17 @@ export function drawScene(g, scene, rect, view, players, time, extra = {}) {
   // The mood of the island: the air turns warmer when the monster is angry.
   if (extra.mood > 0) { g.fillStyle = extra.mood === 1 ? 'rgba(255,150,40,.10)' : 'rgba(210,30,70,.16)'; g.fillRect(rect.x, rect.y, rect.w, rect.h); }
 
+  // Fog of war: dark everywhere but around the players. Names, labels and icons far from them are hidden too.
+  const fog = extra.fog && extra.fog.centers.length ? extra.fog : null;
+  const seen = (x, y) => !fog || fog.centers.some((c) => Math.hypot(c.x - x, c.y - y) < fog.radius * 0.95);
+  if (fog) drawFog(g, rect, fog, sx, sy, ppt);
+
   // Names: large, in the player's color, with a dark edge so they read on any tile.
   const font = Math.max(11, Math.round(ppt * 0.42));
   g.font = `700 ${font}px system-ui, -apple-system, "Segoe UI", sans-serif`;
   g.textAlign = 'center'; g.textBaseline = 'bottom'; g.lineJoin = 'round';
   for (const p of list) {
-    if (p.id === extra.noName) continue;
+    if (p.id === extra.noName || !seen(p.x, p.y)) continue;
     const x = sx(p.x), y = sy(p.y) - Math.round(size * 15 / 16) - 2;
     g.lineWidth = Math.max(3, font / 4); g.strokeStyle = '#1a1c2c';
     g.strokeText(p.name, x, y);
@@ -181,6 +187,7 @@ export function drawScene(g, scene, rect, view, players, time, extra = {}) {
     g.font = `italic 600 ${small}px system-ui, -apple-system, "Segoe UI", sans-serif`;
     g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round';
     for (const pl of zone.places || []) {
+      if (!seen(pl.x, pl.y)) continue;
       const x = sx(pl.x + 0.5), y = sy(pl.y + 0.5);
       g.lineWidth = 3; g.strokeStyle = 'rgba(26,28,44,.75)'; g.strokeText(pl.name, x, y);
       g.fillStyle = '#fff7c2'; g.fillText(pl.name, x, y);
@@ -192,6 +199,7 @@ export function drawScene(g, scene, rect, view, players, time, extra = {}) {
     g.font = `600 ${small}px system-ui, -apple-system, "Segoe UI", sans-serif`;
     g.textBaseline = 'top';
     for (const t of extra.things || []) {
+      if (!seen(t.x, t.y)) continue;
       const x = sx(t.x + 0.5), y = sy(t.y + 1);
       g.lineWidth = 3; g.strokeStyle = '#1a1c2c'; g.strokeText(t.name, x, y);
       g.fillStyle = '#ffffff'; g.fillText(t.name, x, y);
@@ -200,7 +208,7 @@ export function drawScene(g, scene, rect, view, players, time, extra = {}) {
   // Someone just used an ability: its icon pops up over their head. No text, so nothing is given away.
   for (const f of extra.fx || []) {
     const p = players.get(f.by);
-    if (!p || p.x === undefined) continue;
+    if (!p || p.x === undefined || !seen(p.x, p.y)) continue;
     const left = (f.until - time) / 1.4;                 // 1 -> 0
     const s = Math.round(ppt * 0.8), x = sx(p.x) - s / 2, y = sy(p.y) - Math.round(size * 15 / 16) - font - s - (1 - left) * ppt * 0.4;
     g.globalAlpha = Math.min(1, left * 3);
@@ -210,4 +218,24 @@ export function drawScene(g, scene, rect, view, players, time, extra = {}) {
     g.globalAlpha = 1;
   }
   g.restore();
+}
+
+// The dark layer of the fog: a gradient hole around each center, so the edge fades.
+let fogCanvas = null;
+function drawFog(g, rect, fog, sx, sy, ppt) {
+  const w = Math.ceil(rect.w), h = Math.ceil(rect.h);
+  if (!fogCanvas || fogCanvas.width !== w || fogCanvas.height !== h) { fogCanvas = document.createElement('canvas'); fogCanvas.width = w; fogCanvas.height = h; }
+  const f = fogCanvas.getContext('2d'), R = fog.radius * ppt;
+  f.globalCompositeOperation = 'source-over';
+  f.clearRect(0, 0, w, h);
+  f.fillStyle = 'rgba(8, 12, 28, 0.94)';
+  f.fillRect(0, 0, w, h);
+  f.globalCompositeOperation = 'destination-out';
+  for (const c of fog.centers) {
+    const x = sx(c.x) - rect.x, y = sy(c.y) - rect.y, grad = f.createRadialGradient(x, y, R * 0.55, x, y, R);
+    grad.addColorStop(0, 'rgba(0,0,0,1)'); grad.addColorStop(1, 'rgba(0,0,0,0)');
+    f.fillStyle = grad;
+    f.beginPath(); f.arc(x, y, R, 0, Math.PI * 2); f.fill();
+  }
+  g.drawImage(fogCanvas, rect.x, rect.y);
 }

@@ -331,7 +331,7 @@ function frame(now) {
     const rect = { w: box.w * ppt, h: box.h * ppt, x: (canvas.width - box.w * ppt) / 2, y: (canvas.height - box.h * ppt) / 2 };
     fx = fx.filter((f) => f.until > now / 1000);
     beams = beams.filter((b) => b.until > now / 1000);
-    drawScene(g2d, scene, rect, { cx: box.x + box.w / 2, cy: box.y + box.h / 2, tiles: Math.min(box.w, box.h) }, players, now / 1000, { fx, things, labels: roster.settings?.hostDetails, places: true, beams, mood: roster.phase === 'play' ? roster.mood : -1,
+    drawScene(g2d, scene, rect, { cx: box.x + box.w / 2, cy: box.y + box.h / 2, tiles: Math.min(box.w, box.h) }, players, now / 1000, { fx, things, labels: roster.settings?.hostDetails, places: true, beams, fog: roster.phase === 'play' && roster.fog ? { radius: roster.fog, centers: [...players.values()].filter((p) => p.x !== undefined && p.id !== roster.navigator).map((p) => ({ x: p.x, y: p.y - 0.4 })) } : null, mood: roster.phase === 'play' ? roster.mood : -1,
       restored: roster.group?.island.landmarks || [], fresh: roster.phase === 'done' ? roster.result?.restoreId : null });
     // The mission clock runs on between messages from the server. It turns yellow after the target time; nothing else happens.
     const running = roster.phase === 'play' && !roster.paused;

@@ -73,7 +73,7 @@ Every object: `{ "id", "kind", "name", "x", "y", "clues"? }`, or `"slot"` instea
 | `bell` | A bell. It can hold clues for Listen and Look. | its clues |  |
 | `bottle` | A bottle with a message. It can hold clues for Look and Read. | its clues |  |
 | `boulder` | A big rock. Push moves it to its "to" tile, and back. | push | `to`: where Push moves it: { "x": 1, "y": 2 } |
-| `candidate` | One of several look-alike objects (pots). An "odd-one-out" goal names the right one; Use (or its "by" ability) chooses it. A wrong choice costs nothing. | its "by" ability | `by`: the ability that chooses it (default "use") |
+| `candidate` | One of several look-alike objects (pots). An "odd-one-out" goal names the right one; Use (or its "by" ability) chooses it. A wrong choice costs nothing. | its "by" ability | `by`: the ability that chooses it (default "use")<br>`look`: how it looks (a person), for picture clues (section 3e) |
 | `chest` | A chest. Open it, then Pick up what it holds. Close shuts it again. | open, close, pickup | `holds`: the item inside (optional) |
 | `exit` | A way to another map of the same pack. Walking onto it takes players to the exit named by "arrive" in the map named by "to"; they land next to it. | none (walk onto it) | `to`: the id of another map of this pack<br>`arrive`: the id of an exit in that map, where players arrive |
 | `gap` | A broken bridge. Jump crosses it (only the jumper). Fix mends it for everybody, if it names the item it needs. A plate can let the others cross. | jump, fix | `needs`: the item that fixes it (optional; without it, it cannot be fixed) |
@@ -81,7 +81,7 @@ Every object: `{ "id", "kind", "name", "x", "y", "clues"? }`, or `"slot"` instea
 | `item` | An item lying on the ground. Pick up takes it. | pickup | `item`: the item (an id from the items list) |
 | `lever` | A lever. A player uses it and its target (a timed door, a bridge or a gate) is open for a few seconds. Far from the door, so the team must call "Go!". | use (or its `by`) | `target`: the id of the timed door (or gap, or gate) it opens<br>`seconds`: how long it stays open, 3 to 60 (default 10)<br>`by`: the ability that pulls it (default `use`) |
 | `machine` | A broken machine (a pump, a clock, a lamp). Fix it, with the item it names if it needs one; then it works. A "restore" goal counts the machines that work. | its "by" ability | `needs`: the item that fixes it (optional)<br>`by`: the ability that fixes it (default "fix") |
-| `npc` | A character. Talk gives its "talk" clue; the teacher can answer as it, and a goal can ask for items to be brought to it. | talk | `lines`: sentences the teacher can send as this character (a list) |
+| `npc` | A character. Talk gives its "talk" clue; the teacher can answer as it, and a goal can ask for items to be brought to it. | talk | `lines`: sentences the teacher can send as this character (a list)<br>`look`: how it looks, for picture clues (section 3e)<br>`ask`: it answers its talk clue only to the right question (section 3e) |
 | `pad` | A flat stone that lights up when pressed (default ability Push). A "sequence" goal asks for pads in an order the clues reveal. | its "by" ability | `by`: the ability that presses it (default "push") |
 | `plate` | A flat stone. While a player stands on it, its target (a broken bridge or a gate) lets everybody else through. No ability needed. | none (stand on it) | `target`: the id of the gap or gate it holds open (leave it out for a plate that a barrier lists in `playersOn`) |
 | `shell` | A shell. It can hold clues for Listen and Look. | its clues |  |
@@ -208,6 +208,35 @@ Three ways to make the team talk, all written in JSON.
 { "id": "market", "kind": "shop", "name": "Market", "x": 8, "y": 2, "sells": "bread", "price": 2 }
 ```
 
+## 3e. Pictures, voices, lies, questions and fog
+
+Ways to make students **describe** and **ask**, not copy. All of them are data.
+
+**Picture clues.** A person can be drawn from parts. Give an `npc` or a `candidate` a `look`:
+
+```json
+{ "id": "man-1", "kind": "candidate", "name": "Stranger 1", "x": 20, "y": 17,
+  "look": { "hat": "red", "hair": "black", "glasses": true, "beard": false, "shirt": "green" } }
+```
+
+`hat` is none, red, blue, green, yellow or purple; `hair` none, black, brown, blond, grey or red; `shirt` red, blue, green, yellow, orange, purple, pink or white. The person is drawn on the map with that look. A clue shows a picture: `"look": "The camera shows the thief: {look:odd}"` shows the right candidate of an `odd-one-out` goal, `{look:man-1}` shows that person. The Look player sees only the picture (and the few words around it): they must describe it in English, and the team finds the match among the look-alikes. The check says when two candidates look exactly the same. An `odd-one-out` goal also needs the team to have read a clue that points to the answer (`{odd}` or `{look:odd}`), so nobody can win by guessing. Because the camera clue names the answer, put it in the mission with `add` (section 6), not on the map.
+
+**Voices.** The teacher can switch on "Listen clues are spoken by the phone". Then every Listen clue is spoken with the phone's own voice and the words are hidden. A phone without a voice, or a student who cannot hear it, can press "show the words". Write Listen clues as things one hears ("A voice says: ..."). Nothing to set in the pack.
+
+**Clues that lie.** `{wrong:open}` in a clue is a number that is not the fact `open` (a different one each mission). Use it for an old sign or a liar, and let another clue tell the truth (`{fact:open}`) and say who to trust ("the old sign is not right"). The check wants a true clue for every lie, and a lie never needs to be "needed".
+
+**Questions.** An `npc` with `ask` gives its `talk` clue only to the right question. The phone shows the questions; the player says one out loud and taps it:
+
+```json
+{ "id": "mrs-lee", "kind": "npc", "name": "Mrs Lee", "x": 20, "y": 14,
+  "clues": { "talk": "\"The baker lives next to the blue house.\"" },
+  "ask": { "frames": ["What is your name?", "Where does the baker live?", "What time is it?"], "right": 1 } }
+```
+
+A wrong question gets "Sorry, I do not understand" and nothing is lost. With `"teacher": true` the question also appears on the teacher's panel, who says yes when it was said well, in English.
+
+**Fog and the Navigator.** The teacher can switch on fog (players see only 3 to 7 tiles around them) and name a **Navigator**: a player who sees the whole map with every name, but cannot move or use abilities; the others share all twelve abilities, and the Navigator must tell them where to go ("Go left, then up two"). A mission can force fog with `"fog": 6` (a dark night, a cave). The fog is drawn by the screens; it is a classroom game, not a lock. A Navigator needs at least 3 players.
+
 ## 4. Abilities, and the design rules
 
 The 12 abilities: `look`, `read`, `talk`, `listen`, `pickup`, `give`, `open`, `close`, `jump`, `push`, `use`, `fix`. The game shares them among the players (`data/abilities.json`):
@@ -258,6 +287,7 @@ The solver does things the moment it can. If two things need the same item (a sl
 | `monster` | off, gentle, normal, hard, or group-setting (default) |
 | `theme` | how its maps look (section 7) |
 | `seed` | a fixed run (section 6) |
+| `fog` | tiles players see around them, 3 to 9 (0: none). It stays on in this mission whatever the teacher chooses; without it, the teacher chooses (section 3e) |
 | overrides | `rename`, `texts`, `lines`, `move`, `remove`, `add`, `slots`, `shuffle` (below) |
 
 Goal types (`"goal": { "type": "<type>", ... }`, default `collect`):
@@ -306,6 +336,8 @@ Each mission start picks a random **seed**. From it the server builds the run: o
 | `{code:<gate id>:<n>}`, `{code:<gate id>}` | a piece of a gate's code, or all of it (section 3b) |
 | `{fact:<id>}` | a fact of the map (section 3b) |
 | `{rule:<puzzle>.<rule>}` | the sentence of a logic rule (section 3b) |
+| `{wrong:<fact>}` | a number that is NOT the fact: a clue that lies (section 3e) |
+| `{look:<id>}`, `{look:odd}` | a picture of that person, or of the right one of an `odd-one-out` goal (section 3e) |
 | `{where:<id>}` | "near <the named place closest to that object>" |
 | `{name:<id>}` | that object's name |
 | `{order}` | a `sequence` goal's order ("the Moon stone, then the Sun stone, ...") |
@@ -369,7 +401,7 @@ Other types: `typed` (`accepted`: answers, `allowTypos`), `spelling` (`word`), `
 
 ## 12. A full example: Maple City
 
-`data/scenarios/city` is a whole city, written only in JSON: two maps (the centre and Uptown, joined by a bus), three missions, seven items with pictures, four tiles, nine object skins, three cards. Open it next to this page. Where each idea is used:
+`data/scenarios/city` is a whole city, written only in JSON: two maps (the centre and Uptown, joined by a bus), four missions, seven items with pictures, four tiles, nine object skins, three cards. Open it next to this page. Where each idea is used:
 
 | Idea | In the city |
 |---|---|
@@ -385,7 +417,10 @@ Other types: `typed` (`accepted`: answers, `allowTypos`), `spelling` (`word`), `
 | Traders (3d) | Mrs Green wants an umbrella and gives a flower; Mr Park wants the flower and gives a wrench |
 | A burst pipe (section 3) | The water valve is a `sluice`: Fix it with the wrench, then Close it to dry the street |
 | Shopping (3d) | Two shops sell bread (2 and 3 coins), one sells milk. 9 coins: the team must buy bread at the market |
-| Missions | `saturday-shopping` (a `shopping` goal), `lost-parcel` (`collect` and `deliver` to the postman), `lost-tourist` (`escort` to a place in Uptown) |
+| A lie (3e) | The old sign says the market opens at `{wrong:open}`; the radio says the old sign is not right |
+| Questions (3e) | Mrs Lee has `"ask"`: only "Where does the baker live?" gets her clue |
+| Pictures and fog (3e) | `the-stolen-bag`: a camera shows the thief (`{look:odd}`) and five strangers in the park have different looks; the mission has `"fog": 6` |
+| Missions | `saturday-shopping` (a `shopping` goal), `lost-parcel` (`collect` and `deliver` to the postman), `lost-tourist` (`escort` to a place in Uptown), `the-stolen-bag` (`odd-one-out`) |
 
 The three design rules still hold, in a city: the locker with the key is behind a crate (so Push, Open and Pick up are all needed), the ditch needs Jump and a plate, and every mission needs something from each pair of abilities. `"strictClues": true` is on, so every clue in the city is a piece of a puzzle that some mission needs. The two `lever` buttons are close to their doors, so a single player can still cross; put a lever far away (and give it a short `seconds`) if the team must split up.
 

@@ -56,6 +56,8 @@ async function main() {
   await tp(listener, 15, 6); await act(listener, 'listen');
   await tp(looker, 15, 7); await act(looker, 'look');
   await tp(talker, 20, 15); await act(talker, 'talk');
+  check('Mrs Lee wants a question first: the phone gets the question frames, no clue yet', talker.all.filter((x) => x.t === 'ask').at(-1)?.frames.includes('Where does the baker live?') && !clues(talker).some((t) => t.includes('Mrs Lee')));
+  await sleep(1300); talker.send({ t: 'asked', o: 'mrs-lee', i: 1 }); await sleep(200);
   const seen = [...clues(reader), ...clues(listener), ...clues(looker), ...clues(talker)].join(' | ');
   check('four clues, four rules of the street puzzle', ['The doctor lives to the left of the teacher.', 'The baker lives next to the pilot.', 'The baker does not live in the green house.', 'The baker lives next to the blue house.'].every((t) => seen.includes(t)), seen);
   check('no single clue gives the number', !/\b31\b/.test(seen) && r.secrets.answers['flat-door'] === '31');
@@ -113,6 +115,24 @@ async function main() {
   const done2 = await ended();
   check('the milk from the dairy completes the list, with 1 coin left', r.goalState.coins === 1 && !!done2 && done2.result?.completed === true, JSON.stringify(done2?.result));
 
+
+  console.log('\nWho took the bag?: a picture clue, fog, and the old sign that lies');
+  await start('the-stolen-bag');
+  check('the mission is foggy for everybody: 6 tiles', host.last.roster.fog === 6 && A.last.roster.fog === 6);
+  const thiefId = r.mission.goal.answer, thief = r.zone.objects.find((o) => o.id === thiefId).look;
+  await tp(looker, 6, 4); await act(looker, 'look');
+  const pic = clues(looker).length ? looker.all.filter((x) => x.t === 'clue').at(-1) : null;
+  check('the camera shows the thief as a picture, with no description', JSON.stringify(pic.pic) === JSON.stringify([thief]) && pic.text === 'The camera shows the thief:', JSON.stringify(pic));
+  const open = r.secrets.facts.open, hours = r.secrets.facts.hours;
+  await tp(reader, 5, 7); await act(reader, 'read');
+  const lie = looker === reader ? looker.all.filter((x) => x.t === 'clue').at(-1).text : reader.all.filter((x) => x.t === 'clue').at(-1).text;
+  check('the old sign lies about the opening time (the poster is right)', /^OLD SIGN\. The market opens at \d o'clock\.$/.test(lie) && !lie.includes(`at ${open} `), lie);
+  const spot = (id) => { const t = thing(id); return [t.x, t.y + 1]; };
+  await tp(user, ...spot(thiefId === 'man-1' ? 'man-2' : 'man-1')); await act(user, 'use');
+  check('the wrong stranger costs nothing', user.all.filter((x) => x.t === 'say').at(-1)?.msg.includes('Not this one'));
+  await tp(user, ...spot(thiefId)); await act(user, 'use');
+  const done3 = await ended();
+  check('the thief ends the mission', !!done3 && done3.result?.completed === true, JSON.stringify(done3?.result));
 
   console.log('\nThe lost tourist: a ticket, the bus gate, and a character who follows through the exit');
   await start('lost-tourist');

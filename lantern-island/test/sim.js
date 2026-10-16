@@ -451,7 +451,7 @@ async function main() {
   tcmd('pause', { on: false });
   tcmd('set', { key: 'view', value: 99 }); tcmd('set', { key: 'phrases', value: false }); tcmd('set', { key: 'hostDetails', value: true }); tcmd('set', { key: 'hacked', value: 1 });
   await sleep(150);
-  check('live settings: view size (kept within limits), phrase help, host details', JSON.stringify(h3.last.roster.settings) === JSON.stringify({ view: 15, phrases: false, hostDetails: true, timer: true, rotateMinutes: 0, hintCost: false }));
+  check('live settings: view size (kept within limits), phrase help, host details', JSON.stringify(h3.last.roster.settings) === JSON.stringify({ view: 15, phrases: false, hostDetails: true, timer: true, rotateMinutes: 0, hintCost: false, audio: false, fog: 0 }));
   tcmd('tp', { p: A.me.id, x: 30, y: 11 }); tcmd('tp', { p: B.me.id, x: 0, y: 0 });
   await sleep(150);
   check('teleport a player (never into water)', Math.floor(where(A).x) === 30 && where(B).x > 5);

@@ -16,6 +16,8 @@ import { cleanName, HINT_COST_SECONDS } from './rooms.js';
 const SETTINGS = {
   view: (v) => Math.max(5, Math.min(15, Math.round(Number(v)) || 9)),   // tiles a phone sees
   phrases: Boolean, hostDetails: Boolean, timer: Boolean, hintCost: Boolean,
+  audio: Boolean,                                                        // Listen clues are spoken by the phone, not written
+  fog: (v) => { const n = Math.max(0, Math.min(9, Math.round(Number(v)) || 0)); return n && n < 3 ? 3 : n; },      // 0 = no fog; otherwise how many tiles players see around them (3 to 9)
   rotateMinutes: (v) => Math.max(0, Math.min(30, Math.round(Number(v)) || 0)),   // 0 = the roles do not rotate by themselves
 };
 const line = (v, max = 300) => String(v ?? '').replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, max);
@@ -54,6 +56,15 @@ export function createTeacherCommands(G) {
       sendRoster(room); sendQueue(room);
     },
     shuffle(room, m) { G.fromHost.shuffle(room, m); },
+    // The Navigator: a player who sees the whole map but cannot move or act (the others share all the abilities).
+    navigator(room, m) {
+      const p = m.p ? player(room, m.p) : null;
+      if (m.p && !p) return;
+      if (p && room.players.length < 3) { for (const t of room.teachers) send(t, { t: 'error', code: 'note', msg: 'A Navigator needs at least 3 players: 2 to play and 1 to guide.' }); return; }
+      room.navigator = p ? p.id : null;
+      G.deal(room);
+      sendRoster(room); sendQueue(room);
+    },
     set(room, m) {
       if (!Object.hasOwn(SETTINGS, m.key)) return;
       room.settings[m.key] = SETTINGS[m.key](m.value);
@@ -124,6 +135,8 @@ export function createTeacherCommands(G) {
       const p = player(room, k.p);
       if (p && m.text) send(p.ws, { t: 'npc', name: k.npc, text: line(m.text) });
       if (p && m.approve) send(p.ws, { t: 'npc', name: k.npc, text: 'Well done! Thank you.', good: true });
+      // Yes to the question the student asked ("ask" in the map file): the character answers with its clue.
+      if (p && m.clue && playing(room)) { G.grantClue(room, p, room.things.find((x) => x.id === k.o)); return; }
       if (p && m.item && items.byId[m.item] && playing(room)) {
         if (p.items.length >= items.maxCarry) send(p.ws, { t: 'npc', name: k.npc, text: 'Your hands are full! Give something to a teammate first.' });
         else { p.items.push({ item: m.item, from: null }); send(p.ws, { t: 'npc', name: k.npc, text: `Here, take this ${items.byId[m.item].name.toLowerCase()}.` }); }

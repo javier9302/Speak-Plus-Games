@@ -13,6 +13,7 @@
 // {diff:a,b} (a minus b), {times:a,b}, with other characters kept as they are. {pos:<puzzle>.<item>} is the house
 // number of an item in a logic puzzle (logic.js), so a code can ask "which house has the doctor?".
 //
+// {wrong:<fact>} in a clue is a number that is NOT the fact: a sign that lies or is out of date (the team must compare sources).
 // In clues: {rule:<puzzle>.<rule>} is the sentence of a logic rule. {code:<gate id>:<n>} is the n-th digit, letter or picture name of that gate's answer, {code:<gate id>}
 // all of it, {fact:<id>} a fact. The solver and the checker use tokens (see clueTokens) to know what a clue gives.
 import crypto from 'node:crypto';
@@ -142,6 +143,9 @@ const pick = (list) => list[crypto.randomInt(list.length)];
 export function makeSecrets(zone, legacy = '') {
   const facts = {};
   for (const [id, f] of Object.entries(zone.facts || {})) if (!id.endsWith('Help')) facts[id] = pick(factValues(f));
+  // A fact's "wrong" value, for clues that lie or are out of date: {wrong:<fact>} (never the true one).
+  const wrong = {};
+  for (const [id, f] of Object.entries(zone.facts || {})) if (!id.endsWith('Help')) { const others = factValues(f).filter((v) => v !== facts[id]); if (others.length) wrong[id] = pick(others); }
   const answers = {}, values = { ...facts };
   for (const [pid, p] of Object.entries(zone.logic || {})) {
     const sol = pid.endsWith('Help') ? null : solution(p);
@@ -155,7 +159,7 @@ export function makeSecrets(zone, legacy = '') {
     else if (spec.type === 'symbols') answers[o.id] = Array.from({ length: spec.length }, () => pick(SYMBOLS).id);
     else answers[o.id] = spec.answer !== undefined ? evalFormula(spec.answer, values) ?? '' : Array.from({ length: spec.length }, () => String(crypto.randomInt(10))).join('');
   }
-  return { facts, answers };
+  return { facts, answers, wrong };
 }
 
 const parts = (answer) => (Array.isArray(answer) ? answer : [...String(answer)]);

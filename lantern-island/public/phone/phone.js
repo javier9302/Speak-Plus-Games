@@ -1,6 +1,6 @@
 // Phone: join, then walk with the joystick. The phone only sends its joystick; the server moves the character.
 import { connect, esc } from '../shared/net.js';
-import { PLAYER_COLORS, charSprite, heroUrl, iconUrl, itemUrl } from '../shared/pixel.js';
+import { PLAYER_COLORS, charSprite, heroUrl, iconUrl, itemUrl, personUrl } from '../shared/pixel.js';
 import { HEROES, heroById } from '../shared/heroes.js';
 import { createScene, drawScene, fitCanvas, smooth } from '../shared/render.js';
 import { cardHtml, hintsHtml, speak, safeUrl } from '../shared/cardview.js';
@@ -27,6 +27,9 @@ const players = new Map();
 let defs = [];                    // the 12 abilities: { id, name, help }
 let reach = 1.5;                  // how close I must be to use an object
 let notes = [];                   // clues I found: only my phone has their text
+let settings = {};                // the teacher's live settings (roster)
+let fogRadius = 0, navigatorId = null;   // fog of war (tiles players see), and who is the Navigator
+const heard = new Set();          // Listen clues whose words I chose to read because the voice did not work
 let seenDeal = store.get(`li-deal-${slot}`) || '';   // the last sharing of abilities I was shown
 let itemDefs = [];                // { id, name }
 let things = [];                  // objects on the map and their state
@@ -82,6 +85,9 @@ const socket = connect({
       renderPowers();
       // Live settings from the teacher
       viewTiles = m.settings.view;
+      settings = m.settings;
+      fogRadius = m.phase === 'play' ? m.fog || 0 : 0;
+      if (m.navigator !== navigatorId) { navigatorId = m.navigator; if (me && navigatorId === me.id) toast('You are the Navigator! You see the whole map. You cannot move: tell your team where to go.'); }
       $('#open-phrases').hidden = !m.settings.phrases;
       $('#paused').hidden = !(m.phase === 'play' && m.paused);
       $('#wait-text').textContent = m.phase === 'done' ? (m.result?.completed ? 'Mission complete! Great teamwork.' : m.result?.timeUp ? 'Time is up! The mission is over.' : 'The mission is over.') : 'You are in! Look at the big screen.';
@@ -157,6 +163,11 @@ const socket = connect({
       showCount('#notes-count', notes.length);
       play('good');
       openSheet(`<h3>Only you can see this. Tell your team!</h3>${clueHtml(m)}`);
+      if (spoken(m)) speak(m.text);
+    } else if (m.t === 'ask') {
+      // A character that answers only to the right question: choose it, and say it aloud to the character!
+      openSheet(`<h3>${esc(m.name)}</h3><h2>Ask a question.</h2><p>${m.teacher ? 'Say your question out loud, in English. The teacher listens.' : 'Choose the question you need. Then say it out loud!'}</p>
+        <div class="frames">${m.frames.map((f, i) => `<button type="button" class="linkbtn" data-ask="${esc(m.o)}" data-i="${i}">${esc(f)}</button>`).join('')}</div>`, 'Close');
     } else if (m.t === 'nope') {
       toast(m.msg);
       play('bad');
@@ -357,6 +368,7 @@ function openRole(fresh) {
   openSheet(`
     <h2>${fresh ? 'Your role' : 'My role'}</h2>
     ${hasMonster ? [['seer', 'Only your phone shows the monster. Tell your team where it is!'], ['healer', 'Stand next to a stunned teammate and press Heal.'], ['slayer', 'Go near the monster and press Slay. You cannot see it: ask the Seer!']].filter(([k]) => roles[k] === me.id).map(([k, how]) => `<p class="helper">You are the ${k[0].toUpperCase() + k.slice(1)}. ${how}</p>`).join('') : ''}
+    ${navigatorId === me.id ? '<p class="helper">You are the Navigator. You see the whole map, with every name. You cannot move or use abilities: tell your team where to go. "Go left, then up two."</p>' : ''}
     ${['listening', 'reading'].filter((r) => helpers[r] === me.id).map((r) => `<p class="helper">You are the ${r === 'listening' ? 'Listening' : 'Reading'} Helper. Teammates may ask: "Can you ${r === 'listening' ? 'listen to this' : 'read this'} with me, please?"</p>`).join('')}
     <h3>You can</h3>
     <ul class="rows">${defs.filter((d) => have.includes(d.id)).map((d) => `<li><img src="${iconUrl(d.id, '#1a1c2c')}" alt=""><span><b>${esc(d.name)}</b><small>${esc(d.help)}</small></span></li>`).join('')}</ul>
@@ -364,7 +376,12 @@ function openRole(fresh) {
     <ul class="rows">${others.map((p) => `<li><span class="who" style="background:${colorOf(p)}"></span><span><b>${esc(p.name)}</b><small>${p.abilities.map(name).join(', ')}</small></span></li>`).join('')}</ul>
     <button type="button" class="play" data-mute>${isMuted() ? 'Sound: off' : 'Sound: on'}</button>`);
 }
-const clueHtml = (n) => `<div class="clue"><div class="from"><img src="${iconUrl(n.a, '#4A5578')}" alt="">${esc(n.name)} · ${esc(defs.find((d) => d.id === n.a)?.name || n.a)}</div><p>${esc(n.text)}</p></div>`;
+// A Listen clue is spoken, not written, when the teacher turns that on and this phone has a voice. The words stay hidden
+// unless I press "show the words" (the voice did not work).
+const spoken = (n) => settings.audio && n.a === 'listen' && 'speechSynthesis' in window && !heard.has(n.key);
+const clueHtml = (n) => `<div class="clue"><div class="from"><img src="${iconUrl(n.a, '#4A5578')}" alt="">${esc(n.name)} · ${esc(defs.find((d) => d.id === n.a)?.name || n.a)}</div>${spoken(n)
+  ? `<p><button type="button" class="big" data-clue-say="${esc(n.key)}">Listen</button></p><p><small>Listen, then tell your team what you heard. </small></p><button type="button" class="linkbtn" data-clue-text="${esc(n.key)}">I cannot hear it: show the words</button>`
+  : `${n.text ? `<p>${esc(n.text)}</p>` : ''}`}${(n.pic || []).map((l) => `<img class="pic" src="${personUrl(l)}" alt="A person. Describe the picture to your team.">`).join('')}</div>`;
 function openNotes() {
   openSheet(`<h2>My clues</h2>${notes.length ? notes.map(clueHtml).join('') : '<p>Nothing yet. Walk to something and use an ability.</p>'}<h3>Only you can see these. Tell your team!</h3>`);
 }
@@ -380,6 +397,13 @@ $('#sheet-body').addEventListener('click', (e) => {
   play('tap');
 });
 $('#open-notes').addEventListener('click', openNotes);
+$('#sheet-body').addEventListener('click', (e) => {
+  const ask = e.target.closest('[data-ask]');
+  if (ask) { socket.send({ t: 'asked', o: ask.dataset.ask, i: Number(ask.dataset.i) }); $('#sheet').hidden = true; return; }
+  const say = e.target.closest('[data-clue-say]'), text = e.target.closest('[data-clue-text]');
+  if (say) speak(notes.find((n) => n.key === say.dataset.clueSay)?.text || '');
+  if (text) { heard.add(text.dataset.clueText); const n = notes.find((x) => x.key === text.dataset.clueText); if (n) text.closest('.clue').outerHTML = clueHtml(n); }
+});
 
 // ---------- competitive mode: team, scoreboard, sabotage ----------
 // How each effect looks on the phone. The server decides when it starts and ends (server/sabotage.js).
@@ -655,7 +679,12 @@ function frame(now) {
         fx = fx.filter((f) => f.until > now / 1000);
         beams = beams.filter((b) => b.until > now / 1000);
         // The phone only shows a small square around its own character.
-        drawScene(g, scene, { x: 0, y: 0, w: canvas.width, h: canvas.height }, { cx: my.x, cy: my.y - 0.4, tiles: viewTiles }, players, now / 1000, { things, target: near?.thing, fx, noName: me.id, places: true, mood, beams, monster: mon, warn: mon?.warn, restored });
+        const navigator = navigatorId === me.id, rect = { x: 0, y: 0, w: canvas.width, h: canvas.height };
+        // The Navigator sees the whole map, with every name; the others see a small square (and fog, if the teacher wants it).
+        const fit = Math.min(rect.w / scene.zone.w, rect.h / scene.zone.h);
+        const view = navigator ? { cx: scene.zone.w / 2, cy: scene.zone.h / 2, tiles: Math.min(rect.w, rect.h) / fit } : { cx: my.x, cy: my.y - 0.4, tiles: viewTiles };
+        const fog = !navigator && fogRadius ? { radius: fogRadius, centers: [{ x: my.x, y: my.y - 0.4 }] } : null;
+        drawScene(g, scene, rect, view, players, now / 1000, { things, target: navigator ? null : near?.thing, fx, noName: navigator ? null : me.id, places: true, labels: navigator, fog, mood, beams, monster: mon, warn: mon?.warn, restored });
       }
     }
   }

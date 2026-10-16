@@ -23,7 +23,7 @@ export const ZONE_FIELDS = ['id', 'name', 'theme', 'legend', 'goal', 'rows', 'pl
 // What a shuffle can swap between objects, each run (run.js).
 export const SHUFFLE_FIELDS = ['holds', 'reward', 'item', 'clues', 'name'];
 // Clue placeholders filled in each run (besides {d1}... the code digits): {where:<id>} {name:<id>}, and the goal's.
-export const GOAL_PLACEHOLDERS = ['order', 'odd', 'deliveries'];
+export const GOAL_PLACEHOLDERS = ['order', 'odd', 'deliveries', 'look:odd'];
 export const PACK_FIELDS = ['id', 'name', 'order', 'story', 'unlock', 'theme', 'tiles', 'themes', 'strictClues', 'items', 'sprites'];
 
 // Everything wrong with one zone file. `items`: the item ids; `abilities`: the ability ids; `tiles`: its pack's
@@ -119,10 +119,12 @@ export function zoneProblems(raw, { items, abilities, tiles = tileSet(), themes 
   const longest = Math.max(0, ...objects.filter((o) => o?.code).map((o) => (specOf(o)?.legacy ? specOf(o).length : 0)));
   const gates = objects.filter((o) => o && specOf(o));
   for (const [id, text] of texts) for (const [, ph] of text.matchAll(/\{([^}]*)\}/g)) {
-    const d = /^d(\d)$/.exec(ph), ref = /^(where|name):(.*)$/.exec(ph), fact = /^fact:(.*)$/.exec(ph), rule = /^rule:([^.]*)\.(.*)$/.exec(ph), code = /^code:([^:]*)(?::(\d))?$/.exec(ph);
+    const d = /^d(\d)$/.exec(ph), ref = /^(where|name):(.*)$/.exec(ph), fact = /^fact:(.*)$/.exec(ph), rule = /^rule:([^.]*)\.(.*)$/.exec(ph), look = /^look:(.*)$/.exec(ph), wrong = /^wrong:(.*)$/.exec(ph), code = /^code:([^:]*)(?::(\d))?$/.exec(ph);
     if (ref) { if (!objects.some((o) => o?.id === ref[2])) out.push(`object "${id}": {${ph}} in a clue, but "${ref[2]}" is not an object of this map.${didYouMean(ref[2], objects.map((o) => o?.id))}`); }
     else if (GOAL_PLACEHOLDERS.includes(ph)) { /* filled by the mission's goal; npm run check makes sure the goal gives it */ }
     else if (fact) { if (!facts[fact[1]]) out.push(`object "${id}": {${ph}} in a clue, but the map has no fact "${fact[1]}".${didYouMean(fact[1], Object.keys(facts))}`); }
+    else if (wrong) { if (!facts[wrong[1]]) out.push(`object "${id}": {${ph}} in a clue, but the map has no fact "${wrong[1]}".${didYouMean(wrong[1], Object.keys(facts))}`); else if (!texts.some(([, t]) => t.includes(`{fact:${wrong[1]}}`))) out.push(`object "${id}": {${ph}} is a lie, but no clue tells the truth ({fact:${wrong[1]}}) to compare it with`); }
+    else if (look && look[1] !== 'odd') { const o = objects.find((x) => x?.id === look[1]); if (!o) out.push(`object "${id}": {${ph}} in a clue, but "${look[1]}" is not an object of this map.${didYouMean(look[1], objects.map((x) => x?.id))}`); else if (!o.look) out.push(`object "${id}": {${ph}} shows how "${look[1]}" looks, but it has no "look"`); }
     else if (rule) { if (!logic[rule[1]]?.rules?.[rule[2]]) out.push(`object "${id}": {${ph}} in a clue, but the map has no such rule. Rules: ${Object.entries(logic).flatMap(([p, q]) => Object.keys(q.rules || {}).map((r) => `${p}.${r}`)).join(', ') || '(no logic puzzles)'}`); }
     else if (code) {
       const g = gates.find((o) => o.id === code[1]);
@@ -130,7 +132,7 @@ export function zoneProblems(raw, { items, abilities, tiles = tileSet(), themes 
       else if (code[2] && Number(code[2]) > specOf(g).length) out.push(`object "${id}": {${ph}} in a clue, but that code has only ${specOf(g).length} pieces`);
       else if (code[2] !== undefined && Number(code[2]) < 1) out.push(`object "${id}": {${ph}}: pieces count from 1`);
     }
-    else if (!d) out.push(`object "${id}": unknown placeholder {${ph}} in a clue. Placeholders: {d1}... (old code digits), {code:<gate>:<n>}, {fact:<id>}, {rule:<puzzle>.<rule>}, {where:<id>}, {name:<id>}, ${GOAL_PLACEHOLDERS.map((p) => `{${p}}`).join(' ')}`);
+    else if (!d) out.push(`object "${id}": unknown placeholder {${ph}} in a clue. Placeholders: {d1}... (old code digits), {code:<gate>:<n>}, {fact:<id>}, {rule:<puzzle>.<rule>}, {look:<id>}, {wrong:<fact>}, {where:<id>}, {name:<id>}, ${GOAL_PLACEHOLDERS.map((p) => `{${p}}`).join(' ')}`);
     else if (Number(d[1]) < 1 || Number(d[1]) > longest) out.push(`object "${id}": {${ph}} in a clue, but ${longest ? `the code has only ${longest} digits` : 'this map has no code gate'}`);
   }
   const given = new Set(texts.flatMap(([, t]) => [...clueTokens(t)]));

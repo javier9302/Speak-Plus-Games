@@ -248,6 +248,14 @@
       "clues": {
         "talk": "\"Hello! I am Mrs Lee. {rule:street.r4}\""
       },
+      "ask": {
+        "frames": [
+          "What is your name?",
+          "Where does the baker live?",
+          "What time is it?"
+        ],
+        "right": 1
+      },
       "lines": [
         "Good morning! Can I help you?",
         "Please, speak slowly.",
@@ -362,13 +370,23 @@
       }
     },
     {
+      "id": "old-sign",
+      "kind": "sign",
+      "name": "Old sign",
+      "x": 5,
+      "y": 8,
+      "clues": {
+        "read": "OLD SIGN. The market opens at {wrong:open} o'clock."
+      }
+    },
+    {
       "id": "market-radio",
       "kind": "bell",
       "name": "Old radio",
       "x": 1,
       "y": 8,
       "clues": {
-        "listen": "The radio says: \"The market is open for {fact:hours} hours.\""
+        "listen": "The radio says: \"The market is open for {fact:hours} hours. The old sign on the wall is not right.\""
       }
     },
     {

@@ -1,0 +1,101 @@
+{
+  "id": "the-stolen-bag",
+  "title": "Who took the bag?",
+  "story": "A bag was stolen at the market! The camera in the market room shows the thief. Describe the picture to your team and find the thief in the park. It is getting dark: you only see what is near you.",
+  "zone": "city-center",
+  "minutes": 25,
+  "timeLimit": 35,
+  "goal": {
+    "type": "odd-one-out",
+    "answer": "random",
+    "restore": "town-fountain"
+  },
+  "stations": [
+    {
+      "at": "kiosk",
+      "filter": {
+        "type": "choice",
+        "level": "group"
+      }
+    }
+  ],
+  "fog": 6,
+  "add": [
+    {
+      "id": "cctv",
+      "kind": "statue",
+      "name": "Camera screen",
+      "x": 6,
+      "y": 3,
+      "clues": {
+        "look": "The camera shows the thief: {look:odd}"
+      }
+    },
+    {
+      "id": "man-1",
+      "kind": "candidate",
+      "name": "Stranger 1",
+      "x": 20,
+      "y": 17,
+      "look": {
+        "hat": "red",
+        "hair": "black",
+        "glasses": true,
+        "shirt": "green"
+      }
+    },
+    {
+      "id": "man-2",
+      "kind": "candidate",
+      "name": "Stranger 2",
+      "x": 22,
+      "y": 17,
+      "look": {
+        "hat": "none",
+        "hair": "blond",
+        "glasses": false,
+        "shirt": "blue"
+      }
+    },
+    {
+      "id": "man-3",
+      "kind": "candidate",
+      "name": "Stranger 3",
+      "x": 24,
+      "y": 17,
+      "look": {
+        "hat": "blue",
+        "hair": "grey",
+        "beard": true,
+        "shirt": "white"
+      }
+    },
+    {
+      "id": "man-4",
+      "kind": "candidate",
+      "name": "Stranger 4",
+      "x": 26,
+      "y": 17,
+      "look": {
+        "hat": "yellow",
+        "hair": "brown",
+        "glasses": true,
+        "shirt": "pink"
+      }
+    },
+    {
+      "id": "man-5",
+      "kind": "candidate",
+      "name": "Stranger 5",
+      "x": 29,
+      "y": 17,
+      "look": {
+        "hat": "red",
+        "hair": "brown",
+        "glasses": false,
+        "beard": true,
+        "shirt": "orange"
+      }
+    }
+  ]
+}
