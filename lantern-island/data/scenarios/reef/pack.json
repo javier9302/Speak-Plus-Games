@@ -1,0 +1,8 @@
+{
+  "id": "reef",
+  "name": "Reef Night",
+  "order": 10,
+  "story": "A storm has hit the reef. Two islands need their lights, bells and letters. A hard pack for strong teams.",
+  "unlock": { "landmarks": 2 },
+  "theme": "sunset"
+}

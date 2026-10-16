@@ -1,0 +1,61 @@
+{
+  "id": "reef-night",
+  "title": "Reef night",
+  "story": "A storm hit the reef. Find the codes and the keys, cross the sea, and bring the gifts to three helpers in the right order.",
+  "zone": "reef-shore",
+  "minutes": 35,
+  "timeLimit": 50,
+  "monster": "hard",
+  "goal": {
+    "type": "deliver-order",
+    "label": "Deliveries",
+    "shuffle": true,
+    "restore": "reef-light",
+    "order": [
+      {
+        "to": "keeper",
+        "item": "lantern"
+      },
+      {
+        "to": "postman",
+        "item": "letter"
+      },
+      {
+        "to": "diver",
+        "item": "crystal"
+      }
+    ]
+  },
+  "stations": [
+    {
+      "at": "tablet-a",
+      "filter": {
+        "type": "choice"
+      }
+    },
+    {
+      "at": "tablet-b",
+      "filter": {
+        "type": "typed"
+      }
+    },
+    {
+      "at": "tablet-c",
+      "filter": {
+        "type": "spelling"
+      }
+    },
+    {
+      "at": "tablet-d",
+      "filter": {
+        "type": "code"
+      }
+    },
+    {
+      "at": "tablet-e",
+      "filter": {
+        "type": "typed"
+      }
+    }
+  ]
+}

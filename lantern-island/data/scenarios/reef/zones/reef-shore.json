@@ -1,0 +1,343 @@
+{
+  "id": "reef-shore",
+  "name": "Reef Shore",
+  "theme": "sunset",
+  "goal": {
+    "type": "deliver-order",
+    "label": "Deliveries",
+    "shuffle": true,
+    "story": "Bring the gifts to the three helpers, in the right order.",
+    "order": [
+      {
+        "to": "keeper",
+        "item": "lantern"
+      },
+      {
+        "to": "postman",
+        "item": "letter"
+      },
+      {
+        "to": "diver",
+        "item": "crystal"
+      }
+    ]
+  },
+  "rows": [
+    "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+    "~~~~~~~...~~~~~~~~~~~~~~~~~~~~",
+    "~~~~~~~~.~~~~~~~~~~~~~~~~~~~~~",
+    "~~~~~~~........~~~~~~~~~~~~~~~",
+    "~~~,,,T,,,,,,,,,,.~~~......~~~",
+    "~~~,,,T,,,,,,,,,,.~~~......~~~",
+    "~~.T,TT,,,,,,,,,,.===......~~~",
+    "~~.,,,,,,ppp,,,,,.~~~......~~~",
+    "~~.,,,,,,ppp,,,,,.~~~......~~~",
+    "~~.,,,,,,,,,,,,,,.~~~......~~~",
+    "~~................~~~~~~~~~~~~",
+    "~~~~~.~~~~~~~~~~~~~~~~~~~~~~~~",
+    "~~~.....~~~~~~~~~~~~~~~~~~~~~~",
+    "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+  ],
+  "places": [
+    {
+      "id": "reef-garden",
+      "name": "the garden",
+      "x": 4,
+      "y": 5
+    },
+    {
+      "id": "reef-sandbar",
+      "name": "the sandbar",
+      "x": 5,
+      "y": 12
+    },
+    {
+      "id": "reef-islet",
+      "name": "the islet",
+      "x": 23,
+      "y": 7
+    },
+    {
+      "id": "reef-meadow",
+      "name": "the meadow",
+      "x": 13,
+      "y": 5
+    }
+  ],
+  "landmarks": [
+    {
+      "id": "reef-light",
+      "name": "the reef lighthouse",
+      "art": "lighthouse",
+      "x": 26,
+      "y": 4,
+      "w": 1,
+      "h": 2,
+      "solid": true
+    }
+  ],
+  "slots": {
+    "sign-spot": [
+      [
+        10,
+        5
+      ],
+      [
+        13,
+        6
+      ],
+      [
+        8,
+        9
+      ]
+    ],
+    "cat-spot": [
+      [
+        13,
+        8
+      ],
+      [
+        15,
+        6
+      ],
+      [
+        5,
+        9
+      ]
+    ],
+    "post-spot": [
+      [
+        15,
+        9
+      ],
+      [
+        6,
+        8
+      ],
+      [
+        12,
+        10
+      ]
+    ]
+  },
+  "shuffle": [
+    {
+      "objects": [
+        "tablet-a",
+        "tablet-d"
+      ],
+      "field": "reward"
+    }
+  ],
+  "objects": [
+    {
+      "id": "board",
+      "kind": "sign",
+      "name": "Notice board",
+      "slot": "sign-spot",
+      "clues": {
+        "read": "The garden gate has a code with 4 numbers. The first number is {d1}. Tell your team."
+      }
+    },
+    {
+      "id": "stone-cat",
+      "kind": "statue",
+      "name": "Stone cat",
+      "slot": "cat-spot",
+      "clues": {
+        "look": "A number is on the cat's collar: {d2}. It is the second number. Tell your team."
+      }
+    },
+    {
+      "id": "reef-bottle",
+      "kind": "bottle",
+      "name": "Green bottle",
+      "x": 16,
+      "y": 5,
+      "clues": {
+        "look": "A bottle on the grass. There is a note inside. Can someone read it?",
+        "read": "A note for the helpers: \"Bring the gifts in this order: {deliveries}.\" Tell your team."
+      }
+    },
+    {
+      "id": "postman",
+      "kind": "npc",
+      "name": "Postman",
+      "slot": "post-spot",
+      "clues": {
+        "talk": "\"Hello! I wait for a letter. A tablet is {where:tablet-d}.\" Tell your team."
+      },
+      "lines": [
+        "Is that my letter?",
+        "Thank you! Not yet, please wait.",
+        "Thank you very much!"
+      ]
+    },
+    {
+      "id": "keeper",
+      "kind": "npc",
+      "name": "Keeper",
+      "x": 24,
+      "y": 5,
+      "clues": {
+        "talk": "\"The light is dark! I need a lantern. Please bring gifts to my friends too.\" Tell your team."
+      },
+      "lines": [
+        "Is that my lantern?",
+        "Not yet, please wait.",
+        "The light is back. Thank you!"
+      ]
+    },
+    {
+      "id": "shore-bell",
+      "kind": "bell",
+      "name": "Rusty bell",
+      "x": 7,
+      "y": 9,
+      "clues": {
+        "listen": "The bell rings. A voice says: \"The third number is {d3}.\" Tell your team.",
+        "look": "An old bell. It is wet and it has a crack."
+      }
+    },
+    {
+      "id": "sand-bottle",
+      "kind": "bottle",
+      "name": "Blue bottle",
+      "x": 16,
+      "y": 8,
+      "clues": {
+        "read": "A wet note says: \"The last number is {d4}.\" Tell your team."
+      }
+    },
+    {
+      "id": "diver",
+      "kind": "npc",
+      "name": "Diver",
+      "x": 3,
+      "y": 9,
+      "clues": {
+        "talk": "\"I lost my crystal in the lagoon, on the reef isle. Please find it for me.\" Tell your team."
+      },
+      "lines": [
+        "Is that my crystal?",
+        "Not yet, please wait.",
+        "My crystal! Thank you!"
+      ]
+    },
+    {
+      "id": "rock",
+      "kind": "boulder",
+      "name": "Big rock",
+      "x": 8,
+      "y": 2,
+      "to": {
+        "x": 9,
+        "y": 3
+      }
+    },
+    {
+      "id": "chest",
+      "kind": "chest",
+      "name": "Old chest",
+      "x": 8,
+      "y": 1,
+      "holds": "key"
+    },
+    {
+      "id": "bridge-gate",
+      "kind": "gate",
+      "name": "Bridge gate",
+      "x": 18,
+      "y": 6,
+      "locked": true,
+      "key": "key"
+    },
+    {
+      "id": "gap",
+      "kind": "gap",
+      "name": "Broken bridge",
+      "x": 19,
+      "y": 6
+    },
+    {
+      "id": "plate",
+      "kind": "plate",
+      "name": "Flat stone",
+      "x": 20,
+      "y": 6,
+      "target": "gap"
+    },
+    {
+      "id": "garden-gate",
+      "kind": "gate",
+      "name": "Garden gate",
+      "x": 4,
+      "y": 6,
+      "locked": true,
+      "code": 4
+    },
+    {
+      "id": "water-gate",
+      "kind": "sluice",
+      "name": "Water gate",
+      "x": 8,
+      "y": 10,
+      "needs": "plank",
+      "floods": [
+        {
+          "x": 5,
+          "y": 11
+        }
+      ]
+    },
+    {
+      "id": "tablet-a",
+      "kind": "station",
+      "name": "Meadow tablet",
+      "x": 14,
+      "y": 4,
+      "reward": {
+        "item": "letter"
+      }
+    },
+    {
+      "id": "tablet-b",
+      "kind": "station",
+      "name": "Islet tablet",
+      "x": 22,
+      "y": 8,
+      "reward": {
+        "item": "plank"
+      }
+    },
+    {
+      "id": "tablet-c",
+      "kind": "station",
+      "name": "Garden tablet",
+      "x": 4,
+      "y": 4,
+      "reward": {
+        "item": "plank"
+      }
+    },
+    {
+      "id": "tablet-d",
+      "kind": "station",
+      "name": "Sandbar tablet",
+      "x": 4,
+      "y": 12,
+      "reward": {
+        "item": "lantern"
+      }
+    },
+    {
+      "id": "shore-exit",
+      "kind": "exit",
+      "name": "Path to the reef",
+      "x": 26,
+      "y": 7,
+      "to": "reef-isle",
+      "arrive": "isle-exit"
+    }
+  ]
+}

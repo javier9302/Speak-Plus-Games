@@ -49,7 +49,7 @@ export default {
         return false;
       },
       done: () => next >= order.length,
-      why: () => { const d = order[next]; return [`the ${s.byId[d.to].name.toLowerCase()} never gets the ${d.item} (delivery ${next + 1} of ${order.length})`]; },
+      why: () => { const d = order[next]; if (!d) return []; return [`the ${s.byId[d.to].name.toLowerCase()} never gets the ${d.item} (delivery ${next + 1} of ${order.length})`]; },
     };
   },
   sheet: (goal, c) => `deliveries in order: ${goal.order.map((d) => `${c.itemName(d.item)} to the ${c.name(d.to)}`).join(', then ')}`,

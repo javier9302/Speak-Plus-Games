@@ -1,0 +1,96 @@
+{
+  "id": "reef-isle",
+  "name": "Reef Isle",
+  "theme": "night",
+  "rows": [
+    "~~~~~~~~~~~~~~~~~~~~~~~~",
+    "~~~~...~~~~~~~~~~~~~~~~~",
+    "~~~~~.~~~~~~~~~~~~~~~~~~",
+    "~~~......R,,,,,~,,,,,~~~",
+    "~~~......R,,,,,~,,,,,~~~",
+    "~~~......R,,,,,~,,,,,~~~",
+    "~~~......R,,,,,~,,,,,~~~",
+    "~~~......#,,,,,.,,,,,~~~",
+    "~~~......R,,,,,~,,,,,~~~",
+    "~~~......R,,,,,~,,,,,~~~",
+    "~~~......R,,,,,~,,,,,~~~",
+    "~~~~~~~~~~~~~~~~~~~~~~~~"
+  ],
+  "places": [
+    {
+      "id": "reef-beach",
+      "name": "the beach",
+      "x": 5,
+      "y": 6
+    },
+    {
+      "id": "reef-lagoon",
+      "name": "the lagoon",
+      "x": 17,
+      "y": 7
+    }
+  ],
+  "objects": [
+    {
+      "id": "isle-exit",
+      "kind": "exit",
+      "name": "Path to the shore",
+      "x": 3,
+      "y": 7,
+      "to": "reef-shore",
+      "arrive": "shore-exit"
+    },
+    {
+      "id": "isle-rock",
+      "kind": "boulder",
+      "name": "Heavy rock",
+      "x": 5,
+      "y": 2,
+      "to": {
+        "x": 6,
+        "y": 3
+      }
+    },
+    {
+      "id": "isle-chest",
+      "kind": "chest",
+      "name": "Wet chest",
+      "x": 5,
+      "y": 1,
+      "holds": "key"
+    },
+    {
+      "id": "isle-gate",
+      "kind": "gate",
+      "name": "Reef gate",
+      "x": 9,
+      "y": 7,
+      "locked": true,
+      "key": "key"
+    },
+    {
+      "id": "lagoon-gate",
+      "kind": "sluice",
+      "name": "Lagoon gate",
+      "x": 13,
+      "y": 8,
+      "needs": "plank",
+      "floods": [
+        {
+          "x": 15,
+          "y": 7
+        }
+      ]
+    },
+    {
+      "id": "tablet-e",
+      "kind": "station",
+      "name": "Lagoon tablet",
+      "x": 18,
+      "y": 5,
+      "reward": {
+        "item": "crystal"
+      }
+    }
+  ]
+}
