@@ -26,6 +26,7 @@ Ids: small letters, numbers and dashes. A file's name is its `id`. Map, mission,
 | `story` | a sentence for teachers |
 | `unlock` | `{ "landmarks": N }`: the pack opens for a group once it has restored N landmarks (all packs together) |
 | `theme` | the default theme of its maps (section 7) |
+| `strictClues` | `true`: `npm run check` fails when a clue is not needed to finish a mission (section 3b). Default: it only notes it |
 | `tiles` | its own tiles (section 7) |
 | `themes` | its own themes (section 7) |
 
@@ -41,6 +42,7 @@ Ids: small letters, numbers and dashes. A file's name is its `id`. Map, mission,
 | `landmarks` | what missions restore: `{ "id", "name", "art", "x", "y", "w", "h", "solid" }`. Drawn as a ruin until a mission restores it, then for ever. `art`: lighthouse, dock, flower-garden, post-office, windmill, fountain, market, campfire (anything else: a flag) |
 | `theme` | how it looks (section 7) |
 | `slots`, `shuffle` | what changes from run to run (section 6) |
+| `facts` | numbers drawn anew every mission, for codes that clues must combine (section 3b) |
 | `legend`, `...Help` | notes for authors; ignored |
 
 x and y count tiles from the top left, starting at 0. Base tiles:
@@ -60,7 +62,7 @@ A map players start on needs 6 or more `p`. A map with no `p` is reached through
 
 ## 3. Objects
 
-Every object: `{ "id", "kind", "name", "x", "y", "clues"? }`, or `"slot"` instead of x and y (section 6). One object per tile, on ground that does not block. `clues` is `{ "<ability>": "text" }`: only the player who uses that ability sees the text, on their own phone; they must say it to the team.
+Every object: `{ "id", "kind", "name", "x", "y", "clues"? }`, or `"slot"` instead of x and y (section 6). `"extra": ["look"]` lists clues that are just atmosphere, not needed (section 3b). One object per tile, on ground that does not block. `clues` is `{ "<ability>": "text" }`: only the player who uses that ability sees the text, on their own phone; they must say it to the team.
 
 | Kind | What it does | Abilities | Fields |
 |---|---|---|---|
@@ -71,7 +73,7 @@ Every object: `{ "id", "kind", "name", "x", "y", "clues"? }`, or `"slot"` instea
 | `chest` | A chest. Open it, then Pick up what it holds. Close shuts it again. | open, close, pickup | `holds`: the item inside (optional) |
 | `exit` | A way to another map of the same pack. Walking onto it takes players to the exit named by "arrive" in the map named by "to"; they land next to it. | none (walk onto it) | `to`: the id of another map of this pack<br>`arrive`: the id of an exit in that map, where players arrive |
 | `gap` | A broken bridge. Jump crosses it (only the jumper). Fix mends it for everybody, if it names the item it needs. A plate can let the others cross. | jump, fix | `needs`: the item that fixes it (optional; without it, it cannot be fixed) |
-| `gate` | A gate. Locked: Use unlocks it with its key, or by typing its code (the digits are in clues). Then Open; Close shuts it. | use, open, close | `locked`: true: it starts locked<br>`key`: the item that unlocks it (default "key")<br>`code`: a code gate: how many digits (2 to 6); clue texts give them as {d1}, {d2}... |
+| `gate` | A gate. Locked: Use unlocks it with its key, or by typing its code (the digits are in clues). Then Open; Close shuts it. | use, open, close | `locked`: true: it starts locked<br>`key`: the item that unlocks it (default "key")<br>`code`: a code gate: a number of digits (2 to 6; the old way, clues give them as {d1}, {d2}...) or an object (section 3b) |
 | `item` | An item lying on the ground. Pick up takes it. | pickup | `item`: the item (an id from the items list) |
 | `machine` | A broken machine (a pump, a clock, a lamp). Fix it, with the item it names if it needs one; then it works. A "restore" goal counts the machines that work. | its "by" ability | `needs`: the item that fixes it (optional)<br>`by`: the ability that fixes it (default "fix") |
 | `npc` | A character. Talk gives its "talk" clue; the teacher can answer as it, and a goal can ask for items to be brought to it. | talk | `lines`: sentences the teacher can send as this character (a list) |
@@ -87,6 +89,34 @@ Every object: `{ "id", "kind", "name", "x", "y", "clues"? }`, or `"slot"` instea
 Items (an object's `holds`, `needs`, `item`, a reward): `lantern`, `key`, `plank`, `letter`, `crystal` (`data/items.json`; a player carries 4 at most). New items need a picture in code, so packs use these.
 
 A **station** (tablet) holds a challenge card. Its `card` is a preference; the mission decides (section 5). Its reward appears when the card is answered; somebody must Pick it up.
+
+## 3b. Codes that cannot be guessed, and clues that need each other
+
+A gate's `code` is a number (the old way: 2 to 6 digits, `{d1}`... in clues) or an object. The object form is the one to use: its answer is new every mission and belongs to that gate alone.
+
+| `code` | The team must type |
+|---|---|
+| `{ "type": "digits", "length": 3 }` | 3 digits, 0 to 9 |
+| `{ "type": "digits", "length": 2, "answer": "{sum:house,birds}" }` | a number worked out from `facts` (below) |
+| `{ "type": "word", "word": "MOON" }` or `"words": ["MOON", "STAR"]` | a word, 3 to 8 letters (one of the list each mission); spelling counts, capitals do not |
+| `{ "type": "symbols", "length": 4 }` | 4 pictures out of 8 (sun, moon, star, fish, tree, boat, bird, house): 4 096 ways |
+| `"tries": 2`, `"lock": 45` | optional: wrong tries before the lock goes red (1 to 5), and for how many seconds (30 to 60) |
+
+**The red lock.** After 2 wrong tries (a short try is not counted) the gate goes red for 45 seconds, makes a sound, and takes no code, not even the right one. It costs time and nothing else.
+
+**Clues give the pieces.** In the text of a clue:
+
+| Placeholder | Becomes |
+|---|---|
+| `{code:<gate id>:<n>}` | the n-th digit, letter or picture name of that gate's answer (counting from 1) |
+| `{code:<gate id>}` | all of it (a clue that gives everything: use it for easy gates) |
+| `{fact:<id>}` | the value of a fact |
+
+Every piece must be in some clue (`npm run check` says which is missing). Spread the pieces over different abilities, so players must put them together.
+
+**Facts and formulas.** On the map: `"facts": { "house": { "range": [5, 9] }, "birds": { "pick": [3, 5, 7] } }`. Each mission draws one value for each. A clue says "The red house is number {fact:house}." Another says "There are {fact:birds} birds on the sign." The code `"answer": "{sum:house,birds}"` is their sum. Formulas: `{fact:x}`, `{sum:a,b}`, `{diff:a,b}` (a minus b), `{times:a,b}`; other characters stay as written, so `"{fact:house}{fact:birds}"` joins the two numbers. The check makes sure the answer always has the right number of digits, whatever the facts are. A formula is only for `answer`, never in a clue: no single clue may give the answer.
+
+**Every clue must be needed.** `npm run check` takes each clue away, one at a time, and tries the mission again. A clue that can go without changing the result is "not needed": a note, or a FAIL when the pack has `"strictClues": true` (new packs should). Fix it by making the clue part of a puzzle, or by deleting it. Atmosphere on purpose (a shell that says "Waves.")? List its ability in the object's `extra`: `"extra": ["listen"]`. Do not make players hunt for clues they do not need: design the puzzle so that every clue is a piece they must have.
 
 ## 4. Abilities, and the design rules
 
@@ -181,7 +211,9 @@ Each mission start picks a random **seed**. From it the server builds the run: o
 
 | Placeholder | Becomes |
 |---|---|
-| `{d1}` ... `{d6}` | the digits of this mission's code (code gates; the code is new every mission) |
+| `{d1}` ... `{d6}` | the digits of this mission's old numeric code (the code is new every mission) |
+| `{code:<gate id>:<n>}`, `{code:<gate id>}` | a piece of a gate's code, or all of it (section 3b) |
+| `{fact:<id>}` | a fact of the map (section 3b) |
 | `{where:<id>}` | "near <the named place closest to that object>" |
 | `{name:<id>}` | that object's name |
 | `{order}` | a `sequence` goal's order ("the Moon stone, then the Sun stone, ...") |
@@ -240,7 +272,8 @@ Other types: `typed` (`accepted`: answers, `allowTypos`), `spelling` (`word`), `
 2. Draw the map (`rows`), with 6 `p`. Place objects, places, landmarks.
 3. Add missions (or rely on the map's `goal` for quick missions).
 4. `npm run check -- <pack>`: fix every FAIL. It names the file, the object and the reason, and suggests names for typos.
-5. Start the server (`npm start`) and play a mission on the host screen with test players (the lobby's "Open a test player window").
+5. For a code gate, check that no clue gives the whole answer and that each clue is a piece players must have (section 3b).
+6. Start the server (`npm start`) and play a mission on the host screen with test players (the lobby's "Open a test player window").
 
 ## 12. A full example
 

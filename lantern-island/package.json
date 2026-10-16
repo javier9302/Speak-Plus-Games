@@ -6,7 +6,7 @@
   "description": "Cooperative pixel-art adventure for English conversation classes. Phones are the controllers.",
   "scripts": {
     "start": "node server/index.js",
-    "test": "node test/sim.js && node test/compete.js && node test/content.js && node test/goals.js",
+    "test": "node test/sim.js && node test/compete.js && node test/content.js && node test/goals.js && node test/codes.js",
     "check": "node server/check.js",
     "copy-to-supabase": "node server/copy.js file supabase",
     "copy-to-files": "node server/copy.js supabase file"

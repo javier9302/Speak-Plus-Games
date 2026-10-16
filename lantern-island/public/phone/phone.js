@@ -118,11 +118,23 @@ const socket = connect({
     } else if (m.t === 'card') {
       openCard(m);
     } else if (m.t === 'keypad') {
-      // A gate with a code. Its numbers are in clues that other players found.
+      // A gate with a code. Its pieces are in clues that other players found.
       card = { o: m.o };
-      openSheet(`<h3>${esc(m.name)}</h3><h2>Type the code.</h2><p>It has ${m.digits} numbers. They are in clues around the island: ask your team what they found!</p>
-        <form data-answer><input inputmode="numeric" pattern="[0-9]*" maxlength="${m.digits}" placeholder="Code" aria-label="Code"><button class="big" type="submit">Enter</button></form>
-        <p id="card-result" class="result" role="status" hidden></p>`, 'Close');
+      const red = m.red ? `<p id="card-result" class="result" role="status">The lock is red. Wait ${m.red} seconds, and talk with your team.</p>` : '<p id="card-result" class="result" role="status" hidden></p>';
+      if (m.kind === 'symbols') {
+        card.symbols = [];
+        openSheet(`<h3>${esc(m.name)}</h3><h2>Choose the pictures.</h2><p>The code has ${m.length} pictures, in order. They are in clues around the island: ask your team what they found!</p>
+          <div id="symbols-shown" class="symbols-shown" aria-live="polite"></div>
+          <div class="symbols">${m.symbols.map((x) => `<button type="button" data-symbol="${esc(x.id)}" aria-label="${esc(x.id)}">${x.icon}<span>${esc(x.id)}</span></button>`).join('')}</div>
+          <div class="symbols-row"><button type="button" class="big" data-symbols-clear>Clear</button><button type="button" class="big" data-symbols-send disabled>Enter</button></div>
+          ${red}`, 'Close');
+        card.length = m.length;
+      } else {
+        const word = m.kind === 'word';
+        openSheet(`<h3>${esc(m.name)}</h3><h2>Type the code.</h2><p>It has ${m.length} ${word ? 'letters (a word)' : 'numbers'}. They are in clues around the island: ask your team what they found!</p>
+          <form data-answer><input ${word ? 'autocapitalize="characters" autocomplete="off" pattern="[A-Za-z]*"' : 'inputmode="numeric" pattern="[0-9]*"'} maxlength="${m.length}" placeholder="Code" aria-label="Code"><button class="big" type="submit">Enter</button></form>
+          ${red}`, 'Close');
+      }
     } else if (m.t === 'result') {
       onResult(m);
     } else if (m.t === 'hint') {
@@ -522,7 +534,19 @@ function openPhrases() {
 }
 $('#open-phrases').addEventListener('click', openPhrases);
 
+// A code of pictures: tap the pictures in order, then Enter.
+function showSymbols() {
+  const el = $('#symbols-shown');
+  if (!el || !card?.symbols) return;
+  const icons = Object.fromEntries([...document.querySelectorAll('[data-symbol]')].map((b) => [b.dataset.symbol, b.firstChild.textContent]));
+  el.innerHTML = Array.from({ length: card.length }, (_, i) => `<span>${card.symbols[i] ? icons[card.symbols[i]] : ''}</span>`).join('');
+  $('[data-symbols-send]').disabled = card.symbols.length !== card.length;
+}
 $('#sheet-body').addEventListener('click', (e) => {
+  const sym = e.target.closest('[data-symbol]');
+  if (sym && card?.symbols && card.symbols.length < card.length) { card.symbols.push(sym.dataset.symbol); showSymbols(); play('tap'); return; }
+  if (e.target.closest('[data-symbols-clear]') && card?.symbols) { card.symbols = []; showSymbols(); return; }
+  if (e.target.closest('[data-symbols-send]') && card?.symbols?.length === card.length) { sendAnswer(card.symbols.join(',')); card.symbols = []; showSymbols(); return; }
   const opt = e.target.closest('[data-value]'), say = e.target.closest('[data-say]');
   if (opt) sendAnswer(opt.dataset.value);
   if (say && !speak(say.dataset.say)) toast('This phone cannot play the word. Ask the teacher to say it.');

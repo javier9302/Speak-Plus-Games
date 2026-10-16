@@ -222,7 +222,7 @@ function paint(kind, st, holds, flags = '') {
         r(4, 2, 1, 13, DARK); r(8, 2, 1, 13, DARK); r(12, 2, 1, 13, DARK); r(1, 5, 14, 1, DARK); r(1, 11, 14, 1, DARK);
         if (st === 'locked' && flags.includes('k')) {
           // A code gate: a little keypad instead of a padlock.
-          r(4, 4, 8, 9, OUTLINE); r(5, 5, 6, 7, LIGHT);
+          r(4, 4, 8, 9, OUTLINE); r(5, 5, 6, 7, flags.includes('r') ? '#e8483b' : LIGHT);
           for (let i = 0; i < 6; i++) r(6 + (i % 2) * 3, 6 + Math.floor(i / 2) * 2, 2, 1, OUTLINE);
         } else if (st === 'locked') { r(6, 5, 4, 3, OUTLINE); r(7, 6, 2, 2, '#8a5a2b'); r(5, 7, 6, 6, OUTLINE); r(6, 8, 4, 4, GOLD); r(7, 9, 2, 2, OUTLINE); }
       }
@@ -289,7 +289,7 @@ const things = new Map();
 // The picture of a thing in its current state: { kind, st, holds }.
 export function thingSprite(t) {
   if (kindArt[t.kind]) return artSprite(t.kind, t.st);
-  const flags = (t.held ? 'h' : '') + (t.keypad ? 'k' : '');
+  const flags = (t.held ? 'h' : '') + (t.keypad ? 'k' : '') + (t.red ? 'r' : '');
   const key = `${t.kind}/${t.st}/${t.holds || ''}/${flags}`;
   if (!things.has(key)) things.set(key, paint(t.kind, t.st, t.holds, flags));
   return things.get(key);

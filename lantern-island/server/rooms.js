@@ -41,6 +41,7 @@ import { gameCtx } from './things.js';
 import { zoneFor } from './missions.js';
 import { makeRun, isRandom } from './run.js';
 import { customTiles } from './tiles.js';
+import { makeSecrets, specOf, judge, keypadOf, answerText } from './codes.js';
 
 const RUN_TRIES = 20;                     // seeds tried for a run that this team can finish
 import { whyNot, inspect } from './solver.js';
@@ -90,7 +91,8 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
       group: null, zone: Object.values(zones)[0], settings: { ...DEFAULT_SETTINGS },
       dealMode: 'preset', deal: 0, found: new Set(),
       mission: null, clock: 0, paused: false, result: null, counted: false,
-      gateCode: '',                         // the garden gate's code: new digits every mission
+      gateCode: '',                         // the digits of the old numeric codes: new every mission
+      secrets: { facts: {}, answers: {} },  // facts and every code gate's answer: new every mission (codes.js)
       messages: [], helpers: { listening: null, reading: null },
       roles: { seer: null, healer: null, slayer: null }, roleTurn: -1, rotateClock: 0, mon: null,
       things: [], block: new Set(), talks: [], stats: { solved: 0, wrong: 0, hints: 0, acts: 0, stuns: 0, slays: 0 },
@@ -171,7 +173,8 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
         };
       }),
       messages: chat.forTeacher(room),
-      talks: room.talks, zone: room.zone.id, gateName: room.things.find((t) => t.def.code)?.name || null, gateCode: room.things.some((t) => t.def.code) ? room.gateCode.slice(0, room.things.find((t) => t.def.code).def.code) : null,
+      talks: room.talks, zone: room.zone.id, gateName: room.things.find((t) => t.def.code)?.name || null, gateCode: room.things.some((t) => t.def.code) ? answerText(room.secrets.answers[room.things.find((t) => t.def.code).id]) : null,
+      codes: room.things.filter((t) => t.def.code).map((t) => ({ o: t.id, name: t.name, answer: answerText(room.secrets.answers[t.id]), st: t.st })),
       npcs: room.things.filter((t) => kindOf(t).character).map((t) => ({ o: t.id, name: t.name, lines: t.def.lines || [] })),
       things: room.things.filter(canForce).map((t) => ({ o: t.id, name: t.name, kind: t.kind, st: t.st })),
     });
@@ -247,6 +250,7 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
     room.missionRun++;
     room.zone = run.zone;
     room.gateCode = Array.from({ length: 6 }, () => 1 + crypto.randomInt(9)).join('');
+    room.secrets = makeSecrets(room.zone, room.gateCode);
     room.players.forEach((p) => { toSpawn(room, p); p.notes = []; p.items = []; });
     room.found.clear();
     room.talks = [];
@@ -342,7 +346,7 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
       } else sendCard(room, t, p);
       changed(room);
     } else if (r.keypad) {
-      send(p.ws, { t: 'keypad', o: r.keypad.id, name: r.keypad.name, digits: r.keypad.def.code });
+      send(p.ws, { t: 'keypad', o: r.keypad.id, name: r.keypad.name, ...keypadOf(specOf(r.keypad.def)), digits: specOf(r.keypad.def).length, red: lockLeft(r.keypad) });
     } else if (r.deliver) {
       // The letter was handed over at the meeting place.
       delivered(room, r.deliver, chat.deliver(room, r.deliver), p);
@@ -394,20 +398,35 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
     return reward;
   }
 
-  // A player answers the card of a station. Wrong answers never lock anything.
+  // Seconds left on a gate's red lock (0 if it is not red).
+  const lockLeft = (gate) => Math.max(0, Math.ceil(((gate.redUntil || 0) - Date.now()) / 1000));
+
+  // A player answers the card of a station. A wrong card answer never locks anything; a wrong code does (30 to 60 seconds, nothing else).
   function onAnswer(room, p, m) {
     if (room.phase !== 'play') return;
     // A gate with a code: the digits are in clues around the island.
     const gate = room.things.find((x) => x.id === m.o && x.def.code && waitingAbility(x, 'code'));
     if (gate) {
       if (!p.abilities.includes(waitingAbility(gate, 'code')) || p.stun > 0 || room.paused) return;
-      const now = Date.now();
-      if (now - p.answerAt < ANSWER_GAP_MS) return send(p.ws, { t: 'result', o: gate.id, ok: false, msg: 'Wait a moment, then try again.' });
+      const now = Date.now(), spec = specOf(gate.def), res = (msg) => send(p.ws, { t: 'result', o: gate.id, ok: false, msg });
+      if (lockLeft(gate)) return res(`The lock is red. Wait ${lockLeft(gate)} seconds, and talk with your team.`);
+      if (now - p.answerAt < ANSWER_GAP_MS) return res('Wait a moment, then try again.');
       p.answerAt = now;
-      if (String(m.value ?? '').replace(/\D/g, '') !== room.gateCode.slice(0, gate.def.code)) {
+      const r = judge(spec, room.secrets.answers[gate.id], m.value);
+      if (!r.complete) return res(spec.type === 'symbols' ? `Choose ${spec.length} pictures.` : `The code has ${spec.length} ${spec.type === 'word' ? 'letters' : 'numbers'}.`);
+      if (!r.ok) {
         monster.event(room, 'wrongAnswer');
-        return send(p.ws, { t: 'result', o: gate.id, ok: false, msg: 'That is not the code. Find all its numbers: ask your team what they found.' });
+        gate.wrongTries = (gate.wrongTries || 0) + 1;
+        if (gate.wrongTries < spec.tries) return res('That is not the code. Find all its pieces: ask your team what they found.');
+        // Too many wrong tries: the lock goes red. It costs time, nothing else.
+        gate.wrongTries = 0;
+        gate.redUntil = now + spec.lock * 1000;
+        setTimeout(() => changed(room), spec.lock * 1000 + 100);
+        broadcast(room, { t: 'lockout', o: gate.id });          // the big screen makes the lock sound; the gate is drawn red
+        changed(room);
+        return res(`The lock is red! Wait ${spec.lock} seconds. Talk with your team: what do the clues say?`);
       }
+      gate.wrongTries = 0;
       completeAction(room, gate, items, 'code');
       send(p.ws, { t: 'result', o: gate.id, ok: true, msg: 'Unlocked! Now somebody can open it.' });
       return changed(room);

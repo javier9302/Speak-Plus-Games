@@ -17,7 +17,7 @@ function mission(d) {
     <p><b>${esc(d.group)}</b> · level ${esc(d.level)} · about ${d.minutes} minutes · room ${esc(d.room)} · monster: ${esc(d.monster)}</p>
     <p>${esc(d.story)}</p>
     <p><b>Goal:</b> ${esc(d.goal)}.</p>
-    ${d.gateCode ? `<p><b>Code of the ${esc(d.gateCode.name.toLowerCase())}:</b> <span class="code">${esc(d.gateCode.code)}</span></p>` : ''}
+    ${(d.codes || (d.gateCode ? [d.gateCode] : [])).map((c) => `<p><b>Code of the ${esc(c.name.toLowerCase())}:</b> <span class="code">${esc(c.code)}</span></p>`).join('')}
     ${d.teacherRoles.length ? `<p><b>You are the ${d.teacherRoles.join(' and the ')}.</b> Students must ask you in English.</p>` : ''}
 
     <h2>Who can do what</h2>

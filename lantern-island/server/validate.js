@@ -6,6 +6,7 @@ import { checkObject } from './things.js';
 import { tileSet, solidSet } from './tiles.js';
 import { didYouMean } from './words.js';
 import { normalizeGoal } from './missions.js';
+import { codeProblems, factProblems, specOf, needTokens, clueTokens } from './codes.js';
 
 export { didYouMean };
 
@@ -16,13 +17,13 @@ export function unknownFields(rec, allowed, where, out) {
 }
 
 const isInt = (v) => Number.isInteger(v);
-const OBJECT_FIELDS = ['id', 'kind', 'name', 'x', 'y', 'slot', 'clues'];
-export const ZONE_FIELDS = ['id', 'name', 'theme', 'legend', 'goal', 'rows', 'places', 'landmarks', 'objects', 'slots', 'shuffle'];
+const OBJECT_FIELDS = ['id', 'kind', 'name', 'x', 'y', 'slot', 'clues', 'extra'];
+export const ZONE_FIELDS = ['id', 'name', 'theme', 'legend', 'goal', 'rows', 'places', 'landmarks', 'objects', 'slots', 'shuffle', 'facts'];
 // What a shuffle can swap between objects, each run (run.js).
 export const SHUFFLE_FIELDS = ['holds', 'reward', 'item', 'clues', 'name'];
 // Clue placeholders filled in each run (besides {d1}... the code digits): {where:<id>} {name:<id>}, and the goal's.
 export const GOAL_PLACEHOLDERS = ['order', 'odd', 'deliveries'];
-export const PACK_FIELDS = ['id', 'name', 'order', 'story', 'unlock', 'theme', 'tiles', 'themes'];
+export const PACK_FIELDS = ['id', 'name', 'order', 'story', 'unlock', 'theme', 'tiles', 'themes', 'strictClues'];
 
 // Everything wrong with one zone file. `items`: the item ids; `abilities`: the ability ids; `tiles`: its pack's
 // tiles (tiles.js); `themes`: the names of the themes it may use.
@@ -104,18 +105,36 @@ export function zoneProblems(raw, { items, abilities, tiles = tileSet(), themes 
     for (const [a, text] of Object.entries(o.clues && typeof o.clues === 'object' ? o.clues : {})) if (typeof text !== 'string' || !text.trim()) out.push(`${where}: its "${a}" clue has no text`);
   }
 
-  // Clue placeholders: {d1}... are the digits of the code gate; the code needs every one of its digits in some clue.
+  // Clue placeholders: {d1}... are the digits of an old numeric code gate; {fact:<id>} and {code:<gate>:<n>} belong to the
+  // newer codes (codes.js). Every gate needs every piece of its answer in some clue, or players could never open it.
+  out.push(...factProblems(raw.facts).map((p) => `facts: ${p}`));
+  const facts = raw.facts && typeof raw.facts === 'object' && !Array.isArray(raw.facts) ? raw.facts : {};
   const texts = objects.flatMap((o) => Object.values(o?.clues && typeof o.clues === 'object' ? o.clues : {}).filter((t) => typeof t === 'string').map((t) => [o.id, t]));
-  const longest = Math.max(0, ...objects.filter((o) => o?.code).map((o) => Number(o.code) || 0));
+  const longest = Math.max(0, ...objects.filter((o) => o?.code).map((o) => (specOf(o)?.legacy ? specOf(o).length : 0)));
+  const gates = objects.filter((o) => o?.code && specOf(o));
   for (const [id, text] of texts) for (const [, ph] of text.matchAll(/\{([^}]*)\}/g)) {
-    const d = /^d(\d)$/.exec(ph), ref = /^(where|name):(.*)$/.exec(ph);
+    const d = /^d(\d)$/.exec(ph), ref = /^(where|name):(.*)$/.exec(ph), fact = /^fact:(.*)$/.exec(ph), code = /^code:([^:]*)(?::(\d))?$/.exec(ph);
     if (ref) { if (!objects.some((o) => o?.id === ref[2])) out.push(`object "${id}": {${ph}} in a clue, but "${ref[2]}" is not an object of this map.${didYouMean(ref[2], objects.map((o) => o?.id))}`); }
     else if (GOAL_PLACEHOLDERS.includes(ph)) { /* filled by the mission's goal; npm run check makes sure the goal gives it */ }
-    else if (!d) out.push(`object "${id}": unknown placeholder {${ph}} in a clue. Placeholders: {d1}... (code digits), {where:<id>}, {name:<id>}, ${GOAL_PLACEHOLDERS.map((p) => `{${p}}`).join(' ')}`);
+    else if (fact) { if (!facts[fact[1]]) out.push(`object "${id}": {${ph}} in a clue, but the map has no fact "${fact[1]}".${didYouMean(fact[1], Object.keys(facts))}`); }
+    else if (code) {
+      const g = gates.find((o) => o.id === code[1]);
+      if (!g) out.push(`object "${id}": {${ph}} in a clue, but "${code[1]}" is not a gate with a code.${didYouMean(code[1], gates.map((o) => o.id))}`);
+      else if (code[2] && Number(code[2]) > specOf(g).length) out.push(`object "${id}": {${ph}} in a clue, but that code has only ${specOf(g).length} pieces`);
+      else if (code[2] !== undefined && Number(code[2]) < 1) out.push(`object "${id}": {${ph}}: pieces count from 1`);
+    }
+    else if (!d) out.push(`object "${id}": unknown placeholder {${ph}} in a clue. Placeholders: {d1}... (old code digits), {code:<gate>:<n>}, {fact:<id>}, {where:<id>}, {name:<id>}, ${GOAL_PLACEHOLDERS.map((p) => `{${p}}`).join(' ')}`);
     else if (Number(d[1]) < 1 || Number(d[1]) > longest) out.push(`object "${id}": {${ph}} in a clue, but ${longest ? `the code has only ${longest} digits` : 'this map has no code gate'}`);
   }
-  for (const g of objects.filter((o) => o?.code >= 2 && o.code <= 6)) {
-    for (let n = 1; n <= g.code; n++) if (!texts.some(([, t]) => t.includes(`{d${n}}`))) out.push(`object "${g.id}": its code has ${g.code} digits, but no clue gives digit ${n} ({d${n}}). Players could never open it.`);
+  const given = new Set(texts.flatMap(([, t]) => [...clueTokens(t)]));
+  for (const g of gates) {
+    for (const p of codeProblems(g.code, facts)) out.push(`object "${g.id}": ${p}`);
+    const spec = specOf(g);
+    if (given.has(`code:${g.id}:*`)) continue;
+    for (const tok of needTokens(g, g.id)) if (!given.has(tok)) {
+      if (spec.legacy) out.push(`object "${g.id}": its code has ${spec.length} digits, but no clue gives digit ${tok.slice(2)} ({d${tok.slice(2)}}). Players could never open it.`);
+      else out.push(`object "${g.id}": its code needs ${tok.startsWith('fact:') ? `the fact "${tok.slice(5)}" ({${tok}})` : `piece ${tok.split(':')[2]} ({code:${g.id}:${tok.split(':')[2]}})`}, but no clue gives it. Players could never open it.`);
+    }
   }
 
   // Shuffles: each run, these objects swap one of their fields.

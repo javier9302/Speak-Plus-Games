@@ -13,12 +13,14 @@
 import { buildThings } from './things.js';
 import { kindOf, abilityOf, progressOf } from './kinds/index.js';
 import { goalOf } from './goals/index.js';
+import { clueTokens, isKnown } from './codes.js';
 
 const NAMES = { look: 'Look', read: 'Read', talk: 'Talk', listen: 'Listen', pickup: 'Pick up', give: 'Give', open: 'Open', close: 'Close', jump: 'Jump', push: 'Push', use: 'Use', fix: 'Fix' };
 
 // sets: one list of abilities per player. without: abilities to pretend nobody has.
 // explore: keep going after the goal is reached, to see everything a team can get to (npm run check).
-export function solve(zone, mission, sets, { without = [], explore = false } = {}) {
+// skipClues: clues ("<object id>:<ability>") nobody gets to read, to find out which clues a mission cannot do without.
+export function solve(zone, mission, sets, { without = [], explore = false, skipClues = null } = {}) {
   const n = sets.length;
   const has = (i, a) => sets[i].includes(a) && !without.includes(a);
   const owners = (a) => sets.map((s, i) => i).filter((i) => has(i, a));
@@ -84,7 +86,12 @@ export function solve(zone, mission, sets, { without = [], explore = false } = {
     }
     return true;
   };
-  const codeKnown = (t) => Array.from({ length: t.def.code }, (_, d) => d + 1).every((d) => things.some((c) => Object.entries(c.def.clues || {}).some(([a, text]) => text.includes(`{d${d}}`) && clues.has(`${c.id}:${a}`))));
+  // A code is known when the clues found so far give every piece of its answer (codes.js).
+  const codeKnown = (t) => {
+    const found = new Set();
+    for (const c of things) for (const [a, text] of Object.entries(c.def.clues || {})) if (clues.has(`${c.id}:${a}`)) for (const k of clueTokens(text)) found.add(k);
+    return isKnown(t.def, t.id, found);
+  };
 
   // Where something with no abilities can walk from `tiles` (a character that follows a player): it cannot
   // jump or swim, but a plate that any player stands on lets it through. Its own tile counts as free.
@@ -132,7 +139,7 @@ export function solve(zone, mission, sets, { without = [], explore = false } = {
       return false;
     };
     for (const t of things) {
-      for (const a of Object.keys(t.def.clues || {})) if (!clues.has(`${t.id}:${a}`)) act(a, t, `clue on the ${t.name.toLowerCase()}`, () => clues.add(`${t.id}:${a}`));
+      for (const a of Object.keys(t.def.clues || {})) if (!clues.has(`${t.id}:${a}`) && !skipClues?.has(`${t.id}:${a}`)) act(a, t, `clue on the ${t.name.toLowerCase()}`, () => clues.add(`${t.id}:${a}`));
       // The kind's next step forward, done the way the game does it.
       const step = progressOf(t);
       if (!step) continue;
@@ -168,7 +175,7 @@ export function solve(zone, mission, sets, { without = [], explore = false } = {
       if (!step || !step.explain) continue;
       const a = abilityOf(step, t);
       const extra = step.needs?.item ? `the ${step.needs.item(t)} cannot get to the player with ${NAMES[a]}`
-        : step.needs?.code ? 'the numbers of its code were not all found'
+        : step.needs?.code ? 'the pieces of its code were not all found'
         : step.needs?.card ? 'it needs a player with Give to carry its letter' : null;
       const w = why(a, t) || extra;
       if (w) problems.push(`${name}: ${w}`);

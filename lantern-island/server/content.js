@@ -53,7 +53,7 @@ export async function loadContent(contentDir, { abilities, items }) {
     if (!ID.test(id)) { errors.push(`scenarios/${id}: a pack folder name uses small letters, numbers and dashes only`); continue; }
     const meta = await read('pack.json');
     if (meta) for (const p of packProblems(meta, id)) problems.push(`${where('pack.json')}: ${p}`);
-    const pack = { id, name: String(meta?.name || id), story: String(meta?.story || ''), order: Number(meta?.order) || 0, unlock: Math.max(0, Number(meta?.unlock?.landmarks) || 0), zones: [] };
+    const pack = { id, name: String(meta?.name || id), story: String(meta?.story || ''), order: Number(meta?.order) || 0, unlock: Math.max(0, Number(meta?.unlock?.landmarks) || 0), strictClues: meta?.strictClues === true, zones: [] };
     // Its tiles (the base ones and its own) and the themes its maps and missions may use (the built-in ones and its own).
     for (const p of tileProblems(meta?.tiles)) problems.push(`${where('pack.json')}: ${p}`);
     const tiles = tileSet(tileProblems(meta?.tiles).length ? {} : meta?.tiles || {});

@@ -145,3 +145,14 @@ input {
 #offline { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 8px); left: 50%; transform: translateX(-50%); padding: 8px 18px; border-radius: 999px; background: #E8483B; color: #fff; font-weight: 700; z-index: 5; }
 .targets { display: flex; flex-direction: column; gap: 8px; }
 .targets .big { max-width: none; }
+
+/* A code of pictures */
+.symbols { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.symbols button { min-height: 64px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 28px; border: 2px solid #1F2F5C; border-radius: 14px; background: #fff; color: #1F2F5C; }
+.symbols button span { font-size: 12px; font-weight: 600; }
+.symbols button:active { background: #9DB4E0; }
+.symbols-shown { display: flex; gap: 8px; justify-content: center; }
+.symbols-shown span { width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; font-size: 30px; border: 3px dashed #9DB4E0; border-radius: 14px; background: #fff; }
+.symbols-row { display: flex; gap: 10px; }
+.symbols-row .big { flex: 1 1 0 !important; width: auto; }
+.symbols-row .big:disabled { opacity: .4; }

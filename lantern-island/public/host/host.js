@@ -72,6 +72,8 @@ const socket = connect({
     } else if (m.t === 'beam') {
       beams.push({ dir: m.dir, at: m.at, until: performance.now() / 1000 + 0.7 });
       play('beam');
+    } else if (m.t === 'lockout') {
+      play('bad');
     } else if (m.t === 'fx') {
       fx.push({ by: m.by, a: m.a, until: performance.now() / 1000 + 1.4 });
       play(m.a === 'heal' ? 'heal' : 'tap');

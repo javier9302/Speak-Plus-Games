@@ -2,6 +2,7 @@
 // that is running (with its real cards, codes and players). The page is public/teacher/sheet.html.
 import { dealPreset } from './abilities.js';
 import { fillText } from './things.js';
+import { answerText } from './codes.js';
 import { solve } from './solver.js';
 import { KINDS } from './kinds/index.js';
 import { goalOf } from './goals/index.js';
@@ -14,6 +15,9 @@ export function createSheets({ zones, abilities, items, missions, rooms }) {
   const ability = (id) => abilities.byId[id]?.name || id;
   // Before class, a clue's placeholders say what they will become (they change every mission).
   const before = (text, zone) => text.replace(/\{d(\d)\}/g, (m, n) => `(number ${n} of the code)`)
+    .replace(/\{code:([^:}]*):(\d)\}/g, (m, id, n) => `(piece ${n} of the code of the ${(zone.objects.find((o) => o.id === id)?.name || id).toLowerCase()})`)
+    .replace(/\{code:([^:}]*)\}/g, (m, id) => `(the whole code of the ${(zone.objects.find((o) => o.id === id)?.name || id).toLowerCase()})`)
+    .replace(/\{fact:([^}]*)\}/g, (m, id) => `(the number "${id}", new every mission)`)
     .replace(/\{where:([^}]*)\}/g, (m, id) => `(near where the ${(zone.objects.find((o) => o.id === id)?.name || id).toLowerCase()} is)`)
     .replace(/\{name:([^}]*)\}/g, (m, id) => zone.objects.find((o) => o.id === id)?.name || id)
     .replace(/\{(order|odd|deliveries)\}/g, (m, k) => `(${{ order: 'the order of this mission', odd: 'the odd one of this mission', deliveries: 'the deliveries of this mission' }[k]})`);
@@ -46,7 +50,8 @@ export function createSheets({ zones, abilities, items, missions, rooms }) {
       return {
         kind: 'mission', title: m.title, story: m.story, minutes: m.minutes, group: room.group.name, level: room.group.level, room: room.code,
         goal: goalOf(m.goal).sheet(m.goal, { itemName, name: (id) => room.things.find((t) => t.id === id)?.name.toLowerCase() || id }),
-        gateCode: gate ? { name: gate.name, code: room.gateCode.slice(0, gate.def.code) } : null,
+        gateCode: gate ? { name: gate.name, code: answerText(room.secrets.answers[gate.id]) } : null,
+        codes: room.things.filter((t) => t.def.code).map((t) => ({ name: t.name, code: answerText(room.secrets.answers[t.id]) })),
         monster: room.mon ? room.mon.level : 'off',
         teacherRoles: ['seer', 'healer', 'slayer'].filter((r) => room.mon && room.roles[r] === 'teacher'),
         players: room.players.map((p) => ({ name: p.name, abilities: p.abilities.map(ability), roles: roleOf(p) })),

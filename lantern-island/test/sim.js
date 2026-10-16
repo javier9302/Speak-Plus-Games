@@ -899,7 +899,7 @@ async function main() {
   await h8.next('roster', (m) => m.phase === 'play');
   const won2 = await finish();
   check('same mission again: the next ruin is restored instead', won2.result.restoreId === 'dock' && won2.result.restore === 'the boat dock');
-  check('two landmarks open the forest, and it is saved', won2.result.opened.join() === 'Whisper Forest' && won2.group.island.zones.join() === 'beach,forest' && (await http(`/groups/${fresh.id}`, 'PATCH', {})).data.island.zones.includes('forest'));
+  check('two landmarks open the forest and the reef (both unlock at 2), and it is saved', won2.result.opened.join() === 'Whisper Forest,Reef Isle,Reef Shore' && won2.group.island.zones.join() === 'beach,forest,reef-isle,reef-shore' && (await http(`/groups/${fresh.id}`, 'PATCH', {})).data.island.zones.includes('forest'));
   t8.send({ t: 'cmd', c: 'mission', mission: { ...lib2.missions.find((m) => m.id === 'the-lost-crystals'), monster: 'gentle' } });
   await h8.next('world', (m) => m.zone.id === 'forest');
   await sleep(250);

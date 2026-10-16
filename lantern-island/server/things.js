@@ -5,6 +5,7 @@ import { REACH } from './world.js';
 import { KINDS as REGISTRY, kindOf, abilityOf, actionFor } from './kinds/index.js';
 import { didYouMean } from './words.js';
 import { goalOf } from './goals/index.js';
+import { partOf } from './codes.js';
 
 export const KINDS = Object.keys(REGISTRY);
 
@@ -83,7 +84,7 @@ const tileOf = (p) => `${Math.floor(p.x)},${Math.floor(p.y)}`;
 // {d1} {d2} ... in a clue become the digits of this mission's gate code.
 export const fillCode = (text, code) => String(text).replace(/\{d(\d)\}/g, (m, n) => code?.[n - 1] ?? '?');
 
-// A clue's text for this run: {d1}... the code's digits, {where:<id>} "near <the closest named place>",
+// A clue's text for this run: {d1}... the code's digits, {fact:<id>} a fact, {code:<gate>:<n>} a piece of a code, {where:<id>} "near <the closest named place>",
 // {name:<id>} an object's name, and the goal's own ({order}, {odd}, {deliveries}).
 export function fillText(text, room, items) {
   const find = (id) => room.things.find((t) => t.id === id) || room.zone.objects.find((o) => o.id === id);
@@ -92,6 +93,9 @@ export function fillText(text, room, items) {
   return String(text).replace(/\{([^}]*)\}/g, (m, ph) => {
     const d = /^d(\d)$/.exec(ph);
     if (d) return room.gateCode?.[d[1] - 1] ?? '?';
+    const fact = /^fact:(.*)$/.exec(ph), code = /^code:([^:]*)(?::(\d))?$/.exec(ph);
+    if (fact) return String(room.secrets?.facts[fact[1]] ?? '?');
+    if (code) return room.secrets?.answers[code[1]] === undefined ? '?' : partOf(room.secrets.answers[code[1]], code[2] && Number(code[2]));
     const ref = /^(where|name):(.*)$/.exec(ph);
     if (ref) {
       const t = find(ref[2]);

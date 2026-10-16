@@ -64,7 +64,7 @@ export function parseZone(raw, tiles = BASE) {
   const places = (raw.places || []).filter((p) => p.id && p.name && Number.isFinite(p.x) && Number.isFinite(p.y)).map((p) => ({ id: p.id, name: String(p.name), x: p.x, y: p.y }));
   // `pack` and `unlock` (landmarks a group must have restored before this zone opens) come from the pack (content.js).
   return { id: raw.id, name: raw.name, w, h: rows.length, rows: rows.map((r) => r.replace(/p/g, ',')), spawns, objects, places, landmarks, fixed, goal: raw.goal || null,
-    slots, shuffle: Array.isArray(raw.shuffle) ? raw.shuffle : [],
+    slots, shuffle: Array.isArray(raw.shuffle) ? raw.shuffle : [], facts: raw.facts || {},
     tiles, solidTiles: SOLID, theme: raw.theme || null };
 }
 

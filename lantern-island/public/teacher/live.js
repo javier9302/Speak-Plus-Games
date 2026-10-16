@@ -295,8 +295,9 @@ $('#live-notes').addEventListener('input', () => {
 function renderQueue() {
   const q = queue, playing = q.phase === 'play';
   renderChat();
-  $('#gate-code').hidden = !q.gateCode || !playing;
-  $('#gate-code').innerHTML = `Code of the ${esc((q.gateName || 'gate').toLowerCase())} in this mission: <span class="big-code">${esc(q.gateCode || '')}</span> (one number each behind Read, Look and Listen: see the sheet)`;
+  const codes = (q.codes || []).filter((c) => c.st === 'locked');
+  $('#gate-code').hidden = !codes.length || !playing;
+  $('#gate-code').innerHTML = codes.map((c) => `Code of the ${esc(c.name.toLowerCase())} in this mission: <span class="big-code">${esc(c.answer)}</span>`).join('<br>') + ' (the pieces are in the clues: see the sheet)';
   $('#sheet-zone').href = `sheet.html?zone=${encodeURIComponent(q.zone || 'beach')}`;
   $('#sheet-room').href = `sheet.html?room=${encodeURIComponent(watching)}`;
   const waiting = q.stations.filter((s) => s.waiting).length + q.talks.length;
