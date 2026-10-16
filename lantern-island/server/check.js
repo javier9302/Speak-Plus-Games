@@ -16,6 +16,7 @@ import { atlasFor } from './atlas.js';
 import { GOAL_PLACEHOLDERS } from './validate.js';
 
 const CLUE_PLAYERS = 4;                   // players dealt when each clue is taken away in turn (a clue that matters matters for any number)
+const MIN_TALK = 4, MIN_MINUTES = 3;      // below these, a note: little talking, or two players finish it in under 3 minutes if they play perfectly (solver.js estimates both; a real class is several times slower)
 const SEEDS = 30;                         // shuffled runs tried for each mission whose runs can differ
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -79,6 +80,7 @@ export async function runCheck(contentDir = path.join(root, 'data'), dataDir = c
       for (const o of written.zone.objects) for (const text of Object.values(o.clues || {})) for (const [, ph] of String(text).matchAll(/\{([^}]*)\}/g)) {
         if (GOAL_PLACEHOLDERS.includes(ph) && !gives.includes(ph)) fail(`${mission.title}: the clue of "${o.id}" uses {${ph}}, but this mission's goal (${written.mission.goal.type}) does not fill it in`);
       }
+      const lows = [];
       for (let n = 2; n <= 6; n++) {
         const sets = dealPreset(abilities, n);
         const r = inspect(written.zone, written.mission, sets, abilities.ids);
@@ -88,9 +90,13 @@ export async function runCheck(contentDir = path.join(root, 'data'), dataDir = c
         if (mission === all && r.required.length < abilities.ids.length) fail(`${zone.name}, ${n} players: the zone can be finished without ${abilities.ids.filter((a) => !r.required.includes(a)).map(name).join(', ')}`);
         else if (r.required.length < abilities.ids.length) notes.push(`not needed here: ${abilities.ids.filter((a) => !r.required.includes(a)).map(name).join(', ')}`);
         for (const rule of mission === all ? zoneRules(atlas, all, sets, abilities.ids) : []) fail(`${zone.name}, ${n} players: ${rule}`);
-        say(`    ok    ${n} players: can be finished in ${r.log.length} steps; every player is needed${notes.length ? '  (' + notes.join('; ') + ')' : ''}`);
+        const { talk, minutes } = r.stats, mins = (m) => (m < 1 ? '<1' : Math.round(m));
+        if (mission !== all) { if (talk < MIN_TALK) lows.push(`${n} players: talk score ${talk}`); if (n === 2 && minutes.fast < MIN_MINUTES) lows.push(`${n} players: about ${mins(minutes.fast)} min at best`); }
+        say(`    ok    ${n} players: can be finished in ${r.log.length} steps; every player is needed${notes.length ? '  (' + notes.join('; ') + ')' : ''}  [talk score ${talk}; about ${mins(minutes.fast)} to ${mins(minutes.slow)} min for a perfect team]`);
       }
       for (const n of goalOf(written.mission.goal).notes?.(written.zone, written.mission.goal) || []) say(`    note  ${n}`);
+      // Little talking, or very quick: a note (talk score = clues and items that must pass between players; the time is rough).
+      if (lows.length) say(`    note  this mission may be too easy to finish without talking: ${lows.join('; ')} (talk score below ${MIN_TALK}, or a perfect pair under ${MIN_MINUTES} minutes). Spread the clues over more abilities, or put the goal farther away.`);
       // Every clue must be needed: take each one away and the mission must no longer be finishable. A clue counts as
       // needed if some mission of the map (or the whole map) cannot be finished without it; the report is further down.
       {

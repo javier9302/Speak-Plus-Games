@@ -11,6 +11,9 @@ import { goalOf } from './goals/index.js';
 // What each kind of object asks of the team, in plain words (from its kind file).
 const how = (o, itemName) => KINDS[o.kind].how(o, itemName);
 
+// The shortest way through, and how much talking it needs and how long a perfect team would take (solver.js).
+const way = (r) => ({ steps: r.log, estimate: { talk: r.stats.talk, fast: Math.max(1, Math.round(r.stats.minutes.fast)), slow: Math.max(1, Math.round(r.stats.minutes.slow)) } });
+
 export function createSheets({ zones, abilities, items, missions, rooms }) {
   const itemName = (id) => (items.byId[id]?.name || id).toLowerCase();
   const ability = (id) => abilities.byId[id]?.name || id;
@@ -44,7 +47,7 @@ export function createSheets({ zones, abilities, items, missions, rooms }) {
         puzzles: puzzles(zone, null),
         places: zone.places.map((p) => p.name), landmarks: zone.landmarks.map((l) => l.name),
         tables: [2, 3, 4, 5, 6].map((n) => ({ n, sets: dealPreset(abilities, n).map((s) => s.map(ability)) })),
-        steps: solve(zone, whole, dealPreset(abilities, 3)).log,
+        ...way(solve(zone, whole, dealPreset(abilities, 3))),
         missions: (await missions.all()).filter((m) => m.zone === id).map((m) => ({ title: m.title, story: m.story, minutes: m.minutes, tablets: m.stations.map((s) => `${zone.objects.find((o) => o.id === s.at)?.name}: ${s.card ? 'card ' + s.card : s.filter.type || 'any card'}`) })),
       };
     },
@@ -64,7 +67,7 @@ export function createSheets({ zones, abilities, items, missions, rooms }) {
         players: room.players.map((p) => ({ name: p.name, abilities: p.abilities.map(ability), roles: roleOf(p) })),
         stations,
         puzzles: puzzles(room.zone, room, m.stations.map((s) => s.at)),
-        steps: solve(room.zone, m, room.players.map((p) => p.abilities)).log,
+        ...way(solve(room.zone, m, room.players.map((p) => p.abilities))),
       };
     },
   };

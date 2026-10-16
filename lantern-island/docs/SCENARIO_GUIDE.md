@@ -273,6 +273,11 @@ What makes an ability needed:
 
 The solver does things the moment it can. If two things need the same item (a sluice and a machine both need a plank), give the map two.
 
+**Talk score and time (a warning, not a rule).** For every number of players `npm run check` prints, after "every player is needed", something like `[talk score 12; about 3 to 6 min for a perfect team]`:
+
+- The **talk score** counts what must pass between players: each clue that was read by one player but used (to type a code) by another, and each item that changes hands. It is 0 when one player could do everything alone. When it is under 4, the check adds a note: the mission can be done without much talking. Fix it by splitting the clues over more abilities (Read, Look, Listen, Talk), by putting the key on the far side from the gate, or by asking for a code whose pieces are in different places.
+- The **time** is a rough estimate for a perfect team: walking in a straight line, 4 seconds per ability, 12 more to read a clue, 15 for each thing passed on. The first number lets players work at the same time, the second one after another. Real classes take several times longer. The check warns when two players would need under 3 minutes.
+
 ## 5. Missions (`missions/<id>.json`)
 
 | Field | Meaning |
@@ -396,8 +401,9 @@ Other types: `typed` (`accepted`: answers, `allowTypos`), `spelling` (`word`), `
 2. Draw the map (`rows`), with 6 `p`. Place objects, places, landmarks.
 3. Add missions (or rely on the map's `goal` for quick missions).
 4. `npm run check -- <pack>`: fix every FAIL. It names the file, the object and the reason, and suggests names for typos.
-5. For a code gate, check that no clue gives the whole answer and that each clue is a piece players must have (section 3b).
-6. Start the server (`npm start`) and play a mission on the host screen with test players (the lobby's "Open a test player window").
+5. Read the talk score the check prints: a note means the mission can be done with little talking.
+6. For a code gate, check that no clue gives the whole answer and that each clue is a piece players must have (section 3b).
+7. Start the server (`npm start`) and play a mission on the host screen with test players (the lobby's "Open a test player window").
 
 ## 12. A full example: Maple City
 

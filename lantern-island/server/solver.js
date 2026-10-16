@@ -13,9 +13,14 @@
 import { buildThings } from './things.js';
 import { kindOf, abilityOf, progressOf } from './kinds/index.js';
 import { goalOf } from './goals/index.js';
-import { clueTokens, isKnown } from './codes.js';
+import { clueTokens, isKnown, needTokens } from './codes.js';
+import { SPEED } from './world.js';
 
 const NAMES = { look: 'Look', read: 'Read', talk: 'Talk', listen: 'Listen', pickup: 'Pick up', give: 'Give', open: 'Open', close: 'Close', jump: 'Jump', push: 'Push', use: 'Use', fix: 'Fix' };
+
+// The talk score and the time estimate (see the end of solve): how long one ability takes, and one hand-over or clue passed
+// between players ("Can you read it? It says..."), in seconds; a walk is a straight line plus a third, for detours.
+const ACT_SECONDS = 4, READ_SECONDS = 12, TALK_SECONDS = 15, DETOUR = 1.33;
 
 // sets: one list of abilities per player. without: abilities to pretend nobody has.
 // explore: keep going after the goal is reached, to see everything a team can get to (npm run check).
@@ -29,6 +34,8 @@ export function solve(zone, mission, sets, { without = [], explore = false, skip
   const pool = [];                       // items picked up: { item, holder }
   const clues = new Set();               // "thing:ability" found
   const used = new Set(), log = [];
+  const trace = [], clueAt = {}, clueBy = {}, handOvers = new Set(), factPasses = new Set();   // for the talk score and the time estimate
+  let depsNow = [], isClue = false;      // the earlier steps the step being done uses (an item, a clue); is it a clue being read
   let done = false;
 
   const key = (x, y) => `${x},${y}`;
@@ -87,7 +94,10 @@ export function solve(zone, mission, sets, { without = [], explore = false, skip
   const take = (i, item) => {
     const k = pool.findIndex((it) => holdable(i, it, item)), from = pool[k].holder;
     if (from !== i) { if (has(from, 'give')) used.add('give'); else if (has(i, 'pickup')) used.add('pickup'); else { used.add('give'); used.add('pickup'); } }
-    return pool.splice(k, 1)[0];
+    const entry = pool.splice(k, 1)[0];
+    if (from !== i) handOvers.add(`${item}:${from}>${i}:${trace.length}`);     // one hand-over from one player to another
+    if (entry.at !== undefined) depsNow.push(entry.at);
+    return entry;
   };
   const ctx = { byId: (id) => byId[id] || null, itemName: (id) => id };
   // What an action needs, besides a player with its ability who can get there.
@@ -105,6 +115,19 @@ export function solve(zone, mission, sets, { without = [], explore = false, skip
     const found = new Set();
     for (const c of things) for (const [a, text] of Object.entries(c.def.clues || {})) if (clues.has(`${c.id}:${a}`)) for (const k of clueTokens(text)) found.add(k);
     return isKnown(t.def, t.id, found, zone.logic);
+  };
+
+  // Entering a code: every clue that gave a piece of it was read by somebody; if not by the player who types it, it had to be
+  // passed on (that is "talk": the score counts these, and the time estimate waits for them).
+  const passClues = (t, i) => {
+    const needed = new Set(needTokens(t.def, t.id, zone.logic));
+    for (const key of clues) {
+      const [id, a] = key.split(':'), text = byId[id]?.def.clues?.[a];
+      if (text === undefined) continue;
+      const tokens = clueTokens(text);
+      if (!(tokens.has(`code:${t.id}:*`) || [...tokens].some((k) => needed.has(k)))) continue;
+      if (clueBy[key] !== i) { factPasses.add(`${key}>${i}`); depsNow.push(clueAt[key]); }
+    }
   };
 
   // Where something with no abilities can walk from `tiles` (a character that follows a player): it cannot
@@ -147,20 +170,23 @@ export function solve(zone, mission, sets, { without = [], explore = false, skip
     const act = (a, t, what, effect, ok = () => true) => {
       for (const i of owners(a)) {
         if (!reach(regs, i, t) || !ok(i)) continue;
+        depsNow = []; isClue = false;
         effect(i); used.add(a); log.push(`${NAMES[a]}: ${what}`); progress = true;
+        trace.push({ i, x: t.x, y: t.y, deps: depsNow, clue: isClue });
         return true;
       }
       return false;
     };
     for (const t of things) {
-      for (const a of Object.keys(t.def.clues || {})) if (!clues.has(`${t.id}:${a}`) && !skipClues?.has(`${t.id}:${a}`)) act(a, t, `clue on the ${t.name.toLowerCase()}`, () => clues.add(`${t.id}:${a}`));
+      for (const a of Object.keys(t.def.clues || {})) if (!clues.has(`${t.id}:${a}`) && !skipClues?.has(`${t.id}:${a}`)) act(a, t, `clue on the ${t.name.toLowerCase()}`, (i) => { isClue = true; clues.add(`${t.id}:${a}`); clueAt[`${t.id}:${a}`] = trace.length; clueBy[`${t.id}:${a}`] = i; });
       // The kind's next step forward, done the way the game does it.
       const step = progressOf(t);
       if (!step) continue;
       const what = step.log ? step.log(t) : step.gives ? `the ${t.holds} from the ${t.name.toLowerCase()}` : `the ${t.name.toLowerCase()}`;
       act(abilityOf(step, t), t, what, (i) => {
-        if (step.gives) pool.push({ item: t.holds, holder: i });
+        if (step.gives) pool.push({ item: t.holds, holder: i, at: trace.length });
         if (step.needs?.item) { const it = take(i, step.needs.item(t)); if (step.needs.keep) pool.push({ ...it, holder: i }); }
+        if (step.needs?.code) passClues(t, i);
         step.do(t, ctx);
       }, (i) => allowed(step, t, i));
     }
@@ -199,7 +225,27 @@ export function solve(zone, mission, sets, { without = [], explore = false, skip
     s.regs = regions();
     problems.push(...goal.why(problems));
   }
-  return { ok: done, used, log, problems, things, clues };
+  return { ok: done, used, log, problems, things, clues, stats: estimate() };
+
+  // How much talking the mission needs (clues and items that pass between players), and how long a perfect team would take.
+  // The time is rough: a walk in a straight line (plus a third), 4 seconds for each ability, 12 more to read and understand a clue, 15 for each thing passed on to another player. "fast" lets
+  // the players work at the same time, "slow" one after another. The team's real time is more: reading, talking, wrong turns.
+  function estimate() {
+    const spawn = zone.spawns?.length ? zone.spawns : [{ x: 0, y: 0 }];
+    const at = sets.map((_, i) => ({ x: spawn[i % spawn.length].x, y: spawn[i % spawn.length].y }));
+    const free = sets.map(() => 0), finish = [];
+    let slow = 0;
+    trace.forEach((e, k) => {
+      const walk = (Math.hypot(e.x + 0.5 - at[e.i].x, e.y + 0.5 - at[e.i].y) * DETOUR) / SPEED;
+      let start = free[e.i] + walk, passed = false;
+      for (const d of e.deps) if (d !== undefined && trace[d] && trace[d].i !== e.i) { start = Math.max(start, finish[d] + TALK_SECONDS); passed = true; }
+      const doing = e.clue ? READ_SECONDS : ACT_SECONDS;
+      finish[k] = start + doing;
+      free[e.i] = finish[k]; at[e.i] = { x: e.x + 0.5, y: e.y + 0.5 };
+      slow += walk + doing + (passed ? TALK_SECONDS : 0);
+    });
+    return { talk: factPasses.size + handOvers.size, facts: factPasses.size, items: handOvers.size, minutes: { fast: Math.max(0, ...finish, 0) / 60, slow: slow / 60 } };
+  }
 }
 
 // For the server: a short reason, or null if the mission can be finished.
@@ -216,7 +262,7 @@ export function inspect(zone, mission, sets, abilityIds) {
   if (!base.ok) return { ok: false, problems: base.problems, required: [], unused: [], idle: [], log: base.log };
   const required = abilityIds.filter((a) => !solve(zone, mission, sets, { without: [a] }).ok);
   return {
-    ok: true, problems: [], log: base.log, required,
+    ok: true, problems: [], log: base.log, stats: base.stats, required,
     unused: abilityIds.filter((a) => !base.used.has(a)),
     idle: sets.map((s, i) => i).filter((i) => !sets[i].some((a) => required.includes(a))),
   };

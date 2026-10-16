@@ -8,7 +8,7 @@ const TYPE = { choice: 'Choice', typed: 'Typed answer', spelling: 'Spelling', co
 
 const puzzles = (rows) => `<table><tr><th style="width:24%">Object</th><th style="width:38%">What the team does</th><th>Clues (only the player with that ability sees them)</th></tr>
   ${rows.map((p) => `<tr><td><b>${esc(p.name)}</b></td><td>${esc(p.how)}</td><td>${p.clues.map((c) => `<b>${esc(c.ability)}:</b> ${esc(c.text)}`).join('<br>')}</td></tr>`).join('')}</table>`;
-const steps = (log) => `<ol class="small">${log.map((s) => `<li>${esc(s)}</li>`).join('')}</ol>`;
+const steps = (log, est) => `${est ? `<p class="small">Talk score ${est.talk} (clues and items that must pass between players). A perfect team: about ${est.fast} to ${est.slow} minutes; a real class takes several times longer.</p>` : ''}<ol class="small">${log.map((s) => `<li>${esc(s)}</li>`).join('')}</ol>`;
 
 function mission(d) {
   document.title = `${d.title} · teacher sheet`;
@@ -40,7 +40,7 @@ function mission(d) {
     ${puzzles(d.puzzles)}
 
     <h2>One way through, with these players</h2>
-    ${steps(d.steps)}
+    ${steps(d.steps, d.estimate)}
 
     <h2>Notes: errors heard, things to review</h2>
     <div class="lines"></div><div class="lines"></div><div class="lines"></div>`;
@@ -66,7 +66,7 @@ function zone(d) {
     <p class="small">These are the preset sets. "Random mix" shares them differently, but always so that the mission can be finished.</p>
 
     <h2 class="page">One way through the whole zone (3 players)</h2>
-    ${steps(d.steps)}
+    ${steps(d.steps, d.estimate)}
 
     <h2>Missions</h2>
     ${d.missions.map((m) => `<div class="box"><h3>${esc(m.title)} <span class="small">· about ${m.minutes} minutes</span></h3><p>${esc(m.story)}</p><p class="small">${m.tablets.map(esc).join(' · ')}</p></div>`).join('')}`;
