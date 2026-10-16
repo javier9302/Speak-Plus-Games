@@ -18,8 +18,12 @@ export default {
       const o = c.zone.objects.find((x) => x.id === to);
       c.fail(o ? `goal: "deliver" must be a character (kind "npc"), but "${to}" is a ${o.kind}` : `goal: "deliver" is "${to}", which is not an object of this map.${c.didYouMean(to, c.zone.objects.map((x) => x.id))}`);
     }
+    // One pair of hands carries them all to the character, and hands hold only so many (data/items.json "maxCarry").
+    const carry = c.items.maxCarry || 4;
+    if (deliver && Number(wanted) > carry && Number(wanted) !== 99) c.fail(`goal: one player must carry all the ${item}s to the character, but a player can hold only ${carry}. Ask for ${carry} or fewer`);
     return { items: { [item]: need }, deliver, label: raw.label || c.items.byId[item].name };
   },
+  // "Everything the tablets give" (99 is clamped to the tablets; one player could not carry them all, but this is only for the check).
   wholeZone: (raw) => ({ ...raw, items: Object.fromEntries(Object.keys(raw.items || {}).map((k) => [k, 99])) }),
   describe: (goal) => `${Object.values(goal.items)[0]} ${itemOf(goal)}s`,
   progress(room, goal) {

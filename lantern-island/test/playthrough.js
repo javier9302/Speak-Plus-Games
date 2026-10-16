@@ -41,6 +41,7 @@ export async function playMission({ contentDir = path.join(root, 'data'), missio
     host.send({ t: 'host' });
     const room = await host.next('room');
     host.send({ t: 'group', id: group.id });
+    await host.next('roster', (x) => x.group?.id === group.id, 15000).catch(() => {});
     const cs = [];
     for (let k = 0; k < players; k++) { const c = client(app.port); await c.opened; c.send({ t: 'join', room: room.code, name: `P${k + 1}` }); c.me = await c.next('joined'); cs.push(c); }
     const teacher = client(app.port); await teacher.opened;
@@ -57,12 +58,13 @@ export async function playMission({ contentDir = path.join(root, 'data'), missio
       const content = await loadContent(contentDir, { abilities, items: { list: it.items, byId: Object.fromEntries(it.items.map((x) => [x.id, x])) } });
       const zone = content.zones[missionId.slice(6)];
       const atlas = atlasFor(zone, content.zones);
-      mission = { id: 'whole-zone', title: `Whole ${zone.name}`, zone: zone.id, goal: goalOf(zone.goal).wholeZone(zone.goal), stations: atlas.objects.filter((o) => kindOf({ kind: o.kind }).card).map((o) => ({ at: o.id })) };
+      // Everything is collected, but not carried by one player to a character: hands hold only 4.
+      mission = { id: 'whole-zone', title: `Whole ${zone.name}`, zone: zone.id, goal: (({ deliver, ...g }) => ((g.type || 'collect') === 'collect' && deliver ? { ...g, deliver: '' } : { ...g, ...(deliver ? { deliver } : {}) }))(goalOf(zone.goal).wholeZone(zone.goal)), stations: atlas.objects.filter((o) => kindOf({ kind: o.kind }).card).map((o) => ({ at: o.id })) };
     } else mission = (await api('/missions')).missions.find((m) => m.id === missionId);
     if (!mission) fail(`there is no mission "${missionId}"`);
     mission = { ...mission, timeLimit: null, monster: "off" };   // bots are slow, and the monster is tested elsewhere: neither is what this test is about
     cmd({ c: 'mission', mission });
-    await host.next('roster', (x) => x.phase === 'play', 4000).catch(() => fail('the mission did not start'));
+    await host.next('roster', (x) => x.phase === 'play', 45000).catch(() => fail(`the mission did not start: ${[...teacher.all, ...host.all].filter((m) => m.t === 'error').map((m) => m.msg).join(' | ') || 'no message'}`));
     await sleep(150);
 
     const P = (c) => r.players.find((p) => p.id === c.me.id);
@@ -129,7 +131,7 @@ export async function playMission({ contentDir = path.join(root, 'data'), missio
         const m = Math.min(1, d * 3 + 0.2);
         input(c, (dx / d) * m, (dy / d) * m);
         await sleep(25);
-        if (r.phase !== 'play') fail(`the mission stopped while ${name(i)} was walking (${r.timeUp ? 'time is up' : r.phase})`);
+        if (r.phase !== 'play') { if (r.result?.completed) throw Object.assign(new Error('finished'), { finished: true }); fail(`the mission stopped while ${name(i)} was walking (${r.timeUp ? 'time is up' : r.phase})`); }
         if (Date.now() - t0 > ms) { input(c, 0, 0); fail(`${name(i)} is stuck at ${p.x.toFixed(1)},${p.y.toFixed(1)} on the way to ${tx.toFixed(1)},${ty.toFixed(1)}`); }
       }
     }
@@ -276,51 +278,57 @@ export async function playMission({ contentDir = path.join(root, 'data'), missio
     async function meet(a, b) {
       // Player a walks to a tile next to player b (b may move meanwhile: to press a button on a's way), then b is the nearest teammate.
       for (let k = 0; k < 4; k++) {
+        { const [bx, by] = tileOf(P(cs[b])); await stepTo(b, bx + 0.5, by + 0.55, 1500, 0.08); input(cs[b], 0, 0); }   // b stands in the middle of its tile
         const pb = tileOf(P(cs[b])), tiles = [];
-        for (const [dx, dy] of [...DIRS, [1, 1], [-1, 1], [1, -1], [-1, -1]]) { const x = pb[0] + dx, y = pb[1] + dy; if (passable(x, y) && !exitAt(x, y)) tiles.push([x, y]); }
+        // Side by side if possible (a diagonal neighbour is right at the edge of reach).
+        const around = (list) => list.map(([dx, dy]) => [pb[0] + dx, pb[1] + dy]).filter(([x, y]) => passable(x, y) && !exitAt(x, y));
+        const side = around(DIRS);
+        if (side.length && findPath(a, tileOf(P(cs[a])), side, { relaxed: true })) tiles.push(...side); else tiles.push(...side, ...around([[1, 1], [-1, 1], [1, -1], [-1, -1]]));
         await goTo(a, tiles, `${name(b)}`);
-        if (Math.hypot(P(cs[a]).x - P(cs[b]).x, P(cs[a]).y - P(cs[b]).y) <= 1.45) return;
+        { const [tx, ty] = tileOf(P(cs[a])); await stepTo(a, tx + 0.5, ty + 0.55, 1500, 0.08); input(cs[a], 0, 0); }
+        if (Math.hypot(P(cs[a]).x - P(cs[b]).x, P(cs[a]).y - P(cs[b]).y) <= 1.49) return;
       }
-      fail(`${name(a)} could not meet ${name(b)}`);
+      fail(`${name(a)} could not meet ${name(b)} [${where()}]`);
     }
-    async function ensureItem(i, item, depth = 0) {
-      if (itemCount(i, item) > 0) return;
+    // One more of `item` into player i's hands, from a teammate who has one: given directly, taken with Pick up, or through
+    // a third player. Give goes to the nearest teammate, so if somebody else stood closer we try again from there.
+    async function transfer(i, item, depth = 0) {
+      const before = itemCount(i, item);
       const h = holderOf(item, i);
-      if (h < 0) fail(`nobody has the ${item} that ${name(i)} needs`);
+      if (h < 0) fail(`nobody else has the ${item} that ${name(i)} needs [pockets: ${cs.map((c, k) => `${name(k)}: ${P(c).items.map((x) => x.item).join('+') || '-'}`).join('; ')}; tablets: ${r.things.filter((t) => t.kind === 'station').map((t) => `${t.id}=${t.st}/${t.holds || '-'}/${t.def.reward?.item}`).join(' ')}]`);
+      if (depth > 4) fail(`the ${item} could not be handed to ${name(i)}`);
+      await ensureSpace(i, item);
       if (has(h, 'give')) {
         await meet(h, i);
         const idx = P(cs[h]).items.findIndex((it) => it.item === item && !it.courier);
         const msgs = await act(h, 'give', { item: idx });
         if (nopes(msgs).length) fail(`${name(h)} cannot give the ${item} to ${name(i)}: ${nopes(msgs)[0]}`);
-        // Give goes to the nearest teammate: if somebody else stood closer, they have it now. Try again from there.
-        if (itemCount(i, item) === 0 && (depth || 0) < 3) return ensureItem(i, item, (depth || 0) + 1);
       } else if (has(i, 'pickup')) {
-        for (let k = 0; k < 4 && itemCount(i, item) === 0; k++) {
-          await meet(i, h);
-          const msgs = await act(i, 'pickup');
-          if (nopes(msgs).length) fail(`${name(i)} cannot take the ${item} from ${name(h)}: ${nopes(msgs)[0]}`);
-        }
+        // Pick up takes the first thing in the teammate's hands: hand back what is not wanted, and try again.
+        await meet(i, h);
+        const msgs = await act(i, 'pickup');
+        if (nopes(msgs).length) fail(`${name(i)} cannot take the ${item} from ${name(h)}: ${nopes(msgs)[0]}`);
       } else {
-        // Through a third player: h gives to somebody who can give on, or i takes from somebody.
         const mid = cs.findIndex((_, m) => m !== i && m !== h && (has(h, 'give') || has(m, 'pickup')) && (has(m, 'give') || has(i, 'pickup')));
         if (mid < 0) fail(`the ${item} is with ${name(h)} and cannot reach ${name(i)}`);
-        await ensureItem(mid, item); await ensureItem(i, item);
-        return;
+        await transfer(mid, item, depth + 1);
       }
-      if (itemCount(i, item) === 0) fail(`${name(i)} still does not have the ${item}`);
+      if (itemCount(i, item) <= before) return transfer(i, item, depth + 1);
     }
+    async function ensureItem(i, item) { if (itemCount(i, item) === 0) await transfer(i, item); }
 
     // Full hands: pass something to a teammate first ("Can you hold this, please?").
     const MAX = 4;
-    async function ensureSpace(i) {
-      if (P(cs[i]).items.length < MAX) return;
-      const others = cs.map((_, j) => j).filter((j) => j !== i && P(cs[j]).items.length < MAX);
-      if (!others.length) fail(`${name(i)} has full hands and so has everybody else`);
-      const j = others[0];
-      if (has(i, 'give')) { await meet(i, j); await act(i, 'give', { item: P(cs[i]).items.findIndex((it) => !it.courier) }); }
-      else if (has(j, 'pickup')) { await meet(j, i); var got = await act(j, 'pickup'); }
-      else fail(`${name(i)} has full hands and cannot pass anything on`);
-      if (P(cs[i]).items.length >= MAX) fail(`${name(i)} could not make room in their hands [${where()}; ${JSON.stringify((got || []).filter((m) => m.t !== 'fx' && m.t !== 'state'))}]`);
+    async function ensureSpace(i, keep = null, room = 1) {
+      for (let guard = 0; P(cs[i]).items.length > MAX - room && guard < 6; guard++) {
+        const idx = P(cs[i]).items.findIndex((it) => !it.courier && it.item !== keep);
+        if (idx < 0) fail(`${name(i)} has full hands of ${keep}s`);
+        const takers = cs.map((_, j) => j).filter((j) => j !== i && P(cs[j]).items.length < MAX && (has(i, 'give') || (has(j, 'pickup') && idx === 0)));
+        if (!takers.length) fail(`${name(i)} has full hands and cannot pass anything on [carrying: ${P(cs[i]).items.map((x) => x.item).join(', ')}]`);
+        const j = takers[0];
+        if (has(i, 'give')) { await meet(i, j); await act(i, 'give', { item: idx }); }
+        else { await meet(j, i); await act(j, 'pickup'); }
+      }
     }
 
     // ---- one step of the plan ----
@@ -378,11 +386,8 @@ export async function playMission({ contentDir = path.join(root, 'data'), missio
           break;
         }
         case 'deliver': {
-          for (let k = itemCount(e.i, e.item); k < e.need; k++) { const h = holderOf(e.item, e.i); if (h < 0) fail(`not enough ${e.item}s to deliver`); await ensureItem(e.i, e.item); }
-          if (itemCount(e.i, e.item) < e.need) {
-            // Several of the same item: ask the others one by one.
-            for (let guard = 0; itemCount(e.i, e.item) < e.need && guard < 8; guard++) { const h = cs.findIndex((_, j) => j !== e.i && itemCount(j, e.item) > 0); if (h < 0) break; await ensureOne(e.i, h, e.item); }
-          }
+          await ensureSpace(e.i, e.item, e.need - itemCount(e.i, e.item));
+          for (let guard = 0; itemCount(e.i, e.item) < e.need && guard < 10; guard++) await transfer(e.i, e.item);
           if (itemCount(e.i, e.item) < e.need) fail(`${name(e.i)} holds ${itemCount(e.i, e.item)} of the ${e.need} ${e.item}s`);
           await goNear(e.i, e.thing, 'talk');
           await act1(e.i, t, 'talk');
@@ -390,6 +395,9 @@ export async function playMission({ contentDir = path.join(root, 'data'), missio
           break;
         }
         case 'give-npc': {
+          // Talking to the character for its clue while carrying the item already delivered it (the game does that).
+          const k = r.mission.goal.order.findIndex((d, n) => n >= 0 && d.to === e.thing && d.item === e.item);
+          if (k >= 0 && r.goalState.next > k) break;
           await ensureItem(e.i, e.item);
           await goNear(e.i, e.thing, 'talk');
           const next = r.goalState.next;
@@ -425,11 +433,6 @@ export async function playMission({ contentDir = path.join(root, 'data'), missio
         }
         default: fail(`unknown plan step ${JSON.stringify(e)}`);
       }
-    }
-    async function ensureOne(i, h, item) {
-      if (has(h, 'give')) { await meet(h, i); const idx = P(cs[h]).items.findIndex((it) => it.item === item); await act(h, 'give', { item: idx }); }
-      else if (has(i, 'pickup')) { await meet(i, h); await act(i, 'pickup'); }
-      else fail(`${name(h)} cannot hand the ${item} to ${name(i)}`);
     }
     // The escort leader walks one tile at a time and waits for the character to catch up. A broken bridge is not jumped
     // (the character cannot jump): a teammate holds the plate.
@@ -471,7 +474,7 @@ export async function playMission({ contentDir = path.join(root, 'data'), missio
     for (const e of solved.plan) {
       n++;
       if (process.env.PLAY_DEBUG) console.log(`step ${n}: ${JSON.stringify(e)}`);
-      try { await runStep(e); } catch (err) { if (err.play) err.message = `step ${n}/${solved.plan.length} (${e.k} ${e.a || ''} ${e.thing || ''} by ${e.i !== undefined ? name(e.i) : '?'}): ${err.message}`; throw err; }
+      try { await runStep(e); } catch (err) { if (err.finished) break; if (err.play) err.message = `step ${n}/${solved.plan.length} (${e.k} ${e.a || ''} ${e.thing || ''} by ${e.i !== undefined ? name(e.i) : '?'}): ${err.message}`; throw err; }
       if (host.last.roster.phase === 'done') break;
     }
     // A sequence of pads: pressed in the order the clues give.
@@ -523,7 +526,7 @@ async function main() {
     child.stdout.on('data', (d) => { out += d; }); child.stderr.on('data', (d) => { out += d; });
     child.on('close', (code) => { const line = out.split('\n').find((l) => /^(PASS|FAIL)/.test(l)) || `FAIL ${job[1]} (${job[2]} players): ${out.trim().split('\n').slice(-3).join(' | ')}`; results.push({ job, line, ok: code === 0 }); console.log(`${job[0].padEnd(8)} ${line}`); resolve(); });
   });
-  const queue = [...jobs], workers = Array.from({ length: Math.min(6, jobs.length) }, async () => { while (queue.length) await run(queue.shift()); });
+  const queue = [...jobs], workers = Array.from({ length: Math.min(4, jobs.length) }, async () => { while (queue.length) await run(queue.shift()); });
   await Promise.all(workers);
   const bad = results.filter((x) => !x.ok);
   console.log(`\n${results.length - bad.length} of ${results.length} playthroughs finished${bad.length ? `; ${bad.length} did not` : ''}.`);
