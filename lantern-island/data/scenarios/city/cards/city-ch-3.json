@@ -1,0 +1,20 @@
+{
+  "id": "city-ch-3",
+  "type": "choice",
+  "level": "B1",
+  "tags": [
+    "city"
+  ],
+  "prompt": "The bus was late, ___ we waited for twenty minutes.",
+  "options": {
+    "A": "so",
+    "B": "because",
+    "C": "but"
+  },
+  "answer": "A",
+  "hints": [
+    "The second part is a result.",
+    "Which word means \"for this reason\"?",
+    "It has two letters."
+  ]
+}

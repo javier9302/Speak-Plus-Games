@@ -44,8 +44,8 @@ export function solve(zone, mission, sets, { without = [], explore = false, skip
       const flooded = new Set(things.flatMap((t) => (kindOf(t).floods?.(t) || []).map((f) => key(f.x, f.y))));
       // Held open: somebody else stands on a plate (any kind with holdsOpen) that targets it.
       const held = (i, t) => things.some((p) => kindOf(p).holdsOpen?.(p) === t.id && regs.some((r, j) => j !== i && r.has(key(p.x, p.y))))
-        // A lever: somebody else with its ability can get to it and pull it while player i waits at the door.
-        || things.some((p) => kindOf(p).opens?.(p) === t.id && owners(kindOf(p).opensWith(p)).some((j) => j !== i && reach(regs, j, p)));
+        // A lever: somebody with its ability can get to it and pull it. If the door is near, that can be player i; if it is far, somebody else must.
+        || things.some((p) => kindOf(p).opens?.(p) === t.id && owners(kindOf(p).opensWith(p)).some((j) => reach(regs, j, p) && (j !== i || kindOf(p).opensSelf(p, t))));
       const s = { has, held };
       const free = (i, x, y) => {
         if (!ground(x, y) || flooded.has(key(x, y))) return false;
@@ -74,9 +74,21 @@ export function solve(zone, mission, sets, { without = [], explore = false, skip
   }
   // A player reaches a thing from any of the 8 tiles around it.
   const reach = (regs, i, t) => { for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if ((dx || dy) && regs[i].has(key(t.x + dx, t.y + dy))) return true; return false; };
-  // An item is in the pocket of whoever picked it up. It gets to another player only if the holder has Give.
-  const canGet = (i, item) => pool.some((it) => it.item === item && (it.holder === i || has(it.holder, 'give')));
-  const take = (i, item) => { const k = pool.findIndex((it) => it.item === item && (it.holder === i || has(it.holder, 'give'))); if (pool[k].holder !== i) used.add('give'); return pool.splice(k, 1)[0]; };
+  // An item is in the pocket of whoever picked it up. It can go from one player to another if the first has Give, or if the
+  // second has Pick up (which takes an item back from a teammate's hands); it can pass through several players.
+  const moves = (a, b) => has(a, 'give') || has(b, 'pickup');
+  const closure = (from) => {
+    const seen = new Set([from]), todo = [from];
+    while (todo.length) { const a = todo.pop(); for (let b = 0; b < n; b++) if (!seen.has(b) && moves(a, b)) { seen.add(b); todo.push(b); } }
+    return seen;
+  };
+  const holdable = (i, it, item) => it.item === item && closure(it.holder).has(i);
+  const canGet = (i, item) => pool.some((it) => holdable(i, it, item));
+  const take = (i, item) => {
+    const k = pool.findIndex((it) => holdable(i, it, item)), from = pool[k].holder;
+    if (from !== i) { if (has(from, 'give')) used.add('give'); else if (has(i, 'pickup')) used.add('pickup'); else { used.add('give'); used.add('pickup'); } }
+    return pool.splice(k, 1)[0];
+  };
   const ctx = { byId: (id) => byId[id] || null, itemName: (id) => id };
   // What an action needs, besides a player with its ability who can get there.
   const allowed = (step, t, i) => {
@@ -123,7 +135,7 @@ export function solve(zone, mission, sets, { without = [], explore = false, skip
     return seen;
   }
   // What a goal type's solver part may use (server/goals/<type>.js, "solver").
-  const s = { mission, things, byId, pool, used, log, clues, owners, has, canGet, take, key, zone, regs: null, regions, walkFrom,
+  const s = { mission, things, byId, pool, used, log, clues, owners, has, canGet, take, key, zone, regs: null, regions, walkFrom, closure,
     reach: (i, t) => reach(s.regs, i, t) };
   const goal = goalOf(mission.goal).solver(s);
 

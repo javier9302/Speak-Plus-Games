@@ -1,0 +1,791 @@
+{
+  "id": "city",
+  "name": "Maple City",
+  "order": 4,
+  "story": "A busy city: roads you can only cross at the lights, shops with prices, a bus to Uptown. Shopping, an address to find, and a lost tourist. Uses codes, logic clues, timed doors, traders and shops.",
+  "unlock": {
+    "landmarks": 6
+  },
+  "theme": "day",
+  "strictClues": true,
+  "tiles": {
+    "r": {
+      "name": "road",
+      "solid": true,
+      "color": "#4a4f5c",
+      "speckle": [
+        "#555b69",
+        "#434854"
+      ]
+    },
+    "s": {
+      "name": "sidewalk",
+      "solid": false,
+      "color": "#cfcabd",
+      "speckle": [
+        "#c2bdb0",
+        "#d9d5ca"
+      ]
+    },
+    "w": {
+      "name": "crosswalk",
+      "solid": false,
+      "pal": {
+        "a": "#4a4f5c",
+        "w": "#f7f4ee"
+      },
+      "art": [
+        "awwaawwaawwaawwa",
+        "awwaawwaawwaawwa",
+        "awwaawwaawwaawwa",
+        "awwaawwaawwaawwa",
+        "awwaawwaawwaawwa",
+        "awwaawwaawwaawwa",
+        "awwaawwaawwaawwa",
+        "awwaawwaawwaawwa",
+        "awwaawwaawwaawwa",
+        "awwaawwaawwaawwa",
+        "awwaawwaawwaawwa",
+        "awwaawwaawwaawwa",
+        "awwaawwaawwaawwa",
+        "awwaawwaawwaawwa",
+        "awwaawwaawwaawwa",
+        "awwaawwaawwaawwa"
+      ]
+    },
+    "b": {
+      "name": "building",
+      "solid": true,
+      "pal": {
+        "a": "#b5694a",
+        "b": "#8f4f36",
+        "c": "#9db4e0",
+        "d": "#f7f4ee",
+        "e": "#5a6275"
+      },
+      "art": [
+        "eeeeeeeeeeeeeeee",
+        "eeeeeeeeeeeeeeee",
+        "bbbbbbbbbbbbbbbb",
+        "adddddaadddddaaa",
+        "adcccdaadcccdaaa",
+        "adcccdaadcccdaaa",
+        "adcccdaadcccdaaa",
+        "adddddaadddddaaa",
+        "bbbbbbbbbbbbbbbb",
+        "adddddaadddddaaa",
+        "adcccdaadcccdaaa",
+        "adcccdaadcccdaaa",
+        "adcccdaadcccdaaa",
+        "adddddaadddddaaa",
+        "aaaaaaaaaaaaaaaa",
+        "bbbbbbbbbbbbbbbb"
+      ]
+    }
+  },
+  "items": [
+    {
+      "id": "bread",
+      "name": "Bread",
+      "art": [
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "...kaaaaaaaak...",
+        "..kaaaaaaaaaak..",
+        "..kaabaabaabak..",
+        "..kaabaabaabak..",
+        "..kaabaabaabak..",
+        "..kaaaaaaaaaak..",
+        "..kaaaaaaaaaak..",
+        "..kkkkkkkkkkkk..",
+        "................",
+        "................",
+        "................"
+      ],
+      "pal": {
+        "a": "#e0a860",
+        "b": "#a9713c"
+      }
+    },
+    {
+      "id": "milk",
+      "name": "Milk",
+      "art": [
+        "................",
+        ".....kkkkkk.....",
+        ".....kaaaak.....",
+        "....kkkkkkkk....",
+        "....kaaaaaak....",
+        "....kaaaaaak....",
+        "....kaaaaaak....",
+        "....kkkkkkkk....",
+        "....kaaaaaak....",
+        "....kaaaaaak....",
+        "....kabbbbak....",
+        "....kabaabak....",
+        "....kabbbbak....",
+        "....kaaaaaak....",
+        "....kkkkkkkk....",
+        "................"
+      ],
+      "pal": {
+        "a": "#ffffff",
+        "b": "#41a6f6"
+      }
+    },
+    {
+      "id": "ticket",
+      "name": "Bus ticket",
+      "art": [
+        "................",
+        "................",
+        "................",
+        "................",
+        ".kkkkkkkkkkkkkk.",
+        ".kbbbbbbbbkbbbk.",
+        ".kbbbbbbbbkbbbk.",
+        ".kaaaaaaaakaaak.",
+        ".kaacccccakbbak.",
+        ".kaaaaaaaakbbak.",
+        ".kaacccaaakbbak.",
+        ".kaaaaaaaakaaak.",
+        ".kkkkkkkkkkkkkk.",
+        "................",
+        "................",
+        "................"
+      ],
+      "pal": {
+        "a": "#fff7e0",
+        "b": "#e8483b",
+        "c": "#1f2f5c"
+      }
+    },
+    {
+      "id": "umbrella",
+      "name": "Umbrella",
+      "art": [
+        "................",
+        ".....kkkkkk.....",
+        "...kkkkkkkkkk...",
+        "..kaaabaaabaak..",
+        "..kaaabaaabaak..",
+        "..kaaabaaabaak..",
+        "..kaaabaaabaak..",
+        "..kkkkkkkkkkkk..",
+        ".......ck.......",
+        ".......ck.......",
+        ".......ck.......",
+        ".......ck.......",
+        ".......ck.......",
+        ".....cckk.......",
+        ".....kkk........",
+        "................"
+      ],
+      "pal": {
+        "a": "#e8483b",
+        "b": "#c23a2f",
+        "c": "#a9713c"
+      }
+    },
+    {
+      "id": "flower",
+      "name": "Flower",
+      "art": [
+        "................",
+        ".....kkkkkk.....",
+        ".....kaaaak.....",
+        ".....kabbak.....",
+        ".....kabbak.....",
+        ".....kaaaak.....",
+        ".....kkkkkk.....",
+        ".......kk.......",
+        ".......gk.......",
+        ".......gk.......",
+        "....kggkk.......",
+        "....kggkk.......",
+        "....kkkkk.......",
+        ".......gk.......",
+        ".......kk.......",
+        "................"
+      ],
+      "pal": {
+        "a": "#ff9ecb",
+        "b": "#ffd166",
+        "g": "#38b764"
+      }
+    },
+    {
+      "id": "wrench",
+      "name": "Wrench",
+      "art": [
+        "................",
+        ".kk..kk.........",
+        ".ka..ak.........",
+        ".ka..ak.........",
+        ".kaaaak.........",
+        ".kaaakkk........",
+        ".kkkkkaak.......",
+        ".....kkaak......",
+        "......kkaak.....",
+        ".......kkaak....",
+        "........kkaak...",
+        ".........kkaak..",
+        "..........kkaak.",
+        "...........kkak.",
+        "............kkk.",
+        "................"
+      ],
+      "pal": {
+        "a": "#b4bccd"
+      }
+    },
+    {
+      "id": "parcel",
+      "name": "Parcel",
+      "art": [
+        "................",
+        "................",
+        "......kkkk......",
+        "......kbbk......",
+        "..kkkkkkkkkkkk..",
+        "..kaaaabbaaaak..",
+        "..kaaaabbaaaak..",
+        "..kaaaabbaaaak..",
+        "..kbbbbkkbbbbk..",
+        "..kkkkkkkkkkkk..",
+        "..kaaaabbaaaak..",
+        "..kaaaabbaaaak..",
+        "..kaaaabbaaaak..",
+        "..kkkkkkkkkkkk..",
+        "................",
+        "................"
+      ],
+      "pal": {
+        "a": "#d9b27a",
+        "b": "#e8483b"
+      }
+    }
+  ],
+  "sprites": {
+    "traffic-light": {
+      "pal": {
+        "p": "#5a6275",
+        "q": "#2b2f45",
+        "r": "#e8483b",
+        "g": "#38b764"
+      },
+      "states": {
+        "closed": [
+          "kkkkk...........",
+          "kkkkk...........",
+          "kkrrk...........",
+          "kkrrk...........",
+          "kkkkk...........",
+          "kkkkk...........",
+          ".pk.............",
+          ".pk...rr.rr.rr..",
+          ".pk...rr.rr.rr..",
+          ".pk.............",
+          ".pk.............",
+          ".pk.............",
+          ".pk.............",
+          ".pk.............",
+          ".pk.............",
+          ".kk............."
+        ],
+        "open": [
+          "kkkkk...........",
+          "kkkkk...........",
+          "kkggk...........",
+          "kkggk...........",
+          "kkkkk...........",
+          "kkkkk...........",
+          ".pk.............",
+          ".pk.............",
+          ".pk.............",
+          ".pk.............",
+          ".pk.............",
+          ".pk.............",
+          ".pk.............",
+          ".pk.............",
+          ".pk.............",
+          ".kk............."
+        ],
+        "default": [
+          "kkkkk...........",
+          "kkkkk...........",
+          "kkrrk...........",
+          "kkrrk...........",
+          "kkkkk...........",
+          "kkkkk...........",
+          ".pk.............",
+          ".pk...rr.rr.rr..",
+          ".pk...rr.rr.rr..",
+          ".pk.............",
+          ".pk.............",
+          ".pk.............",
+          ".pk.............",
+          ".pk.............",
+          ".pk.............",
+          ".kk............."
+        ]
+      }
+    },
+    "pedestrian-button": {
+      "pal": {
+        "p": "#5a6275",
+        "q": "#ffd166",
+        "y": "#e8483b",
+        "g": "#38b764"
+      },
+      "states": {
+        "x": [
+          "................",
+          "....kkkkkkkk....",
+          "....kqkkkkqk....",
+          "....kqkyykqk....",
+          "....kqkkkkqk....",
+          "....kqqqqqqk....",
+          "....kkkkkkkk....",
+          ".......pk.......",
+          ".......pk.......",
+          ".......pk.......",
+          ".......pk.......",
+          ".......pk.......",
+          ".......pk.......",
+          ".......pk.......",
+          ".......pk.......",
+          ".......kk......."
+        ],
+        "on": [
+          "................",
+          "....kkkkkkkk....",
+          "....kqkkkkqk....",
+          "....kqkggkqk....",
+          "....kqkkkkqk....",
+          "....kqqqqqqk....",
+          "....kkkkkkkk....",
+          ".......pk.......",
+          ".......pk.......",
+          ".......pk.......",
+          ".......pk.......",
+          ".......pk.......",
+          ".......pk.......",
+          ".......pk.......",
+          ".......pk.......",
+          ".......kk......."
+        ],
+        "default": [
+          "................",
+          "....kkkkkkkk....",
+          "....kqkkkkqk....",
+          "....kqkyykqk....",
+          "....kqkkkkqk....",
+          "....kqqqqqqk....",
+          "....kkkkkkkk....",
+          ".......pk.......",
+          ".......pk.......",
+          ".......pk.......",
+          ".......pk.......",
+          ".......pk.......",
+          ".......pk.......",
+          ".......pk.......",
+          ".......pk.......",
+          ".......kk......."
+        ]
+      }
+    },
+    "delivery-crate": {
+      "pal": {
+        "a": "#c68a4e",
+        "b": "#8a5a2b"
+      },
+      "states": {
+        "default": [
+          "................",
+          "................",
+          ".kkkkkkkkkkkkkk.",
+          ".kbbbbbbbbbbbbk.",
+          ".kbbaaaaaaaaabk.",
+          ".kbabaaaaaaaabk.",
+          ".kbaabaaaaaaabk.",
+          ".kbaaabaaaaaabk.",
+          ".bbbbbbbbbbbbbb.",
+          ".kbaaaaabaaaabk.",
+          ".kbaaaaaabaaabk.",
+          ".kbaaaaaaabaabk.",
+          ".kbaaaaaaaababk.",
+          ".kbbbbbbbbbbbbk.",
+          ".kkkkkkkkkkkkkk.",
+          "................"
+        ]
+      }
+    },
+    "market-shutter": {
+      "pal": {
+        "a": "#8b93a7",
+        "b": "#5a6275",
+        "r": "#e8483b",
+        "y": "#ffd166",
+        "e": "#2b2f45"
+      },
+      "states": {
+        "locked": [
+          "................",
+          ".kkkkkkkkkkkkkk.",
+          ".kaaaaaaaaaaaak.",
+          ".kaaaaaaaaaaaak.",
+          ".kbbbbbbbbbbbbk.",
+          ".kaaaaakkaaaaak.",
+          ".kaaaaaykaaaaak.",
+          ".kbbbbkkkkbbbbk.",
+          ".kaaaakrrkaaaak.",
+          ".kaaaakrrkaaaak.",
+          ".kbbbbkrrkbbbbk.",
+          ".kaaaakkkkaaaak.",
+          ".kaaaaaaaaaaaak.",
+          ".kbbbbbbbbbbbbk.",
+          ".kaaaaaaaaaaaak.",
+          ".kkkkkkkkkkkkkk."
+        ],
+        "closed": [
+          "................",
+          ".kkkkkkkkkkkkkk.",
+          ".kaaaaaaaaaaaak.",
+          ".kaaaaaaaaaaaak.",
+          ".kbbbbbbbbbbbbk.",
+          ".kaaaaaaaaaaaak.",
+          ".kaaaaaaaaaaaak.",
+          ".kbbbbbbbbbbbbk.",
+          ".kaaaakkkkaaaak.",
+          ".kaaaayyyyaaaak.",
+          ".kbbbbbbbbbbbbk.",
+          ".kaaaaaaaaaaaak.",
+          ".kaaaaaaaaaaaak.",
+          ".kbbbbbbbbbbbbk.",
+          ".kaaaaaaaaaaaak.",
+          ".kkkkkkkkkkkkkk."
+        ],
+        "open": [
+          "................",
+          ".kkkkkkkkkkkkkk.",
+          ".kaaaaaaaaaaaak.",
+          ".kaaaaaaaaaaaak.",
+          ".kbbbbbbbbbbbbk.",
+          ".keeeeeeeeeeeek.",
+          ".keeeeeeeeeeeek.",
+          ".keeeeeeeeeeeek.",
+          ".keeeeeeeeeeeek.",
+          ".keeeeeeeeeeeek.",
+          ".keeeeeeeeeeeek.",
+          ".keeeeeeeeeeeek.",
+          ".keeeeeeeeeeeek.",
+          ".keeeeeeeeeeeek.",
+          ".keeeeeeeeeeeek.",
+          ".kkkkkkkkkkkkkk."
+        ],
+        "default": [
+          "................",
+          ".kkkkkkkkkkkkkk.",
+          ".kaaaaaaaaaaaak.",
+          ".kaaaaaaaaaaaak.",
+          ".kbbbbbbbbbbbbk.",
+          ".kaaaaakkaaaaak.",
+          ".kaaaaaykaaaaak.",
+          ".kbbbbkkkkbbbbk.",
+          ".kaaaakrrkaaaak.",
+          ".kaaaakrrkaaaak.",
+          ".kbbbbkrrkbbbbk.",
+          ".kaaaakkkkaaaak.",
+          ".kaaaaaaaaaaaak.",
+          ".kbbbbbbbbbbbbk.",
+          ".kaaaaaaaaaaaak.",
+          ".kkkkkkkkkkkkkk."
+        ]
+      }
+    },
+    "flat-door": {
+      "pal": {
+        "a": "#c68a4e",
+        "b": "#8a5a2b",
+        "d": "#f7f4ee",
+        "f": "#5a6275",
+        "y": "#ffd166",
+        "r": "#e8483b",
+        "e": "#2b2f45"
+      },
+      "states": {
+        "locked": [
+          ".kkkkkkkkkkkkkk.",
+          ".kffffffffffffk.",
+          ".kfbbbbbbbbbbfk.",
+          ".kfakkkbbaaaafk.",
+          ".kfakkkbbaaaafk.",
+          ".kfakkkbbaaaafk.",
+          ".kfaaaabbaaaafk.",
+          ".kfaaaabbaaaafk.",
+          ".kfbbbbbbbbbbfk.",
+          ".kfaaaabbaaaafk.",
+          ".kfaaaabbarrafk.",
+          ".kfaaaabbarrafk.",
+          ".kfaaaabbaaaafk.",
+          ".kfaaaabbaaaafk.",
+          ".kfaaaabbaaaafk.",
+          ".kfaaaabbaaaafk."
+        ],
+        "closed": [
+          ".kkkkkkkkkkkkkk.",
+          ".kffffffffffffk.",
+          ".kfbbbbbbbbbbfk.",
+          ".kfakkkbbaaaafk.",
+          ".kfakkkbbaaaafk.",
+          ".kfakkkbbaaaafk.",
+          ".kfaaaabbaaaafk.",
+          ".kfaaaabbaaaafk.",
+          ".kfbbbbbbbbbbfk.",
+          ".kfaaaabbaaaafk.",
+          ".kfaaaabbayyafk.",
+          ".kfaaaabbayyafk.",
+          ".kfaaaabbaaaafk.",
+          ".kfaaaabbaaaafk.",
+          ".kfaaaabbaaaafk.",
+          ".kfaaaabbaaaafk."
+        ],
+        "open": [
+          ".kkkkkkkkkkkkkk.",
+          ".kaabeeeeeeeeek.",
+          ".kaabeeeeeeeeek.",
+          ".kaabeeeeeeeeek.",
+          ".kaabeeeeeeeeek.",
+          ".kaabeeeeeeeeek.",
+          ".kaabeeeeeeeeek.",
+          ".kaabeeeeeeeeek.",
+          ".kaabeeeeeeeeek.",
+          ".kaabeeeeeeeeek.",
+          ".kaabeeeeeeeeek.",
+          ".kaabeeeeeeeeek.",
+          ".kaabeeeeeeeeek.",
+          ".kaabeeeeeeeeek.",
+          ".kaabeeeeeeeeek.",
+          ".kaabeeeeeeeeek."
+        ],
+        "default": [
+          ".kkkkkkkkkkkkkk.",
+          ".kffffffffffffk.",
+          ".kfbbbbbbbbbbfk.",
+          ".kfakkkbbaaaafk.",
+          ".kfakkkbbaaaafk.",
+          ".kfakkkbbaaaafk.",
+          ".kfaaaabbaaaafk.",
+          ".kfaaaabbaaaafk.",
+          ".kfbbbbbbbbbbfk.",
+          ".kfaaaabbaaaafk.",
+          ".kfaaaabbarrafk.",
+          ".kfaaaabbarrafk.",
+          ".kfaaaabbaaaafk.",
+          ".kfaaaabbaaaafk.",
+          ".kfaaaabbaaaafk.",
+          ".kfaaaabbaaaafk."
+        ]
+      }
+    },
+    "turnstile": {
+      "pal": {
+        "m": "#b4bccd",
+        "r": "#e8483b"
+      },
+      "states": {
+        "locked": [
+          "................",
+          ".......rr.......",
+          ".....kkkkkk.....",
+          ".....kmmmmk.....",
+          ".....kmmmmk.....",
+          ".....kmmmmk.....",
+          ".....kkkkkk.....",
+          ".......mk.......",
+          ".kkkkkkkkkkkkkk.",
+          ".kmmmmmmmmmmmmk.",
+          ".kkkkkkkkkkkkkk.",
+          ".kkkkkkkkkkkkkk.",
+          ".kmmmmmmmmmmmmk.",
+          ".kkkkkkkkkkkkkk.",
+          ".......mk.......",
+          ".......kk......."
+        ],
+        "closed": [
+          "................",
+          "................",
+          ".....kkkkkk.....",
+          ".....kmmmmk.....",
+          ".....kmmmmk.....",
+          ".....kmmmmk.....",
+          ".....kkkkkk.....",
+          ".......mk.......",
+          ".kkkkkkkkkkkkkk.",
+          ".kmmmmmmmmmmmmk.",
+          ".kkkkkkkkkkkkkk.",
+          ".kkkkkkkkkkkkkk.",
+          ".kmmmmmmmmmmmmk.",
+          ".kkkkkkkkkkkkkk.",
+          ".......mk.......",
+          ".......kk......."
+        ],
+        "open": [
+          "................",
+          "................",
+          ".kkkkkkkkkkkkkk.",
+          ".kmmkkmmmmkkmmk.",
+          ".....kmmmmk.....",
+          ".....kmmmmk.....",
+          ".....kkkkkk.....",
+          ".......mk.......",
+          ".......mk.......",
+          ".......mk.......",
+          ".......mk.......",
+          ".......mk.......",
+          ".......mk.......",
+          ".......mk.......",
+          ".......mk.......",
+          ".......kk......."
+        ],
+        "default": [
+          "................",
+          ".......rr.......",
+          ".....kkkkkk.....",
+          ".....kmmmmk.....",
+          ".....kmmmmk.....",
+          ".....kmmmmk.....",
+          ".....kkkkkk.....",
+          ".......mk.......",
+          ".kkkkkkkkkkkkkk.",
+          ".kmmmmmmmmmmmmk.",
+          ".kkkkkkkkkkkkkk.",
+          ".kkkkkkkkkkkkkk.",
+          ".kmmmmmmmmmmmmk.",
+          ".kkkkkkkkkkkkkk.",
+          ".......mk.......",
+          ".......kk......."
+        ]
+      }
+    },
+    "roadworks": {
+      "pal": {
+        "o": "#ff9e2c",
+        "w": "#f7f4ee",
+        "e": "#2b2f45"
+      },
+      "states": {
+        "default": [
+          "................",
+          "................",
+          "kkkkkkkkkkkkkkkk",
+          "oowwoowwoowwooww",
+          "oowwoowwoowwooww",
+          "kkkkkkkkkkkkkkkk",
+          ".kkkkkkkkkkkkkk.",
+          ".kkeeeeeeeeeekk.",
+          "..keeeeeeeeeek..",
+          "..keeeeeeeeeek..",
+          "..keeeeeeeeeek..",
+          "..keeeeeeeeeek..",
+          "..keeeeeeeeeek..",
+          "..kkkkkkkkkkkk..",
+          "................",
+          "................"
+        ]
+      }
+    },
+    "manhole": {
+      "pal": {
+        "a": "#8b93a7",
+        "b": "#5a6275"
+      },
+      "states": {
+        "x": [
+          "................",
+          "................",
+          "................",
+          "................",
+          "................",
+          "...kaaaaaaaak...",
+          "..kaaaaaaaaaak..",
+          "..kaakaakaakak..",
+          "..kaakaakaakak..",
+          "..kaakaakaakak..",
+          "..kaakaakaakak..",
+          "..kaaaaaaaaaak..",
+          "...kkkkkkkkkk...",
+          "................",
+          "................",
+          "................"
+        ],
+        "down": [
+          "................",
+          "................",
+          "................",
+          "................",
+          "................",
+          "...kbbbbbbbbk...",
+          "..kbbbbbbbbbbk..",
+          "..kbbkbbkbbkbk..",
+          "..kbbkbbkbbkbk..",
+          "..kbbkbbkbbkbk..",
+          "..kbbkbbkbbkbk..",
+          "..kbbbbbbbbbbk..",
+          "...kkkkkkkkkk...",
+          "................",
+          "................",
+          "................"
+        ],
+        "default": [
+          "................",
+          "................",
+          "................",
+          "................",
+          "................",
+          "...kaaaaaaaak...",
+          "..kaaaaaaaaaak..",
+          "..kaakaakaakak..",
+          "..kaakaakaakak..",
+          "..kaakaakaakak..",
+          "..kaakaakaakak..",
+          "..kaaaaaaaaaak..",
+          "...kkkkkkkkkk...",
+          "................",
+          "................",
+          "................"
+        ]
+      }
+    },
+    "water-valve": {
+      "pal": {
+        "p": "#5a6275",
+        "r": "#e8483b"
+      },
+      "states": {
+        "default": [
+          "................",
+          "...kkkkkkkkkk...",
+          "...krrrrrrrrk...",
+          "...kkkkrrkkkk...",
+          ".......rr.......",
+          "......krrk......",
+          "......krrk......",
+          "......kkkk......",
+          "......kppk......",
+          "kkkkkkkppkkkkkkk",
+          "kppppppppppppppk",
+          "kppppppppppppppk",
+          "kppppppppppppppk",
+          "kkkkkkkkkkkkkkkk",
+          "................",
+          "................"
+        ]
+      }
+    }
+  }
+}

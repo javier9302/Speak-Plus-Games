@@ -1,0 +1,20 @@
+{
+  "id": "city-ch-2",
+  "type": "choice",
+  "level": "A2",
+  "tags": [
+    "city"
+  ],
+  "prompt": "You are lost. What do you say?",
+  "options": {
+    "A": "Excuse me, where is the station?",
+    "B": "I like your hat.",
+    "C": "What is your name?"
+  },
+  "answer": "A",
+  "hints": [
+    "You ask for help.",
+    "You want a place.",
+    "It starts with \"Excuse me\"."
+  ]
+}

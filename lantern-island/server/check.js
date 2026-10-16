@@ -68,6 +68,7 @@ export async function runCheck(contentDir = path.join(root, 'data'), dataDir = c
     const missions = [all];
     for (const t of templates.filter((m) => (m.zone || Object.keys(zones)[0]) === zone.id)) { try { missions.push(normalizeMission(t, zones, items)); } catch (e) { fail(`${t.file || 'data/missions/' + t.id + '.json'}: ${e.message}`); } }
 
+    const neededClues = new Set();
     for (const mission of missions) {
       for (const s of mission.stations) if (s.card && !cardIds.has(s.card)) fail(`${mission.title}: tablet "${s.at}" asks for the card "${s.card}", which does not exist`);
       say();
@@ -90,20 +91,16 @@ export async function runCheck(contentDir = path.join(root, 'data'), dataDir = c
         say(`    ok    ${n} players: can be finished in ${r.log.length} steps; every player is needed${notes.length ? '  (' + notes.join('; ') + ')' : ''}`);
       }
       for (const n of goalOf(written.mission.goal).notes?.(written.zone, written.mission.goal) || []) say(`    note  ${n}`);
-      // Every clue must be needed: take each one away and the mission must no longer be finishable. A clue that carries
-      // a goal placeholder ({order}...) counts as needed. Other clues are flavour: a note, or a FAIL in a pack with
-      // "strictClues": true. An object can list the abilities of its flavour clues in "extra": ["look"].
-      if (mission !== all) {
-        const sets = dealPreset(abilities, CLUE_PLAYERS), loose = [];
+      // Every clue must be needed: take each one away and the mission must no longer be finishable. A clue counts as
+      // needed if some mission of the map (or the whole map) cannot be finished without it; the report is further down.
+      {
+        const sets = dealPreset(abilities, CLUE_PLAYERS);
         if (solve(written.zone, written.mission, sets).ok) {
-          for (const o of written.zone.objects) for (const [a, text] of Object.entries(o.clues || {})) {
-            if ((o.extra || []).includes(a) || GOAL_PLACEHOLDERS.some((p) => String(text).includes(`{${p}}`))) continue;
-            if (solve(written.zone, written.mission, sets, { skipClues: new Set([`${o.id}:${a}`]) }).ok) loose.push(`${o.id} (${name(a)})`);
+          for (const o of written.zone.objects) for (const a of Object.keys(o.clues || {})) {
+            if (neededClues.has(`${o.id}:${a}`)) continue;
+            if (!solve(written.zone, written.mission, sets, { skipClues: new Set([`${o.id}:${a}`]) }).ok) neededClues.add(`${o.id}:${a}`);
           }
         }
-        if (loose.length && content.packs[zone.pack]?.strictClues) fail(`${mission.title}: ${loose.length} clue${loose.length > 1 ? 's are' : ' is'} not needed to finish: ${loose.join(', ')}. Remove ${loose.length > 1 ? 'them' : 'it'}, make ${loose.length > 1 ? 'them' : 'it'} part of a puzzle, or list ${loose.length > 1 ? 'them' : 'it'} in the object's "extra".`);
-        else if (loose.length) say(`    note  ${loose.length} clue${loose.length > 1 ? 's' : ''} not needed to finish (${loose.slice(0, 3).join(', ')}${loose.length > 3 ? ', ...' : ''}). "strictClues": true in pack.json makes this an error.`);
-        else say('    ok    every clue is needed');
       }
       // Every run must be finishable too (the server never starts one that is not, but a pack should not have them).
       if (mission !== all && isRandom(base, mission)) {
@@ -115,6 +112,19 @@ export async function runCheck(contentDir = path.join(root, 'data'), dataDir = c
         if (bad.length) fail(`${mission.title}: ${bad.length} of ${SEEDS * 5} shuffled runs cannot be finished, for example ${bad.slice(0, 2).join(' | ')}. Check the slots and shuffles.`);
         else say(`    ok    ${SEEDS} shuffled runs, 2 to 6 players: all can be finished`);
       }
+    }
+    // A clue that no mission needs: a note, or a FAIL in a pack with "strictClues": true. An object can list the abilities
+    // of its atmosphere clues in "extra": ["listen"]. Clues with a goal placeholder ({order}...) count as needed.
+    {
+      const loose = [];
+      for (const o of atlas.objects) for (const [a, text] of Object.entries(o.clues || {})) {
+        if (neededClues.has(`${o.id}:${a}`) || (o.extra || []).includes(a) || GOAL_PLACEHOLDERS.some((p) => String(text).includes(`{${p}}`))) continue;
+        loose.push(`${o.id} (${name(a)})`);
+      }
+      const many = loose.length > 1;
+      if (loose.length && content.packs[zone.pack]?.strictClues) fail(`${zone.name}: ${loose.length} clue${many ? 's are' : ' is'} not needed by any mission: ${loose.join(', ')}. Remove ${many ? 'them' : 'it'}, make ${many ? 'them' : 'it'} part of a puzzle, or list ${many ? 'them' : 'it'} in the object's "extra".`);
+      else if (loose.length) { say(); say(`  note  ${loose.length} clue${many ? 's' : ''} not needed by any mission (${loose.slice(0, 3).join(', ')}${loose.length > 3 ? ', ...' : ''}). "strictClues": true in pack.json makes this an error.`); }
+      else { say(); say('  ok    every clue is needed by some mission'); }
     }
     say();
     say('  The shortest way through the whole zone, for 3 players:');

@@ -1,6 +1,6 @@
 # Scenario guide
 
-How to write a scenario pack for Lantern Island. This page is enough to author a pack without reading the engine code. Read it with one example pack open: `data/scenarios/tiny` (the example at the end of this page) or `data/scenarios/harbor` (every feature).
+How to write a scenario pack for Lantern Island. This page is enough to author a pack without reading the engine code. Read it with one example pack open: `data/scenarios/city` (Maple City, section 12: every newer feature), `data/scenarios/harbor` (the first example with every goal type) or the `tiny` pack at the end of this page (the smallest one that passes).
 
 **The loop:** write JSON files in `data/scenarios/<pack>/`, then run `npm run check -- <pack>`. The check gives every mistake in plain English with its file. A running server reloads the files by itself; the next mission uses them.
 
@@ -367,7 +367,29 @@ Other types: `typed` (`accepted`: answers, `allowTypos`), `spelling` (`word`), `
 5. For a code gate, check that no clue gives the whole answer and that each clue is a piece players must have (section 3b).
 6. Start the server (`npm start`) and play a mission on the host screen with test players (the lobby's "Open a test player window").
 
-## 12. A full example
+## 12. A full example: Maple City
+
+`data/scenarios/city` is a whole city, written only in JSON: two maps (the centre and Uptown, joined by a bus), three missions, seven items with pictures, four tiles, nine object skins, three cards. Open it next to this page. Where each idea is used:
+
+| Idea | In the city |
+|---|---|
+| Own tiles (section 7) | `pack.json` `tiles`: road (solid), sidewalk, crosswalk and building (art). The start is a park (`,`) so the six `p` look right |
+| Own items (3c) | `pack.json` `items`: bread, milk, ticket, umbrella, flower, wrench, parcel |
+| Skins (3c) | `pack.json` `sprites`, worn by objects with `"skin"`: a traffic light (a `timed-door`), a crossing button (a `lever`), a market shutter, a flat door and a turnstile (all `barrier`), road works (a `gap`), a manhole (a `plate`), a water valve (a `sluice`) |
+| Roads you cross only at the lights (3d) | The avenue is a solid road. Its crosswalk has a `timed-door` (the red light) and a `lever` (the button) |
+| A code from facts (3b) | The market gate: `"requires": [{ "item": "key" }, { "code": { "type": "digits", "length": 2, "answer": "{sum:open,hours}" } }]`. A poster gives `{fact:open}`, a radio gives `{fact:hours}`: the code is the closing time |
+| A logic puzzle (3b) | The flat door: `"answer": "{pos:street.doctor}{pos:street.baker}"`. Four clues for four abilities (Read, Look, Listen, Talk) each show one rule |
+| A word code (3b) | The hotel door in Uptown: `{ "word": "HOTEL" }`, with its letters in three clues |
+| Barriers (3c) | A ticket turnstile (`{ "item": "ticket" }`, kept in the pocket), the market shutter, the flat door, the hotel door |
+| A bus stop (section 8) | An `exit` behind the turnstile; characters that follow come along |
+| Traders (3d) | Mrs Green wants an umbrella and gives a flower; Mr Park wants the flower and gives a wrench |
+| A burst pipe (section 3) | The water valve is a `sluice`: Fix it with the wrench, then Close it to dry the street |
+| Shopping (3d) | Two shops sell bread (2 and 3 coins), one sells milk. 9 coins: the team must buy bread at the market |
+| Missions | `saturday-shopping` (a `shopping` goal), `lost-parcel` (`collect` and `deliver` to the postman), `lost-tourist` (`escort` to a place in Uptown) |
+
+The three design rules still hold, in a city: the locker with the key is behind a crate (so Push, Open and Pick up are all needed), the ditch needs Jump and a plate, and every mission needs something from each pair of abilities. `"strictClues": true` is on, so every clue in the city is a piece of a puzzle that some mission needs. The two `lever` buttons are close to their doors, so a single player can still cross; put a lever far away (and give it a short `seconds`) if the team must split up.
+
+## 13. The smallest pack
 
 The `tiny` pack: one map, one mission, every rule passing. Copy it to start a new pack (change the ids). `test/content.js` checks that this example passes `npm run check`.
 

@@ -1,6 +1,7 @@
 // A lever: a player uses it, and its target (a timed door, a broken bridge or a gate) is open for a few seconds.
 // Put it far from the door: the player at the lever calls "Go!", the others run through. The clock is the mission
 // clock, so it stops when the teacher pauses.
+import { SPEED } from '../world.js';
 const SECONDS = 10;
 const secondsOf = (t) => t.def.seconds || SECONDS;
 const abilityOf = (t) => t.def.by || 'use';
@@ -15,8 +16,10 @@ export default {
     if (o.by) v.ability(o.by, 'by');
   },
   start: () => ({ st: 'x', until: 0 }),
-  // For the solver: the target is open for every player but the one at the lever (he or she pulls it, the others cross).
+  // For the solver: the target is open for every player; the one who pulls the lever can cross too only if the door is near.
   opens: (t) => t.def.target,
+  // A player who pulls it can also cross if the door is near enough to reach before it shuts (a straight line, and a margin).
+  opensSelf: (t, door) => Math.hypot(door.x - t.x, door.y - t.y) * 1.3 <= secondsOf(t) * SPEED,
   opensWith: abilityOf,
   markUsed: (t, s) => (s.owners(abilityOf(t)).some((i) => [-1, 0, 1].some((dy) => [-1, 0, 1].some((dx) => s.regs[i].has(`${t.x + dx},${t.y + dy}`)))) ? [abilityOf(t)] : []),
   force(t) { t.until = 1e9; t.st = 'on'; return 'pulled'; },

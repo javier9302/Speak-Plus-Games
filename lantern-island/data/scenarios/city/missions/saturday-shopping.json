@@ -1,0 +1,26 @@
+{
+  "id": "saturday-shopping",
+  "title": "Saturday shopping",
+  "story": "Mum needs bread and milk for lunch. You have 9 coins. The prices are different in each shop: compare them!",
+  "zone": "city-center",
+  "minutes": 20,
+  "timeLimit": 30,
+  "goal": {
+    "type": "shopping",
+    "list": {
+      "bread": 2,
+      "milk": 1
+    },
+    "coins": 9,
+    "restore": "town-fountain"
+  },
+  "stations": [
+    {
+      "at": "kiosk",
+      "filter": {
+        "type": "choice",
+        "level": "group"
+      }
+    }
+  ]
+}

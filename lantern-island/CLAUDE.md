@@ -4,7 +4,7 @@ Lantern Island is an engine plus scenario packs. Most requests are content ("add
 
 ## Content tasks (packs, maps, missions, cards, themes)
 
-1. Read `docs/SCENARIO_GUIDE.md` (its last section is a complete small pack) and one real pack: `data/scenarios/harbor` (every feature) or `data/scenarios/beach`. Do not read the engine code for content work: the guide has every field, kind, goal type, tile, theme and rule.
+1. Read `docs/SCENARIO_GUIDE.md` (section 12 explains the city pack, the last section is a complete small pack) and one real pack: `data/scenarios/city` (the newest features: codes, logic clues, barriers, timed doors, traders, shops), `data/scenarios/harbor` (every goal type) or `data/scenarios/beach`. Do not read the engine code for content work: the guide has every field, kind, goal type, tile, theme and rule.
 2. Write only files in `data/scenarios/<pack>/` (and `data/themes.json` for a built-in theme). Never change engine code to make content work.
 3. Run `npm run check -- <pack>` and fix every FAIL. It explains each problem in plain English, with the file. Most failures are design rules (every player needed for 2 to 6 players, every obstacle needs two players, the whole map needs all 12 abilities): the guide's section 4 has the recipe.
 4. Run `npm test`. New pack missions change `test/solver-golden.json`: rewrite it with `node test/golden.js --write`, after checking that only the new missions were added.

@@ -42,15 +42,15 @@ const zone = {
     { id: 'letter1', kind: 'item', name: 'Letter', x: 4, y: 9, item: 'letter' },
     { id: 'tom', kind: 'trader', name: 'Old Tom', x: 15, y: 3, wants: 'letter', gives: 'key', says: 'I have a key, but I want a letter. Can you help?' },
     { id: 'lee', kind: 'trader', name: 'Mrs Lee', x: 16, y: 3, wants: 'key', gives: 'plank' },
-    { id: 's1', kind: 'shop', name: 'Bakery', x: 4, y: 2, sells: 'bread', price: 3 },
-    { id: 's2', kind: 'shop', name: 'Market', x: 8, y: 2, sells: 'bread', price: 2 },
-    { id: 's3', kind: 'shop', name: 'Dairy', x: 6, y: 10, sells: 'milk', price: 4 },
+    { id: 's1', kind: 'shop', name: 'Bakery', x: 4, y: 2, sells: 'roll', price: 3 },
+    { id: 's2', kind: 'shop', name: 'Market', x: 8, y: 2, sells: 'roll', price: 2 },
+    { id: 's3', kind: 'shop', name: 'Dairy', x: 6, y: 10, sells: 'juice', price: 4 },
     { id: 't1', kind: 'station', name: 'Tablet', x: 10, y: 10 },
   ],
 };
 const missions = {
   'mt-chain': { goal: { type: 'collect', items: { plank: 1 } } },
-  'mt-shop': { goal: { type: 'shopping', list: { bread: 2, milk: 1 }, coins: 9 } },
+  'mt-shop': { goal: { type: 'shopping', list: { roll: 2, juice: 1 }, coins: 9 } },
 };
 
 async function main() {
@@ -60,7 +60,7 @@ async function main() {
   const pack = path.join(dir, 'scenarios', 'mechtest');
   await fs.mkdir(path.join(pack, 'zones'), { recursive: true });
   await fs.mkdir(path.join(pack, 'missions'), { recursive: true });
-  await fs.writeFile(path.join(pack, 'pack.json'), JSON.stringify({ id: 'mechtest', name: 'Mechanics test', order: 9, items: [food('bread', 'Bread', '#d9b27a'), food('milk', 'Milk', '#ffffff')] }));
+  await fs.writeFile(path.join(pack, 'pack.json'), JSON.stringify({ id: 'mechtest', name: 'Mechanics test', order: 9, items: [food('roll', 'Roll', '#d9b27a'), food('juice', 'Juice', '#ffffff')] }));
   await fs.writeFile(path.join(pack, 'zones', 'mech-field.json'), JSON.stringify(zone));
   for (const [id, m] of Object.entries(missions)) await fs.writeFile(path.join(pack, 'missions', `${id}.json`), JSON.stringify({ id, title: id, zone: 'mech-field', stations: [{ at: 't1' }], ...m }));
 
@@ -88,8 +88,8 @@ async function main() {
   check('nobody with Talk: the traders stay silent', !solve(z, chain, dealPreset(abilities, 3), { without: ['talk'] }).ok);
   check('the log shows the trades', solve(z, chain, dealPreset(abilities, 3)).log.some((l) => l.includes('letter to the old tom')) && solve(z, chain, dealPreset(abilities, 3)).log.some((l) => l.includes('key to the mrs lee')));
   const zs = zoneFor(shop, content.zones);
-  check('shopping can be finished with 2 to 6 players, buying at the cheapest shops', [2, 3, 4, 5, 6].every((n) => solve(zs, shop, dealPreset(abilities, n)).ok) && solve(zs, shop, dealPreset(abilities, 3)).log.filter((l) => l.startsWith('Use: buy bread') && l.includes('market')).length === 2 && !solve(zs, shop, dealPreset(abilities, 3)).log.some((l) => l.includes('bakery')));
-  const poor = norm('mt-shop', { goal: { type: 'shopping', list: { bread: 2, milk: 1 }, coins: 7 } }), poorSolve = solve(zoneFor(poor, content.zones), poor, dealPreset(abilities, 3));
+  check('shopping can be finished with 2 to 6 players, buying at the cheapest shops', [2, 3, 4, 5, 6].every((n) => solve(zs, shop, dealPreset(abilities, n)).ok) && solve(zs, shop, dealPreset(abilities, 3)).log.filter((l) => l.startsWith('Use: buy roll') && l.includes('market')).length === 2 && !solve(zs, shop, dealPreset(abilities, 3)).log.some((l) => l.includes('bakery')));
+  const poor = norm('mt-shop', { goal: { type: 'shopping', list: { roll: 2, juice: 1 }, coins: 7 } }), poorSolve = solve(zoneFor(poor, content.zones), poor, dealPreset(abilities, 3));
   check('too few coins: it cannot be finished, and the report says how many are needed', !poorSolve.ok && poorSolve.problems.some((p) => p.includes('not enough coins') && p.includes('cheapest costs 4')), poorSolve.problems.join(' | '));
   check('the shopping goal needs Talk (the price) and Use (to pay)', !solve(zs, shop, dealPreset(abilities, 3), { without: ['talk'] }).ok && !solve(zs, shop, dealPreset(abilities, 3), { without: ['use'] }).ok);
   check('a list item nobody sells is found', (() => { try { norm('mt-shop', { goal: { type: 'shopping', list: { plank: 1 }, coins: 5 } }); return false; } catch (e) { return e.message.includes('nobody sells "plank"'); } })());
@@ -158,17 +158,17 @@ async function main() {
   const buyer = who('use'), asker = who('talk');
   await tp(asker, 4, 3); await act(asker, 'talk');
   const price = (c) => c.all.filter((x) => x.t === 'clue').at(-1)?.text;
-  check('Talk at the Bakery tells the price and the coins', price(asker) === 'Bread: 3 coins. The team has 9 coins.', price(asker));
+  check('Talk at the Bakery tells the price and the coins', price(asker) === 'Roll: 3 coins. The team has 9 coins.', price(asker));
   await tp(asker, 8, 3); await act(asker, 'talk');
-  check('the Market is cheaper', price(asker) === 'Bread: 2 coins. The team has 9 coins.', price(asker));
+  check('the Market is cheaper', price(asker) === 'Roll: 2 coins. The team has 9 coins.', price(asker));
   await tp(buyer, 6, 9); r.goalState.coins = 3; await act(buyer, 'use');
   check('not enough coins: nothing is bought, and the player is told', !player(buyer).items.length && last(buyer, 'nope', 'msg').includes('costs 4 coins') && last(buyer, 'nope', 'msg').includes('has 3 coins'), last(buyer, 'nope', 'msg'));
   r.goalState.coins = 9;
   await tp(buyer, 8, 3); await act(buyer, 'use'); await act(buyer, 'use');
-  check('two breads at 2 coins leave 5', player(buyer).items.filter((i) => i.item === 'bread').length === 2 && r.goalState.coins === 5);
+  check('two rolls at 2 coins leave 5', player(buyer).items.filter((i) => i.item === 'roll').length === 2 && r.goalState.coins === 5);
   await tp(buyer, 6, 9); await act(buyer, 'use');
   const done = host.last.roster.phase === 'done' ? host.last.roster : await host.next('roster', (x) => x.phase === 'done', 2000).catch(() => null);
-  check('the milk completes the list (1 coin left)', r.goalState.coins === 1 && !!done && done.result?.completed === true, JSON.stringify(done?.result));
+  check('the juice completes the list (1 coin left)', r.goalState.coins === 1 && !!done && done.result?.completed === true, JSON.stringify(done?.result));
 
   await app.close();
   console.log(`\n${passed} passed, ${failed} failed`);

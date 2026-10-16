@@ -1,0 +1,23 @@
+{
+  "id": "lost-tourist",
+  "title": "The lost tourist",
+  "story": "A tourist is lost. Her hotel is in Uptown. Get a bus ticket, take her on the bus, and find her room.",
+  "zone": "city-center",
+  "minutes": 25,
+  "timeLimit": 35,
+  "goal": {
+    "type": "escort",
+    "npc": "tourist",
+    "to": "hotel",
+    "restore": "town-fountain"
+  },
+  "stations": [
+    {
+      "at": "kiosk",
+      "filter": {
+        "type": "choice",
+        "level": "group"
+      }
+    }
+  ]
+}

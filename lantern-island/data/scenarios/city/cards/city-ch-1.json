@@ -1,0 +1,20 @@
+{
+  "id": "city-ch-1",
+  "type": "choice",
+  "level": "A1",
+  "tags": [
+    "city"
+  ],
+  "prompt": "Where do you buy bread?",
+  "options": {
+    "A": "At a bakery",
+    "B": "At a library",
+    "C": "At a bank"
+  },
+  "answer": "A",
+  "hints": [
+    "It smells good!",
+    "It sells cakes too.",
+    "It starts with B."
+  ]
+}

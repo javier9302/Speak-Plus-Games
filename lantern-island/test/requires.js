@@ -126,7 +126,7 @@ async function main() {
   const answer = async (c, o, value) => { await sleep(1300); c.send({ t: 'answer', o, value }); return (await c.next('result', (x) => x.o === o)).msg; };
 
   const world = host.last.world.zone;
-  check('the screens get the pack\'s sprites and the items\' pictures', world.skins['shop-door'].states.open.length === 16 && world.itemArt.find((i) => i.id === 'id-card')?.art.length === 16 && world.itemArt.length === 6 && !!world.art.barrier);
+  check('the screens get the pack\'s sprites and the items\' pictures', world.skins['shop-door'].states.open.length === 16 && world.itemArt.find((i) => i.id === 'id-card')?.art.length === 16 && world.itemArt.length >= 6 && !!world.art.barrier);
   check('and a thing says which skin it wears', host.last.things.list.find((t) => t.id === 'b1').skin === 'shop-door' && host.last.things.list.find((t) => t.id === 'b2').skin === undefined);
 
   // Barrier 1: an item.

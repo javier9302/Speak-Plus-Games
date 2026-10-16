@@ -45,8 +45,8 @@ export default {
         const npc = s.byId[s.mission.goal.deliver];
         if (!npc) return true;
         for (const i of s.owners('talk')) {
-          if (!s.reach(i, npc) || !s.pool.filter((it) => it.item === item).every((it) => it.holder === i || s.has(it.holder, 'give'))) continue;
-          if (s.pool.some((it) => it.item === item && it.holder !== i)) s.used.add('give');
+          if (!s.reach(i, npc) || !s.pool.filter((it) => it.item === item).every((it) => s.closure(it.holder).has(i))) continue;
+          for (const it of s.pool) if (it.item === item && it.holder !== i) { if (s.has(it.holder, 'give')) s.used.add('give'); else if (s.has(i, 'pickup')) s.used.add('pickup'); else { s.used.add('give'); s.used.add('pickup'); } }
           s.used.add('talk'); s.log.push(`Talk: the ${npc.name.toLowerCase()}, with the ${item}s`);
           return true;
         }

@@ -1,0 +1,114 @@
+{
+  "id": "city-uptown",
+  "name": "Uptown",
+  "theme": "sunset",
+  "rowsHelp": "No player starts: players arrive on the bus.",
+  "rows": [
+    "bbbbbbbbbbbbbbbbbbbbbbbb",
+    "bsssssssssbssbsssssssssb",
+    "bsssssssssbssbsssssssssb",
+    "bsssssssssbssbsssssssssb",
+    "bsssssssssbssbbbbsbbbbbb",
+    "bsssssssssbssssssssssssb",
+    "bsssssssssbssssssssssssb",
+    "bssssssssssssssssssssssb",
+    "bsssssssssbssssssssssssb",
+    "bsssssssssbssssssssssssb",
+    "bsssssssssbssssssssssssb",
+    "bsssssssssbssssssssssssb",
+    "bsssssssssbssssssssssssb",
+    "bbbbbbbbbbbbbbbbbbbbbbbb"
+  ],
+  "places": [
+    {
+      "id": "hotel",
+      "name": "the hotel",
+      "x": 17,
+      "y": 2
+    }
+  ],
+  "landmarks": [],
+  "objects": [
+    {
+      "id": "uptown-stop",
+      "kind": "exit",
+      "name": "Bus to the centre",
+      "x": 1,
+      "y": 7,
+      "to": "city-center",
+      "arrive": "bus-stop"
+    },
+    {
+      "id": "uptown-ditch",
+      "kind": "gap",
+      "name": "Road works",
+      "x": 10,
+      "y": 7,
+      "skin": "roadworks"
+    },
+    {
+      "id": "uptown-manhole",
+      "kind": "plate",
+      "name": "Manhole cover",
+      "x": 12,
+      "y": 7,
+      "target": "uptown-ditch",
+      "skin": "manhole"
+    },
+    {
+      "id": "hotel-door",
+      "kind": "barrier",
+      "name": "Hotel door",
+      "x": 17,
+      "y": 4,
+      "skin": "flat-door",
+      "requires": {
+        "word": "HOTEL"
+      }
+    },
+    {
+      "id": "hotel-sign",
+      "kind": "sign",
+      "name": "Station Road sign",
+      "x": 12,
+      "y": 9,
+      "clues": {
+        "read": "STATION ROAD. The hotel door has a word. Letters 1 and 2: {code:hotel-door:1} {code:hotel-door:2}."
+      }
+    },
+    {
+      "id": "postcard-stand",
+      "kind": "statue",
+      "name": "Postcard stand",
+      "x": 15,
+      "y": 9,
+      "clues": {
+        "look": "Postcards with a big word: letters 3 and 4 are {code:hotel-door:3} {code:hotel-door:4}."
+      }
+    },
+    {
+      "id": "tram-bell",
+      "kind": "bell",
+      "name": "Tram bell",
+      "x": 19,
+      "y": 9,
+      "clues": {
+        "listen": "The tram bell rings. A voice says: \"The last letter is {code:hotel-door:5}.\""
+      }
+    },
+    {
+      "id": "city-info",
+      "kind": "station",
+      "name": "City info board",
+      "x": 20,
+      "y": 2,
+      "card": {
+        "type": "typed",
+        "level": "group"
+      },
+      "reward": {
+        "item": "ticket"
+      }
+    }
+  ]
+}

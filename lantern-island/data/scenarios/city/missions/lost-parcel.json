@@ -1,0 +1,25 @@
+{
+  "id": "lost-parcel",
+  "title": "The lost parcel",
+  "story": "A parcel is waiting in a flat on Maple Street. The doctor and the baker know the number. Find the address, open the door and bring the parcel to the postman.",
+  "zone": "city-center",
+  "minutes": 25,
+  "timeLimit": 35,
+  "goal": {
+    "type": "collect",
+    "items": {
+      "parcel": 1
+    },
+    "deliver": "postman",
+    "restore": "city-post-office"
+  },
+  "stations": [
+    {
+      "at": "post-kiosk",
+      "filter": {
+        "type": "typed",
+        "level": "group"
+      }
+    }
+  ]
+}

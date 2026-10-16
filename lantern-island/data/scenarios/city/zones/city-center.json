@@ -1,0 +1,554 @@
+{
+  "id": "city-center",
+  "name": "Maple City",
+  "theme": "day",
+  "rowsHelp": "b building, r road, w crosswalk, s sidewalk, \",\" the park (the six p are the start).",
+  "goal": {
+    "label": "Tickets",
+    "items": {
+      "ticket": 3
+    },
+    "deliver": "bus-driver",
+    "story": "The bus to Uptown is about to leave. Collect bus tickets from the info kiosks and bring them to the bus driver."
+  },
+  "facts": {
+    "open": {
+      "range": [
+        7,
+        9
+      ]
+    },
+    "hours": {
+      "range": [
+        5,
+        9
+      ]
+    }
+  },
+  "logic": {
+    "street": {
+      "positions": [
+        "red",
+        "blue",
+        "green",
+        "yellow"
+      ],
+      "items": [
+        "doctor",
+        "baker",
+        "teacher",
+        "pilot"
+      ],
+      "rules": {
+        "r1": {
+          "if": [
+            "left",
+            "doctor",
+            "teacher"
+          ],
+          "text": "The doctor lives to the left of the teacher."
+        },
+        "r2": {
+          "if": [
+            "not",
+            "baker",
+            "green"
+          ],
+          "text": "The baker does not live in the green house."
+        },
+        "r3": {
+          "if": [
+            "next",
+            "baker",
+            "pilot"
+          ],
+          "text": "The baker lives next to the pilot."
+        },
+        "r4": {
+          "if": [
+            "next",
+            "baker",
+            "blue"
+          ],
+          "text": "The baker lives next to the blue house."
+        }
+      }
+    }
+  },
+  "rows": [
+    "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "bsssssssbsbssssssrrssssssssssbsssssb",
+    "bsssssssbsbssssssrrssssssssssbsssssb",
+    "bbbbsbbbbsbbbsbbbrrssssssssssbbsbbbb",
+    "bsssssssssbssssssrrssssssssssssssssb",
+    "bsssssssssssssssswwssssssssssssssssb",
+    "bsssssssssbssssssrrssssssssssssssssb",
+    "brrrrrrrwrrrrrrrrrrrrrrrrrrrrrrrrrrb",
+    "brrrrrrrwrrrrrrrrrrrrrrrrrrrrrrrrrrb",
+    "bsbsbssssssssssssssssbsbsssssssssssb",
+    "bsbsbssssssssssssssssbsbsssssssssssb",
+    "bT,,,,,,,,sssssssssssssssssssssssbbb",
+    "b,,,,,,,,,sssssssssssssssssssssssssb",
+    "b,,pppppp,sssssssssssssssssssssssbbb",
+    "b,,,,,,,,,sssssssssssssssssssssssssb",
+    "b,,,,,,,,,sssssssssssssssssssssssssb",
+    "bT,,,,,,,Tsssssssssssssssssssssssssb",
+    "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  ],
+  "places": [
+    {
+      "id": "park",
+      "name": "the park",
+      "x": 5,
+      "y": 15
+    },
+    {
+      "id": "avenue",
+      "name": "Central Avenue",
+      "x": 8,
+      "y": 10
+    },
+    {
+      "id": "market",
+      "name": "the market",
+      "x": 3,
+      "y": 4
+    },
+    {
+      "id": "maple",
+      "name": "Maple Street",
+      "x": 14,
+      "y": 7
+    },
+    {
+      "id": "bus-stop",
+      "name": "the bus stop",
+      "x": 33,
+      "y": 14
+    }
+  ],
+  "landmarks": [
+    {
+      "id": "town-fountain",
+      "name": "the town fountain",
+      "art": "fountain",
+      "x": 25,
+      "y": 15,
+      "w": 1,
+      "h": 1,
+      "solid": true
+    },
+    {
+      "id": "city-post-office",
+      "name": "the post office",
+      "art": "post-office",
+      "x": 28,
+      "y": 18,
+      "w": 1,
+      "h": 1,
+      "solid": true
+    }
+  ],
+  "objects": [
+    {
+      "id": "locker",
+      "kind": "chest",
+      "name": "Locker",
+      "x": 3,
+      "y": 11,
+      "holds": "key"
+    },
+    {
+      "id": "crate",
+      "kind": "boulder",
+      "name": "Delivery crate",
+      "x": 3,
+      "y": 12,
+      "to": {
+        "x": 4,
+        "y": 13
+      },
+      "skin": "delivery-crate",
+      "clues": {
+        "look": "A big delivery crate. There is something behind it."
+      },
+      "extra": [
+        "look"
+      ]
+    },
+    {
+      "id": "light-avenue",
+      "kind": "timed-door",
+      "name": "Traffic light",
+      "x": 8,
+      "y": 10,
+      "skin": "traffic-light"
+    },
+    {
+      "id": "button-avenue",
+      "kind": "lever",
+      "name": "Crossing button",
+      "x": 14,
+      "y": 14,
+      "target": "light-avenue",
+      "seconds": 10,
+      "skin": "pedestrian-button"
+    },
+    {
+      "id": "dairy",
+      "kind": "shop",
+      "name": "Dairy",
+      "x": 13,
+      "y": 18,
+      "sells": "milk",
+      "price": 4
+    },
+    {
+      "id": "bakery",
+      "kind": "shop",
+      "name": "Bakery",
+      "x": 17,
+      "y": 18,
+      "sells": "bread",
+      "price": 3
+    },
+    {
+      "id": "office-door",
+      "kind": "gate",
+      "name": "Ticket office door",
+      "x": 22,
+      "y": 12,
+      "locked": true,
+      "key": "key"
+    },
+    {
+      "id": "kiosk",
+      "kind": "station",
+      "name": "Info kiosk",
+      "x": 22,
+      "y": 11,
+      "card": {
+        "type": "choice",
+        "level": "group"
+      },
+      "reward": {
+        "item": "ticket"
+      }
+    },
+    {
+      "id": "mrs-lee",
+      "kind": "npc",
+      "name": "Mrs Lee",
+      "x": 20,
+      "y": 14,
+      "clues": {
+        "talk": "\"Hello! I am Mrs Lee. {rule:street.r4}\""
+      },
+      "lines": [
+        "Good morning! Can I help you?",
+        "Please, speak slowly.",
+        "Thank you! Have a nice day."
+      ]
+    },
+    {
+      "id": "postman",
+      "kind": "npc",
+      "name": "Postman",
+      "x": 27,
+      "y": 12,
+      "clues": {
+        "talk": "\"Good morning! Is there a parcel for me? Please bring it here.\""
+      },
+      "extra": [
+        "talk"
+      ],
+      "lines": [
+        "Good morning! Is that my parcel?",
+        "Thank you very much!"
+      ]
+    },
+    {
+      "id": "tourist",
+      "kind": "npc",
+      "name": "Lost tourist",
+      "x": 29,
+      "y": 15,
+      "clues": {
+        "talk": "\"I am lost! My hotel is in Uptown. Can you take me there, please?\""
+      },
+      "extra": [
+        "talk"
+      ],
+      "lines": [
+        "Excuse me, where is the bus stop?",
+        "Is it far?",
+        "Thank you very much!"
+      ]
+    },
+    {
+      "id": "bus-gate",
+      "kind": "barrier",
+      "name": "Bus gate",
+      "x": 33,
+      "y": 14,
+      "skin": "turnstile",
+      "requires": {
+        "item": "ticket"
+      }
+    },
+    {
+      "id": "bus-stop",
+      "kind": "exit",
+      "name": "Bus to Uptown",
+      "x": 34,
+      "y": 14,
+      "to": "city-uptown",
+      "arrive": "uptown-stop"
+    },
+    {
+      "id": "market-gate",
+      "kind": "barrier",
+      "name": "Market gate",
+      "x": 4,
+      "y": 5,
+      "skin": "market-shutter",
+      "requires": [
+        {
+          "item": "key"
+        },
+        {
+          "code": {
+            "type": "digits",
+            "length": 2,
+            "answer": "{sum:open,hours}"
+          }
+        }
+      ]
+    },
+    {
+      "id": "market",
+      "kind": "shop",
+      "name": "Market stall",
+      "x": 3,
+      "y": 3,
+      "sells": "bread",
+      "price": 2
+    },
+    {
+      "id": "market-sign",
+      "kind": "sign",
+      "name": "Market sign",
+      "x": 2,
+      "y": 7,
+      "clues": {
+        "read": "MARKET GATE. The code is the time when the market closes. Use the 24-hour clock."
+      },
+      "extra": [
+        "read"
+      ]
+    },
+    {
+      "id": "market-poster",
+      "kind": "statue",
+      "name": "Market poster",
+      "x": 7,
+      "y": 8,
+      "clues": {
+        "look": "A poster. It says: \"The market opens at {fact:open} o'clock.\""
+      }
+    },
+    {
+      "id": "market-radio",
+      "kind": "bell",
+      "name": "Old radio",
+      "x": 1,
+      "y": 8,
+      "clues": {
+        "listen": "The radio says: \"The market is open for {fact:hours} hours.\""
+      }
+    },
+    {
+      "id": "ditch",
+      "kind": "gap",
+      "name": "Road works",
+      "x": 10,
+      "y": 7,
+      "skin": "roadworks"
+    },
+    {
+      "id": "manhole",
+      "kind": "plate",
+      "name": "Manhole cover",
+      "x": 12,
+      "y": 7,
+      "target": "ditch",
+      "skin": "manhole"
+    },
+    {
+      "id": "maple-sign",
+      "kind": "sign",
+      "name": "Street sign",
+      "x": 12,
+      "y": 6,
+      "clues": {
+        "read": "MAPLE STREET. Tom says: {rule:street.r1}"
+      }
+    },
+    {
+      "id": "church-bell",
+      "kind": "bell",
+      "name": "Church bell",
+      "x": 14,
+      "y": 6,
+      "clues": {
+        "listen": "A voice in the bell says: \"{rule:street.r3}\""
+      }
+    },
+    {
+      "id": "mayor-statue",
+      "kind": "statue",
+      "name": "Statue of the Mayor",
+      "x": 15,
+      "y": 8,
+      "clues": {
+        "look": "On the statue there is a note: \"{rule:street.r2}\""
+      }
+    },
+    {
+      "id": "light-maple",
+      "kind": "timed-door",
+      "name": "Traffic light",
+      "x": 17,
+      "y": 7,
+      "skin": "traffic-light"
+    },
+    {
+      "id": "button-maple",
+      "kind": "lever",
+      "name": "Crossing button",
+      "x": 13,
+      "y": 8,
+      "target": "light-maple",
+      "seconds": 10,
+      "skin": "pedestrian-button"
+    },
+    {
+      "id": "flat-door",
+      "kind": "barrier",
+      "name": "Flat door",
+      "x": 13,
+      "y": 5,
+      "skin": "flat-door",
+      "requires": {
+        "code": {
+          "type": "digits",
+          "length": 2,
+          "answer": "{pos:street.doctor}{pos:street.baker}"
+        }
+      }
+    },
+    {
+      "id": "parcel",
+      "kind": "item",
+      "name": "Parcel",
+      "x": 12,
+      "y": 3,
+      "item": "parcel"
+    },
+    {
+      "id": "post-kiosk",
+      "kind": "station",
+      "name": "Post kiosk",
+      "x": 15,
+      "y": 3,
+      "card": {
+        "type": "typed",
+        "level": "group"
+      },
+      "reward": {
+        "item": "ticket"
+      }
+    },
+    {
+      "id": "umbrella",
+      "kind": "item",
+      "name": "Umbrella",
+      "x": 20,
+      "y": 8,
+      "item": "umbrella"
+    },
+    {
+      "id": "mrs-green",
+      "kind": "trader",
+      "name": "Mrs Green",
+      "x": 21,
+      "y": 3,
+      "wants": "umbrella",
+      "gives": "flower",
+      "says": "It is raining and my flowers are wet! Do you have an umbrella, please?",
+      "thanks": "Thank you! Take a flower for your trouble."
+    },
+    {
+      "id": "mr-park",
+      "kind": "trader",
+      "name": "Mr Park",
+      "x": 23,
+      "y": 3,
+      "wants": "flower",
+      "gives": "wrench",
+      "says": "Today is my wife's birthday. I would like a flower for her. Can you help me?",
+      "thanks": "She will love it! Here, take my wrench."
+    },
+    {
+      "id": "valve",
+      "kind": "sluice",
+      "name": "Water valve",
+      "x": 27,
+      "y": 6,
+      "needs": "wrench",
+      "floods": [
+        {
+          "x": 31,
+          "y": 5
+        }
+      ],
+      "skin": "water-valve"
+    },
+    {
+      "id": "fountain-kiosk",
+      "kind": "station",
+      "name": "Fountain kiosk",
+      "x": 31,
+      "y": 3,
+      "card": {
+        "type": "spelling",
+        "level": "group"
+      },
+      "reward": {
+        "item": "ticket"
+      }
+    },
+    {
+      "id": "bus-driver",
+      "kind": "npc",
+      "name": "Bus driver",
+      "x": 26,
+      "y": 8,
+      "clues": {
+        "talk": "\"Good morning! I need tickets for the next bus. Please bring them all, from one pair of hands.\""
+      },
+      "extra": [
+        "talk"
+      ],
+      "lines": [
+        "Where do you want to go?",
+        "The bus leaves soon!",
+        "Thank you!"
+      ]
+    }
+  ]
+}
