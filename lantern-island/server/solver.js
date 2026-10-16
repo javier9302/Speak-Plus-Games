@@ -90,7 +90,7 @@ export function solve(zone, mission, sets, { without = [], explore = false, skip
   const codeKnown = (t) => {
     const found = new Set();
     for (const c of things) for (const [a, text] of Object.entries(c.def.clues || {})) if (clues.has(`${c.id}:${a}`)) for (const k of clueTokens(text)) found.add(k);
-    return isKnown(t.def, t.id, found);
+    return isKnown(t.def, t.id, found, zone.logic);
   };
 
   // Where something with no abilities can walk from `tiles` (a character that follows a player): it cannot

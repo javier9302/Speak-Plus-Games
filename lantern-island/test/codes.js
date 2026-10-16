@@ -11,6 +11,7 @@ import { normalizeMission, zoneFor } from '../server/missions.js';
 import { solve } from '../server/solver.js';
 import { runCheck } from '../server/check.js';
 import { zoneProblems } from '../server/validate.js';
+import { arrangements, solution, logicProblems, answerProblems } from '../server/logic.js';
 import { codeSpec, codeProblems, factProblems, evalFormula, judge, makeSecrets, clueTokens, needTokens, isKnown, partOf } from '../server/codes.js';
 import { client } from './client.js';
 
@@ -26,7 +27,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const rows = Array.from({ length: 13 }, (_, y) => (y === 0 || y === 12 ? '~'.repeat(26) : `~${','.repeat(24)}~`)).map((r, y) => {
   if (y === 0 || y === 12) return r;
   const a = [...r];
-  for (const x of [14, 17, 20]) if (y !== 6) a[x] = '~';
+  for (const x of [14, 17, 20, 23]) if (y !== 6) a[x] = '~';
   if (y === 6) a.splice(3, 6, ...'pppppp');
   return a.join('');
 });
@@ -35,6 +36,15 @@ const zone = {
   goal: { type: 'restore', story: 'Fix the lamp behind the three gates.' },
   places: [], landmarks: [],
   facts: { a: { range: [5, 9] }, b: { pick: [5, 6, 7] } },
+  logic: { street: {
+    positions: ['red', 'blue', 'green', 'yellow'], items: ['doctor', 'baker', 'teacher', 'pilot'],
+    rules: {
+      r1: { if: ['left', 'doctor', 'teacher'], text: 'The doctor lives to the left of the teacher.' },
+      r2: { if: ['not', 'baker', 'green'], text: 'The baker does not live in the green house.' },
+      r3: { if: ['next', 'baker', 'pilot'], text: 'The baker lives next to the pilot.' },
+      r4: { if: ['next', 'baker', 'blue'], text: 'The baker lives next to the blue house.' },
+    },
+  } },
   objects: [
     { id: 'gate1', kind: 'gate', name: 'Sum gate', x: 14, y: 6, locked: true, code: { type: 'digits', length: 2, answer: '{sum:a,b}' } },
     { id: 'gate2', kind: 'gate', name: 'Word gate', x: 17, y: 6, locked: true, code: { type: 'word', words: ['MOON', 'STAR'] } },
@@ -46,8 +56,13 @@ const zone = {
     { id: 's5', kind: 'bottle', name: 'Green bottle', x: 16, y: 3, clues: { look: 'Letters 3 and 4: {code:gate2:3} {code:gate2:4}.' } },
     { id: 's6', kind: 'sign', name: 'Gate sign', x: 18, y: 3, clues: { read: 'First picture: {code:gate3:1}.' } },
     { id: 's7', kind: 'bell', name: 'Small bell', x: 19, y: 3, clues: { listen: 'Second picture: {code:gate3:2}.', look: 'Third picture: {code:gate3:3}.' } },
-    { id: 'lamp', kind: 'machine', name: 'Lamp', x: 23, y: 6 },
-    { id: 't1', kind: 'station', name: 'Tablet', x: 22, y: 9 },
+    { id: 'gate4', kind: 'gate', name: 'House gate', x: 23, y: 6, locked: true, code: { type: 'digits', length: 2, answer: '{pos:street.doctor}{pos:street.baker}' } },
+    { id: 's8', kind: 'sign', name: 'Town sign', x: 21, y: 2, clues: { read: 'Tom says: {rule:street.r1}' } },
+    { id: 's9', kind: 'bottle', name: 'Blue bottle', x: 21, y: 3, clues: { look: 'A note: {rule:street.r2}' } },
+    { id: 's10', kind: 'shell', name: 'Pink shell', x: 21, y: 4, clues: { listen: 'A voice says: {rule:street.r3}' } },
+    { id: 's11', kind: 'statue', name: 'Stone man', x: 21, y: 5, clues: { read: 'On the stone: {rule:street.r4}' } },
+    { id: 'lamp', kind: 'machine', name: 'Lamp', x: 24, y: 6 },
+    { id: 't1', kind: 'station', name: 'Tablet', x: 24, y: 9 },
   ],
 };
 const mission = { id: 'cf-all', title: 'All gates', zone: 'code-field', stations: [{ at: 't1' }], goal: { type: 'restore', machines: ['lamp'] } };
@@ -72,6 +87,22 @@ async function main() {
   const tokens = clueTokens('{fact:a} and {code:gate2:3} and {d2} and {code:gate9}');
   check('clue tokens', tokens.has('fact:a') && tokens.has('code:gate2:3') && tokens.has('d:2') && tokens.has('code:gate9:*'));
   check('a gate is known when every piece was found, or all of it', !isKnown({ code: { type: 'symbols', length: 2 } }, 'g', new Set(['code:g:1'])) && isKnown({ code: { type: 'symbols', length: 2 } }, 'g', new Set(['code:g:1', 'code:g:2'])) && isKnown({ code: { type: 'symbols', length: 2 } }, 'g', new Set(['code:g:*'])) && needTokens({ code: { length: 2, answer: '{sum:a,b}' } }, 'g').join() === 'fact:a,fact:b');
+
+  console.log('\nLogic puzzles');
+  const street = zone.logic.street;
+  check('four rules leave one arrangement: the doctor in 3, the baker in 1', arrangements(street).length === 1 && solution(street).doctor === 3 && solution(street).baker === 1);
+  check('the rules are a valid puzzle, and the code asks the right question', logicProblems('street', street).length === 0 && answerProblems('street', street, ['doctor', 'baker']).length === 0);
+  const fewer = (id) => ({ ...street, rules: Object.fromEntries(Object.entries(street.rules).filter(([k]) => k !== id)) });
+  check('without any one rule there is more than one answer', ['r1', 'r2', 'r3', 'r4'].every((id) => arrangements(fewer(id)).length > 1));
+  const extra = { ...street, rules: { ...street.rules, r5: { if: ['at', 'teacher', 4], text: 'The teacher lives in house 4.' } } };
+  check('a rule that is not needed is found', answerProblems('street', extra, ['doctor', 'baker']).some((p) => p.includes('"r5"') && p.includes('not needed')), answerProblems('street', extra, ['doctor', 'baker']).join(' | '));
+  check('a puzzle that is too open is found', answerProblems('street', fewer('r4'), ['doctor', 'baker'])[0]?.includes('possible answers'));
+  check('contradicting rules and bad rules are explained', logicProblems('s', { ...street, rules: { a: { if: ['at', 'doctor', 1], text: 'x' }, b: { if: ['at', 'doctor', 2], text: 'y' } } })[0]?.includes('contradict')
+    && logicProblems('s', { ...street, rules: { a: { if: ['at', 'cat', 1], text: 'x' }, b: { if: ['at', 'doctor', 2], text: 'y' } } })[0]?.includes('"cat"')
+    && logicProblems('s', { ...street, rules: { a: { if: ['at', 'red', 1], text: 'x' }, b: { if: ['at', 'doctor', 2], text: 'y' } } })[0]?.includes('one of a and b must be an item')
+    && logicProblems('s', { positions: ['a', 'b'], items: ['x', 'y'], rules: {} })[0]?.includes('3 to 5'));
+  check('the secrets hold the arrangement, so the code is "31"', makeSecrets({ facts: {}, logic: zone.logic, objects: zone.objects }, '123456').answers.gate4 === '31');
+  check('an answer asking about a puzzle that does not exist is found', codeProblems({ length: 2, answer: '{pos:nope.doctor}{pos:nope.baker}' }, {}, zone.logic)[0]?.includes('does not define'));
 
   console.log('\nThe map file');
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'lantern-codes-'));
@@ -98,7 +129,7 @@ async function main() {
   const m = normalizeMission(content.missions.find((x) => x.id === 'cf-all'), content.zones, items), z = zoneFor(m, content.zones);
   const four = dealPreset(abilities, 4);
   check('the mission can be finished with 2 to 6 players', [2, 3, 4, 5, 6].every((n) => solve(z, m, dealPreset(abilities, n)).ok));
-  const need = ['s1:read', 's2:look', 's4:read', 's5:look', 's6:read', 's7:listen', 's7:look'];
+  const need = ['s1:read', 's2:look', 's4:read', 's5:look', 's6:read', 's7:listen', 's7:look', 's8:read', 's9:look', 's10:listen', 's11:read'];
   check('without any one of these clues it cannot', need.every((k) => !solve(z, m, four, { skipClues: new Set([k]) }).ok), need.filter((k) => solve(z, m, four, { skipClues: new Set([k]) }).ok).join());
   check('the shell (flavour) is not needed', solve(z, m, four, { skipClues: new Set(['s3:listen']) }).ok);
   const checked = await runCheck(dir, dir, 'codetest');
@@ -143,8 +174,8 @@ async function main() {
   check('a clue shows the fact of this mission', clueText(reader) === `The red house is number ${r.secrets.facts.a}.`, clueText(reader));
   await tp(reader, 15, 4); await act(reader, 'read');
   check('a clue shows pieces of the word', clueText(reader) === `Letters 1 and 2: ${answers.gate2[0]} ${answers.gate2[1]}.`, clueText(reader));
-  check('the teacher sees every answer, the big screen none', teacher.last.queue.codes.length === 3 && teacher.last.queue.codes.find((c) => c.o === 'gate1').answer === answers.gate1
-    && !JSON.stringify(host.all).includes(answers.gate2) && !JSON.stringify(host.all).includes(answers.gate1 + '"'));
+  check('the teacher sees every answer, the big screen none', teacher.last.queue.codes.length === 4 && teacher.last.queue.codes.find((c) => c.o === 'gate1').answer === answers.gate1
+    && !JSON.stringify(host.all).includes(answers.gate2) && host.all.every((m) => !['queue', 'keypad', 'clue'].includes(m.t)));
 
   // The sum gate: a wrong code twice turns the lock red, and a right code is not taken while it is red.
   const user = who('use');
@@ -175,6 +206,17 @@ async function main() {
   const other = ['sun', 'moon', 'star', 'fish'].filter((s) => s !== answers.gate3[0])[0];
   check('a wrong picture is refused', (await answer(user, 'gate3', [other, ...answers.gate3.slice(1)].join(','))).includes('not the code'));
   check('the right pictures open it', (await answer(user, 'gate3', answers.gate3.join(','))).includes('Unlocked'));
+
+  await tp(who('open'), 19, 6); await act(who('open'), 'open');
+
+  // The house gate: the code comes from a logic puzzle; each clue shows one rule.
+  await tp(reader, 22, 5); await act(reader, 'read');
+  check('a clue shows the sentence of its rule', clueText(reader).startsWith('Tom says: The doctor lives to the left of the teacher.') || clueText(reader).startsWith('On the stone: The baker lives next to the blue house.'), clueText(reader));
+  await tp(user, 22, 6); await act(user, 'use');
+  const hpad = keypad(user, 'gate4');
+  check('the house gate asks for 2 digits', hpad.kind === 'digits' && hpad.length === 2);
+  check('the wrong order of the right houses is refused', (await answer(user, 'gate4', '13')).includes('not the code'));
+  check('house 3 for the doctor, house 1 for the baker opens it', (await answer(user, 'gate4', '31')).includes('Unlocked') && thing('gate4').st === 'closed');
 
   await app.close();
   console.log(`\n${passed} passed, ${failed} failed`);

@@ -10,11 +10,13 @@
 //
 // "facts" on the map: { "house": { "range": [1, 9] }, "birds": { "pick": [2, 4, 6] } }. Each mission draws one value
 // for each. Clues give them as {fact:house}; a code's "answer" is a formula over them: {fact:x}, {sum:a,b},
-// {diff:a,b} (a minus b), {times:a,b}, with other characters kept as they are.
+// {diff:a,b} (a minus b), {times:a,b}, with other characters kept as they are. {pos:<puzzle>.<item>} is the house
+// number of an item in a logic puzzle (logic.js), so a code can ask "which house has the doctor?".
 //
-// In clues: {code:<gate id>:<n>} is the n-th digit, letter or picture name of that gate's answer, {code:<gate id>}
+// In clues: {rule:<puzzle>.<rule>} is the sentence of a logic rule. {code:<gate id>:<n>} is the n-th digit, letter or picture name of that gate's answer, {code:<gate id>}
 // all of it, {fact:<id>} a fact. The solver and the checker use tokens (see clueTokens) to know what a clue gives.
 import crypto from 'node:crypto';
+import { solution, domainOf, answerProblems } from './logic.js';
 
 export const SYMBOLS = [
   { id: 'sun', icon: '☀️' }, { id: 'moon', icon: '🌙' }, { id: 'star', icon: '⭐' }, { id: 'fish', icon: '🐟' },
@@ -22,7 +24,7 @@ export const SYMBOLS = [
 ];
 export const TYPES = ['digits', 'word', 'symbols'];
 export const DEFAULT_TRIES = 2, DEFAULT_LOCK = 45;
-const FORMULA = /\{(fact|sum|diff|times):([a-z0-9,-]+)\}/g;
+const FORMULA = /\{(fact|sum|diff|times|pos):([a-z0-9,.-]+)\}/g;
 const CODE_FIELDS = ['type', 'length', 'answer', 'word', 'words', 'tries', 'lock'];
 const FACT_ID = /^[a-z0-9][a-z0-9-]{0,31}$/;
 
@@ -50,11 +52,17 @@ export function evalFormula(formula, values) {
   const out = String(formula).replace(FORMULA, (m, op, args) => {
     const n = args.split(',').map((f) => values[f]);
     if (n.some((x) => !Number.isInteger(x))) { bad = true; return ''; }
-    const r = op === 'fact' ? n[0] : op === 'sum' ? n.reduce((a, b) => a + b, 0) : op === 'diff' ? n.reduce((a, b) => a - b) : n.reduce((a, b) => a * b, 1);
+    const r = op === 'fact' || op === 'pos' ? n[0] : op === 'sum' ? n.reduce((a, b) => a + b, 0) : op === 'diff' ? n.reduce((a, b) => a - b) : n.reduce((a, b) => a * b, 1);
     if (r < 0) bad = true;
     return String(r);
   });
   return bad ? null : out;
+}
+// Every value a name in a formula can take: a fact's values, or the house numbers an item can have.
+function domains(facts, logic) {
+  const d = Object.fromEntries(Object.entries(facts || {}).filter(([k]) => !k.endsWith('Help')).map(([k, f]) => [k, factValues(f)]));
+  for (const [pid, p] of Object.entries(logic || {})) if (!pid.endsWith('Help')) for (const item of p.items || []) d[`${pid}.${item}`] = domainOf(p, item);
+  return d;
 }
 const factValues = (f) => (Array.isArray(f?.pick) ? f.pick : f?.range ? Array.from({ length: f.range[1] - f.range[0] + 1 }, (_, i) => f.range[0] + i) : []);
 
@@ -74,7 +82,7 @@ export function factProblems(facts) {
 }
 
 // Everything wrong with one code. `facts`: the map's facts, or null to skip the checks that need them.
-export function codeProblems(code, facts = null) {
+export function codeProblems(code, facts = null, logic = {}) {
   if (typeof code === 'number' || code === undefined) return code === undefined || (Number.isInteger(code) && code >= 2 && code <= 6) ? [] : ['"code" is the number of digits, 2 to 6'];
   if (!code || typeof code !== 'object' || Array.isArray(code)) return ['"code" is a number of digits (2 to 6) or { "type": "digits" | "word" | "symbols", ... }'];
   const out = [];
@@ -97,11 +105,11 @@ export function codeProblems(code, facts = null) {
     const formula = String(code.answer), used = factsIn(formula);
     if (!used.length) out.push('"answer" must use at least one fact, for example "{sum:house,birds}"');
     else if (facts) {
-      const missing = used.filter((f) => !facts[f]);
-      if (missing.length) out.push(`"answer" uses the fact "${missing[0]}", which this map does not define (map field "facts")`);
+      const dom = domains(facts, logic), missing = used.filter((f) => !dom[f]);
+      if (missing.length) out.push(`"answer" uses "${missing[0]}", which this map does not define (map fields "facts" and "logic")`);
       else if (Number.isInteger(code.length)) {
         // Every value the facts can take must give an answer of the right length.
-        const names = [...new Set(used)], lists = names.map((n) => factValues(facts[n]));
+        const names = [...new Set(used)], lists = names.map((n) => dom[n]);
         let total = 1; for (const l of lists) total *= l.length;
         for (let i = 0; i < Math.min(total, 5000); i++) {
           const values = {}; let rest = i;
@@ -110,6 +118,10 @@ export function codeProblems(code, facts = null) {
           if (v === null || !/^\d+$/.test(v) || v.length !== code.length) { out.push(`"answer" ${formula} gives ${v === null ? 'a negative number' : `"${v}"`} when ${names.map((n) => `${n} is ${values[n]}`).join(' and ')}; it must always be ${code.length} digits`); break; }
         }
       }
+      // Asked about these items, each puzzle must leave one answer, and every one of its rules must be needed for it.
+      const asked = {};
+      if (!missing.length) for (const f of used.filter((x) => x.includes('.'))) { const [pid, item] = f.split('.'); (asked[pid] ||= new Set()).add(item); }
+      for (const [pid, items] of Object.entries(asked)) out.push(...answerProblems(pid, logic[pid], [...items]));
     }
   }
   return out;
@@ -121,14 +133,18 @@ const pick = (list) => list[crypto.randomInt(list.length)];
 export function makeSecrets(zone, legacy = '') {
   const facts = {};
   for (const [id, f] of Object.entries(zone.facts || {})) if (!id.endsWith('Help')) facts[id] = pick(factValues(f));
-  const answers = {};
+  const answers = {}, values = { ...facts };
+  for (const [pid, p] of Object.entries(zone.logic || {})) {
+    const sol = pid.endsWith('Help') ? null : solution(p);
+    for (const [item, house] of Object.entries(sol || {})) values[`${pid}.${item}`] = house;
+  }
   for (const o of zone.objects) {
     const spec = specOf(o);
     if (!spec) continue;
     if (spec.legacy) answers[o.id] = legacy.slice(0, spec.length);
     else if (spec.type === 'word') answers[o.id] = pick(spec.words);
     else if (spec.type === 'symbols') answers[o.id] = Array.from({ length: spec.length }, () => pick(SYMBOLS).id);
-    else answers[o.id] = spec.answer !== undefined ? evalFormula(spec.answer, facts) ?? '' : Array.from({ length: spec.length }, () => String(crypto.randomInt(10))).join('');
+    else answers[o.id] = spec.answer !== undefined ? evalFormula(spec.answer, values) ?? '' : Array.from({ length: spec.length }, () => String(crypto.randomInt(10))).join('');
   }
   return { facts, answers };
 }
@@ -153,26 +169,34 @@ export function judge(spec, answer, value) {
 }
 
 // ---- What a clue gives, for the solver and the checker ----
-const PLACEHOLDER = /\{(d\d|fact:[a-z0-9-]+|code:[a-z0-9-]+(?::\d)?)\}/g;
+const PLACEHOLDER = /\{(d\d|fact:[a-z0-9-]+|rule:[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*|code:[a-z0-9-]+(?::\d)?)\}/g;
 // The tokens a clue's text hands out: "d:1" (old digit), "fact:house", "code:gate:2", "code:gate:*" (all of it).
 export function clueTokens(text) {
   const out = new Set();
   for (const [, ph] of String(text).matchAll(PLACEHOLDER)) {
     const parts = ph.split(':');
     if (parts[0].startsWith('d') && parts.length === 1) out.add(`d:${ph.slice(1)}`);
-    else if (parts[0] === 'fact') out.add(`fact:${parts[1]}`);
+    else if (parts[0] === 'fact' || parts[0] === 'rule') out.add(`${parts[0]}:${parts[1]}`);
     else out.add(`code:${parts[1]}:${parts[2] ?? '*'}`);
   }
   return out;
 }
 // The tokens a gate needs, all of them, to be opened by knowing its answer.
-export function needTokens(def, id) {
+export function needTokens(def, id, logic = {}) {
   const spec = specOf(def);
   if (!spec) return [];
   if (spec.legacy) return Array.from({ length: spec.length }, (_, i) => `d:${i + 1}`);
-  if (spec.answer !== undefined) return [...new Set(factsIn(spec.answer))].map((f) => `fact:${f}`);
+  if (spec.answer !== undefined) {
+    // A fact is one clue; a logic puzzle needs every one of its rules.
+    const out = new Set();
+    for (const f of factsIn(spec.answer)) {
+      if (f.includes('.')) for (const r of Object.keys(logic[f.split('.')[0]]?.rules || {})) out.add(`rule:${f.split('.')[0]}.${r}`);
+      else out.add(`fact:${f}`);
+    }
+    return [...out];
+  }
   return Array.from({ length: spec.length }, (_, i) => `code:${id}:${i + 1}`);
 }
 // True if the found tokens are enough for this gate.
 // A clue that gives the whole answer ({code:<id>}) is always enough.
-export const isKnown = (def, id, found) => found.has(`code:${id}:*`) || needTokens(def, id).every((t) => found.has(t));
+export const isKnown = (def, id, found, logic = {}) => found.has(`code:${id}:*`) || needTokens(def, id, logic).every((t) => found.has(t));

@@ -17,6 +17,7 @@ export function createSheets({ zones, abilities, items, missions, rooms }) {
   const before = (text, zone) => text.replace(/\{d(\d)\}/g, (m, n) => `(number ${n} of the code)`)
     .replace(/\{code:([^:}]*):(\d)\}/g, (m, id, n) => `(piece ${n} of the code of the ${(zone.objects.find((o) => o.id === id)?.name || id).toLowerCase()})`)
     .replace(/\{code:([^:}]*)\}/g, (m, id) => `(the whole code of the ${(zone.objects.find((o) => o.id === id)?.name || id).toLowerCase()})`)
+    .replace(/\{rule:([^.}]*)\.([^}]*)\}/g, (m, p, r) => zone.logic?.[p]?.rules?.[r]?.text ?? '?')
     .replace(/\{fact:([^}]*)\}/g, (m, id) => `(the number "${id}", new every mission)`)
     .replace(/\{where:([^}]*)\}/g, (m, id) => `(near where the ${(zone.objects.find((o) => o.id === id)?.name || id).toLowerCase()} is)`)
     .replace(/\{name:([^}]*)\}/g, (m, id) => zone.objects.find((o) => o.id === id)?.name || id)

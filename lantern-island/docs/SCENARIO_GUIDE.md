@@ -43,6 +43,7 @@ Ids: small letters, numbers and dashes. A file's name is its `id`. Map, mission,
 | `theme` | how it looks (section 7) |
 | `slots`, `shuffle` | what changes from run to run (section 6) |
 | `facts` | numbers drawn anew every mission, for codes that clues must combine (section 3b) |
+| `logic` | logic puzzles: houses, people, and rules that clues show (section 3b) |
 | `legend`, `...Help` | notes for authors; ignored |
 
 x and y count tiles from the top left, starting at 0. Base tiles:
@@ -111,10 +112,36 @@ A gate's `code` is a number (the old way: 2 to 6 digits, `{d1}`... in clues) or 
 | `{code:<gate id>:<n>}` | the n-th digit, letter or picture name of that gate's answer (counting from 1) |
 | `{code:<gate id>}` | all of it (a clue that gives everything: use it for easy gates) |
 | `{fact:<id>}` | the value of a fact |
+| `{rule:<puzzle>.<rule>}` | the sentence of a rule of a logic puzzle |
 
 Every piece must be in some clue (`npm run check` says which is missing). Spread the pieces over different abilities, so players must put them together.
 
 **Facts and formulas.** On the map: `"facts": { "house": { "range": [5, 9] }, "birds": { "pick": [3, 5, 7] } }`. Each mission draws one value for each. A clue says "The red house is number {fact:house}." Another says "There are {fact:birds} birds on the sign." The code `"answer": "{sum:house,birds}"` is their sum. Formulas: `{fact:x}`, `{sum:a,b}`, `{diff:a,b}` (a minus b), `{times:a,b}`; other characters stay as written, so `"{fact:house}{fact:birds}"` joins the two numbers. The check makes sure the answer always has the right number of digits, whatever the facts are. A formula is only for `answer`, never in a clue: no single clue may give the answer.
+
+**Logic puzzles.** "The doctor is not in the blue house. The baker is next to the blue house..." No clue gives the answer; only all of them together do. On the map:
+
+```json
+"logic": { "street": {
+  "positions": ["red", "blue", "green", "yellow"],
+  "items": ["doctor", "baker", "teacher", "pilot"],
+  "rules": {
+    "r1": { "if": ["left", "doctor", "teacher"], "text": "The doctor lives to the left of the teacher." },
+    "r2": { "if": ["not", "baker", "green"], "text": "The baker does not live in the green house." },
+    "r3": { "if": ["next", "baker", "pilot"], "text": "The baker lives next to the pilot." },
+    "r4": { "if": ["next", "baker", "blue"], "text": "The baker lives next to the blue house." }
+  } } }
+```
+
+The houses are numbered 1, 2, 3... from the left; 3 to 5 houses and the same number of `items`. A rule's `if` is `[kind, a, b]`, where a and b are an item, a house colour or a house number:
+
+| Kind | Means |
+|---|---|
+| `at` | a is in the same house as b ("The baker lives in the red house.") |
+| `not` | a is not in the same house as b |
+| `next` | a is in a house next to b's |
+| `left` | a is somewhere left of b |
+
+The gate asks for house numbers: `"code": { "type": "digits", "length": 2, "answer": "{pos:street.doctor}{pos:street.baker}" }` is the doctor's house number and the baker's (here 3 and 1: the code is 31). Clues show the rules: `"read": "Tom says: {rule:street.r1}"`. Each rule goes in a different clue, ideally for different abilities, so the team must share them. The check proves that the rules give exactly one answer, and that **no rule can be left out**; it names the one that is not needed. The arrangement is the same every mission (the houses do not shuffle), so use a new puzzle for each map.
 
 **Every clue must be needed.** `npm run check` takes each clue away, one at a time, and tries the mission again. A clue that can go without changing the result is "not needed": a note, or a FAIL when the pack has `"strictClues": true` (new packs should). Fix it by making the clue part of a puzzle, or by deleting it. Atmosphere on purpose (a shell that says "Waves.")? List its ability in the object's `extra`: `"extra": ["listen"]`. Do not make players hunt for clues they do not need: design the puzzle so that every clue is a piece they must have.
 
@@ -214,6 +241,7 @@ Each mission start picks a random **seed**. From it the server builds the run: o
 | `{d1}` ... `{d6}` | the digits of this mission's old numeric code (the code is new every mission) |
 | `{code:<gate id>:<n>}`, `{code:<gate id>}` | a piece of a gate's code, or all of it (section 3b) |
 | `{fact:<id>}` | a fact of the map (section 3b) |
+| `{rule:<puzzle>.<rule>}` | the sentence of a logic rule (section 3b) |
 | `{where:<id>}` | "near <the named place closest to that object>" |
 | `{name:<id>}` | that object's name |
 | `{order}` | a `sequence` goal's order ("the Moon stone, then the Sun stone, ...") |

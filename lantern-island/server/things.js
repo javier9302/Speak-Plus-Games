@@ -94,6 +94,8 @@ export function fillText(text, room, items) {
     const d = /^d(\d)$/.exec(ph);
     if (d) return room.gateCode?.[d[1] - 1] ?? '?';
     const fact = /^fact:(.*)$/.exec(ph), code = /^code:([^:]*)(?::(\d))?$/.exec(ph);
+    const rule = /^rule:([^.]*)\.(.*)$/.exec(ph);
+    if (rule) return room.zone.logic?.[rule[1]]?.rules?.[rule[2]]?.text ?? '?';
     if (fact) return String(room.secrets?.facts[fact[1]] ?? '?');
     if (code) return room.secrets?.answers[code[1]] === undefined ? '?' : partOf(room.secrets.answers[code[1]], code[2] && Number(code[2]));
     const ref = /^(where|name):(.*)$/.exec(ph);
