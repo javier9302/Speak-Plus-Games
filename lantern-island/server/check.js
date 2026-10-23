@@ -14,6 +14,7 @@ import { goalOf } from './goals/index.js';
 import { makeRun, isRandom } from './run.js';
 import { atlasFor } from './atlas.js';
 import { GOAL_PLACEHOLDERS } from './validate.js';
+import { readBank, BANK } from './cards.js';
 
 const CLUE_PLAYERS = 4;                   // players dealt when each clue is taken away in turn (a clue that matters matters for any number)
 const MIN_TALK = 4, MIN_MINUTES = 3;      // below these, a note: little talking, or two players finish it in under 3 minutes if they play perfectly (solver.js estimates both; a real class is several times slower)
@@ -35,8 +36,18 @@ export async function runCheck(contentDir = path.join(root, 'data'), dataDir = c
   for (const e of content.errors) if (!only || e.startsWith(`scenarios/${only}/`) || e.startsWith(`scenarios/${only}:`)) fail(e);
   const zones = content.zones;
   if (only && !content.packs[only] && !errors.length) fail(`there is no pack "${only}" (packs: ${Object.keys(content.packs).join(', ')})`);
-  // Cards a mission can name: the packs', the samples, and the teacher's own (storage, data/cards).
-  const cardIds = new Set([...content.cards.map((c) => c.id), ...JSON.parse(await fs.readFile(path.join(contentDir, 'seed-cards.json'), 'utf8')).map((c) => c.id)]);
+  // The question bank: every question must be readable. How many of each type and level, to see the gaps.
+  const bank = await readBank(contentDir);
+  if (!only) {
+    say(`QUESTIONS: ${bank.cards.length} in data/${BANK}`);
+    for (const p of bank.problems) fail(p);
+    const levels = [...new Set(bank.cards.map((c) => c.level))].sort();
+    for (const t of [...new Set(bank.cards.map((c) => c.type))]) say(`  ${t.padEnd(9)} ${levels.map((l) => `${l} ${bank.cards.filter((c) => c.type === t && c.level === l).length}`).join('  ')}`);
+    for (const c of bank.cards) if (content.cards.some((p) => p.id === c.id)) fail(`${BANK}: the id "${c.id}" is also a card of the pack "${content.cards.find((p) => p.id === c.id).pack}"`);
+    say();
+  }
+  // Cards a mission can name: the packs', the bank's, and the teacher's own (storage, data/cards).
+  const cardIds = new Set([...content.cards.map((c) => c.id), ...bank.cards.map((c) => c.id)]);
   for (const f of await fs.readdir(path.join(dataDir, 'cards')).catch(() => [])) if (f.endsWith('.json')) cardIds.add(f.slice(0, -5));
 
   // The packs' missions, and the teacher's own templates (storage, data/missions) that do not share an id with one.

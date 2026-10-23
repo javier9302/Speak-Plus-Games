@@ -39,17 +39,20 @@ function filtered() {
     && (!q || JSON.stringify([c.id, c.prompt, c.tags, c.options, c.accepted, c.word, c.link]).toLowerCase().includes(q)));
 }
 
+// Cards of the question bank and of the packs are edited in their files: the panel only shows them.
+const fileOf = (c) => (c.bank ? 'data/questions.json' : c.pack ? `the ${c.pack} pack` : '');
+
 function renderList() {
   const list = filtered();
   $('#c-count').textContent = `${list.length} of ${cards.length} cards`;
   $('#c-list').innerHTML = list.map((c) => `
     <article class="card-row ${editing && editing.id === c.id && !isNew ? 'sel' : ''}" data-id="${esc(c.id)}">
-      <div class="meta"><span class="badge">${esc(c.level)}</span><span>${TYPES[c.type]}</span><span>${AUTO[mode(c)] || 'starts another card'}</span>${c.tags.map((t) => `<span>#${esc(t)}</span>`).join('')}${c.media.audio ? '<span>♪ sound</span>' : ''}${c.media.image ? '<span>picture</span>' : ''}${recent(c) ? `<span>used ${new Date(c.lastUsed).toLocaleDateString()}</span>` : ''}</div>
-      <div class="p">${esc(c.prompt)}</div>
+      <div class="meta"><span class="badge">${esc(c.level)}</span><span>${TYPES[c.type]}</span><span>${AUTO[mode(c)] || 'starts another card'}</span>${c.tags.map((t) => `<span>#${esc(t)}</span>`).join('')}${c.media.audio ? '<span>♪ sound</span>' : ''}${c.media.image ? '<span>picture</span>' : ''}${recent(c) ? `<span>used ${new Date(c.lastUsed).toLocaleDateString()}</span>` : ''}${fileOf(c) ? `<span>in ${esc(fileOf(c))}</span>` : ''}</div>
+      <div class="p">${esc(c.prompt)}${c.word ? ` <strong>${esc(c.word)}</strong>` : ''}</div>
       <div class="row">
-        <button class="btn btn-small" type="button" data-act="edit">Edit and preview</button>
+        <button class="btn btn-small" type="button" data-act="edit">${fileOf(c) ? 'Preview' : 'Edit and preview'}</button>
         <button class="btn btn-small" type="button" data-act="duplicate">Duplicate</button>
-        <button class="btn btn-small btn-danger" type="button" data-act="delete">Delete</button>
+        ${fileOf(c) ? '' : '<button class="btn btn-small btn-danger" type="button" data-act="delete">Delete</button>'}
       </div>
     </article>`).join('') || '<p class="muted">No cards match. Change the filters, or make a new card.</p>';
 }

@@ -381,7 +381,7 @@ The maps that exits link to a mission's start map are joined into one big map fo
 
 ## 9. Cards
 
-A pack can bring its own challenge cards in `cards/<id>.json`, used only by its own missions. Give them a tag and ask for it in a station's filter (`"filter": { "tags": ["harbor"] }`). Same format as the teacher's card library (Cards tab, or `data/cards/`):
+A pack can bring its own challenge cards in `cards/<id>.json`, used only by its own missions. Give them a tag and ask for it in a station's filter (`"filter": { "tags": ["harbor"] }`). Same format as the question bank (`data/questions.json`, for every mission), except that a pack card needs an `id`, the name of its file:
 
 ```json
 { "id": "harbor-ch-1", "type": "choice", "level": "A1", "tags": ["harbor"], "prompt": "What do you use to catch fish?", "options": { "A": "A net", "B": "A spoon", "C": "A book" }, "answer": "A", "hints": ["Fishers throw it into the sea.", "It has many small holes.", "It starts with N."] }

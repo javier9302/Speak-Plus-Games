@@ -118,7 +118,20 @@ Each tablet takes one card when the game starts, chosen for the group's level (s
 
 The card appears **only on the phone of the player who used the tablet**, with "Read it to your team!". Wrong answers never lock anything; the team just tries again.
 
-Cards are files in `data/cards/`, one per card. They are created on the first start from `data/seed-cards.json` (18 samples, A1 to B1). You can edit, add or delete files there; changes apply the next time you press **Start**, without restarting the server. A proper card editor comes in stage 4.
+**All the questions are in one file: `data/questions.json`** (about 160, A1 to C1, every type). To add one, copy a line of the same type, paste it under it and change the words:
+
+```json
+{"type": "spelling", "level": "A2", "tags": ["spelling"], "word": "island", "describe": "Land with water all around it.", "hints": ["Lantern Island is one!", "It has six letters and an S you do not hear.", "i-s-l-a-..."]},
+{"type": "choice", "level": "A1", "tags": ["food"], "prompt": "Which one is a drink?", "options": {"A": "Bread", "B": "Milk", "C": "Rice"}, "answer": "B", "hints": ["You drink it from a glass.", "It is white.", "Cows give it."]},
+{"type": "typed", "level": "A2", "tags": ["seasons"], "prompt": "Which season comes after summer?", "accepted": ["autumn", "fall"], "allowTypos": true, "hints": ["Leaves fall from the trees.", "Americans say 'fall'.", "a-u-t-u-..."]},
+```
+
+- Every line ends with a comma except the last one before `]`. Lines that are only text in quotes are section titles.
+- `id` is optional; a spelling card needs no `prompt` (it says "Listen and spell the word."). Up to 3 hints, from a small help to almost the answer.
+- Changes apply the next time you press **Start**, without restarting the server. Run `npm run check`: it names any question with a mistake (a missing comma, an answer that is not one of the options) and counts the questions of each type and level, so you see where more are needed.
+- The more questions a level has, the less they repeat: a tablet draws from the half of the matching questions used least recently.
+
+The Cards tab of the teacher panel shows these questions too (marked "in data/questions.json") but cannot change them; **Duplicate** makes an editable copy. Cards made in the Cards tab, or imported there from CSV or JSON, are saved apart (`data/cards/`, one file each, or Supabase).
 
 ### The teacher's view of a running game
 
@@ -257,8 +270,8 @@ public/shared/render.js  drawing the map and characters
 data/scenarios/       scenario packs, one folder each: pack.json, zones/ (maps, objects, clues), missions/, cards/
 data/abilities.json      the abilities and who gets which
 data/items.json          the items, and how many a player can carry
-data/seed-cards.json     the sample cards (copied to data/cards/ on the first start)
-data/cards/              the card library, one file per card
+data/questions.json      the question bank: every challenge card, in one list to copy and paste into
+data/cards/              cards made in the teacher panel's Cards tab, one file per card
 data/groups/             saves (made when you create a group)
 test/sim.js              the simulated class
 test/compete.js          the simulated match (4 rooms, 24 phones)

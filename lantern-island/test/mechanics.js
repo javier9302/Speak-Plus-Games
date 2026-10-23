@@ -55,7 +55,7 @@ const missions = {
 
 async function main() {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'lantern-mech-'));
-  for (const f of ['items.json', 'abilities.json', 'monster.json', 'seed-cards.json', 'themes.json']) await fs.copyFile(path.join(root, 'data', f), path.join(dir, f));
+  for (const f of ['items.json', 'abilities.json', 'monster.json', 'questions.json', 'themes.json']) await fs.copyFile(path.join(root, 'data', f), path.join(dir, f));
   await fs.cp(path.join(root, 'data', 'scenarios'), path.join(dir, 'scenarios'), { recursive: true });
   const pack = path.join(dir, 'scenarios', 'mechtest');
   await fs.mkdir(path.join(pack, 'zones'), { recursive: true });

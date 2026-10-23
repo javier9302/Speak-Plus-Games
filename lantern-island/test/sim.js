@@ -116,8 +116,8 @@ async function main() {
   await sleep(100);
   const usage = JSON.parse(await fs.readFile(path.join(dataDir, 'meta', 'card-usage.json'), 'utf8'));
   const drawn = app.rooms.rooms.get(room.code).things.filter((t) => t.card).map((t) => t.card.id);
-  const cardFiles = await Promise.all(drawn.map(async (id) => JSON.parse(await fs.readFile(path.join(dataDir, 'cards', id + '.json'), 'utf8'))));
-  check('starting a mission notes when its cards were used, without rewriting the cards', drawn.length > 0 && drawn.every((id) => usage.used[id]) && cardFiles.every((c) => !c.lastUsed));
+  const bankText = await fs.readFile(path.join(app.config.contentDir, 'questions.json'), 'utf8');
+  check('starting a mission notes when its cards were used, without rewriting the cards', drawn.length > 0 && drawn.every((id) => usage.used[id]) && !bankText.includes('lastUsed'));
   check('phones get the map', world.zone.w === 40 && world.zone.rows.length === 24 && host.last.roster.settings.view === 9);
   const pos = (id) => { const s = host.last.state.p.find((p) => p[0] === id); return { x: s[1], y: s[2], dir: s[3], moving: s[4] }; };
   const start = pos(phones[0].me.id);
@@ -672,8 +672,9 @@ async function main() {
   const taker = who('use');
   stand(taker, 32, 14);
   check('if the receiver leaves, the challenge goes back to the tablet', (await press(taker, 'use')) === 'card' && taker.last.card.o === 'tablet-4');
-  await app.cards.remove('ch-a1-01');
-  check('a sample card the teacher deleted does not come back', !(await app.cards.all()).some((c) => c.id === 'ch-a1-01'));
+  const lockedDelete = await http('/cards/ch-a1-01', 'DELETE'), lockedPut = await http('/cards/ch-a1-01', 'PUT', newCard);
+  check('cards of questions.json are edited in the file only', lockedDelete.status === 400 && lockedPut.status === 400 && lockedDelete.data.error.includes('questions.json') && (await app.cards.all()).find((c) => c.id === 'ch-a1-01')?.bank);
+  await http('/cards/kept-card', 'PUT', newCard);
 
   console.log('\nThe hidden monster (a new room with three players)');
   await http(`/groups/${gid}`, 'PATCH', { settings: { monster: 'normal' } });
@@ -991,7 +992,7 @@ async function main() {
   const cmissions = (await (await fetch(cbase + '/api/missions')).json()).missions;
   const cup = await (await fetch(cbase + '/api/media', { method: 'POST', headers: { 'content-type': 'audio/mpeg' }, body: Buffer.from('mp3-bytes') })).json();
   const cget = await fetch(cbase + cup.url);
-  check('the game runs on Supabase: groups, sample cards, pack missions (kept in their files), uploads', fake.db.li_groups.has(cg.id) && ccards.length >= 40 && fake.db.li_cards.size === ccards.filter((c) => !c.pack).length && cmissions.length >= 9 && cmissions.every((m) => m.pack) && fake.db.li_missions.size === 0 && (await cget.text()) === 'mp3-bytes' && cget.headers.get('content-type') === 'audio/mpeg');
+  check('the game runs on Supabase: groups, sample cards, pack missions (kept in their files), uploads', fake.db.li_groups.has(cg.id) && ccards.length >= 40 && fake.db.li_cards.size === ccards.filter((c) => !c.pack && !c.bank).length && cmissions.length >= 9 && cmissions.every((m) => m.pack) && fake.db.li_missions.size === 0 && (await cget.text()) === 'mp3-bytes' && cget.headers.get('content-type') === 'audio/mpeg');
   check('the Supabase key never reaches a browser', !JSON.stringify([await (await fetch(cbase + '/api/info')).json(), cg, cup]).includes(fake.key) && !(await (await fetch(cbase + '/host/host.js')).text()).includes('SERVICE_KEY'));
   await cloud.close();
   // Moving a school from files to Supabase and back.
@@ -1000,7 +1001,7 @@ async function main() {
   const backDir = await fs.mkdtemp(path.join(os.tmpdir(), 'lantern-back-'));
   await copyStorage(createSupabaseStorage({ url: there.url, key: there.key }), createFileStorage(backDir));
   const backGroup = JSON.parse(await fs.readFile(path.join(backDir, 'groups', gid + '.json'), 'utf8'));
-  check('copy everything to Supabase and back to files', counts.groups >= 2 && counts.cards >= 40 && counts.files >= 1 && there.db.li_groups.has(gid) && backGroup.island.landmarks.includes('lighthouse') && (await fs.readdir(path.join(backDir, 'media'))).length === counts.files && (await fs.readdir(path.join(backDir, 'cards'))).length === counts.cards);
+  check('copy everything to Supabase and back to files', counts.groups >= 2 && counts.cards >= 1 && counts.files >= 1 && there.db.li_groups.has(gid) && backGroup.island.landmarks.includes('lighthouse') && (await fs.readdir(path.join(backDir, 'media'))).length === counts.files && (await fs.readdir(path.join(backDir, 'cards'))).length === counts.cards);
   await there.close(); await fake.close();
   for (const d of [fileDir, backDir]) await fs.rm(d, { recursive: true, force: true });
 

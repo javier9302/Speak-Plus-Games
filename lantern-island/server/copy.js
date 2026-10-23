@@ -19,8 +19,6 @@ export async function copyStorage(from, to, log = () => {}) {
     counts[collection] = rows.filter((r) => r?.id).length;
     log(`${collection}: ${counts[collection]}`);
   }
-  // "meta" records have no id of their own: copy the two we know.
-  for (const id of ['seeded-cards', 'seeded-missions']) { const m = await from.get('meta', id); if (m) await to.put('meta', id, m); }
   const files = await from.listFiles();
   for (const name of files) { const body = await from.getFile(name); if (body) await to.putFile(name, body); }
   counts.files = files.length;

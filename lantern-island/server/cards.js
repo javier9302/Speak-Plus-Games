@@ -1,5 +1,9 @@
 // Challenge cards: loading them, choosing one for a station, and checking answers.
-// Cards are data (storage collection "cards"). Samples come from data/seed-cards.json.
+// Cards come from three places, read fresh at every mission start:
+//   data/questions.json        the question bank: one list to copy and paste questions into (readBank)
+//   data/scenarios/<pack>/cards/ a pack's own cards (content.js)
+//   storage collection "cards" the teacher's own, made in the Cards tab
+// The first two are edited in their files only; the Cards tab shows them but cannot change them.
 //
 // Types
 //   choice    tap A, B or C                              auto-checked
@@ -10,7 +14,9 @@
 //             a typed answer or a teacher code, whichever the card has
 //   courier   a letter that one player must hand to another at a named place; the
 //             receiver then gets another card ("then")
-import { seed } from './seed.js';
+import crypto from 'node:crypto';
+import fs from 'node:fs/promises';
+import path from 'node:path';
 
 export const CARD_TYPES = ['choice', 'typed', 'spelling', 'code', 'link', 'courier'];
 export const HELPERS = ['listening', 'reading'];
@@ -95,22 +101,60 @@ export function normalizeCard(raw) {
   return r.card || null;
 }
 
-// packCards: the cards of the scenario packs (content.js). They are read-only here: edited in their files.
+export const BANK = 'questions.json';
+const DEFAULT_PROMPT = { spelling: 'Listen and spell the word.' };
+
+// The question bank: a list of cards in data/questions.json. "id" is optional (one is made from the
+// question, so it stays the same while the question does), and so is a spelling card's prompt. Strings
+// in the list are section titles and are skipped. Returns { cards, problems }: a broken question is left
+// out and named in problems; the others still play.
+export async function readBank(contentDir) {
+  let list;
+  try { list = JSON.parse(await fs.readFile(path.join(contentDir, BANK), 'utf8')); }
+  catch (e) { return e.code === 'ENOENT' ? { cards: [], problems: [] } : { cards: [], problems: [`${BANK} cannot be read (${e.message}). Look for a missing comma or quote near there.`] }; }
+  if (!Array.isArray(list)) return { cards: [], problems: [`${BANK} must be one list: [ {...}, {...} ]`] };
+  const cards = [], problems = [], seen = new Set();
+  let n = 0;
+  for (const raw of list) {
+    if (typeof raw === 'string') continue;
+    n++;
+    const what = `${BANK}, question ${n}${raw?.prompt || raw?.word ? ` ("${String(raw.word || raw.prompt).slice(0, 40)}")` : ''}`;
+    if (!raw || typeof raw !== 'object') { problems.push(`${what}: is not a question { ... }`); continue; }
+    const id = raw.id || 'q-' + crypto.createHash('sha1').update(JSON.stringify([raw.type, raw.level, raw.prompt, raw.word, raw.options, raw.accepted, raw.teacher])).digest('hex').slice(0, 8);
+    const r = validateCard({ ...raw, id, prompt: raw.prompt || DEFAULT_PROMPT[raw.type] });
+    if (r.error) problems.push(`${what}: ${r.error}`);
+    else if (seen.has(id)) problems.push(`${what}: ${raw.id ? `the id "${id}" is used twice` : 'the same question is there twice'}`);
+    else { seen.add(id); cards.push({ ...r.card, bank: true }); }
+  }
+  return { cards, problems };
+}
+
+// packCards: the cards of the scenario packs (content.js). They, and the bank's, are read-only here: edited in their files.
 export function createCards(storage, contentDir, packCards = () => []) {
   const fromPack = (id) => packCards().find((c) => c.id === id);
-  const readOnly = (id) => Object.assign(new Error(`Card "${id}" comes from the scenario pack "${fromPack(id).pack}". Edit it in data/scenarios/${fromPack(id).pack}/cards/.`), { status: 400 });
+  const readOnly = async (id) => {
+    const p = fromPack(id);
+    if (p) return Object.assign(new Error(`Card "${id}" comes from the scenario pack "${p.pack}". Edit it in data/scenarios/${p.pack}/cards/.`), { status: 400 });
+    if ((await readBank(contentDir)).cards.some((c) => c.id === id)) return Object.assign(new Error(`Card "${id}" comes from data/${BANK}. Edit it in that file.`), { status: 400 });
+    return null;
+  };
   return {
     // Read fresh at every mission start, so edits apply to the next mission.
     // When each card was last played is kept apart (meta "card-usage"), so playing never rewrites a card.
     async all() {
       const used = (await storage.get('meta', 'card-usage'))?.used || {};
-      const library = (await seed(storage, contentDir, 'cards', 'seed-cards.json')).filter((c) => !fromPack(c.id));
-      return [...packCards(), ...library].map((raw) => { const c = normalizeCard(raw); return c && raw.pack ? { ...c, pack: raw.pack } : c; }).filter(Boolean)
+      const bank = await readBank(contentDir);
+      for (const p of bank.problems) console.warn(`Skipped: ${p}`);
+      const pack = packCards().map((raw) => { const c = normalizeCard(raw); return c && { ...c, pack: raw.pack }; }).filter(Boolean);
+      const fixed = [...pack, ...bank.cards.filter((c) => !fromPack(c.id))], ids = new Set(fixed.map((c) => c.id));
+      const library = (await storage.list('cards')).filter((c) => !ids.has(c.id)).map(normalizeCard).filter(Boolean);
+      return [...fixed, ...library]
         .map((c) => (used[c.id] ? { ...c, lastUsed: used[c.id] } : c));
     },
     // Saves one card (new or changed). Throws with the reason if it is not valid.
     async put(raw) {
-      if (fromPack(raw?.id)) throw readOnly(raw.id);
+      const locked = await readOnly(raw?.id);
+      if (locked) throw locked;
       const r = validateCard(raw);
       if (r.error) throw Object.assign(new Error(`Card "${raw?.id || '?'}": ${r.error}.`), { status: 400 });
       await storage.put('cards', r.card.id, r.card);
@@ -120,13 +164,13 @@ export function createCards(storage, contentDir, packCards = () => []) {
     async putMany(list) {
       const saved = [], skipped = [];
       for (const raw of Array.isArray(list) ? list.slice(0, 2000) : []) {
-        const r = fromPack(raw?.id) ? { error: 'it is a card of a scenario pack (edit its file)' } : validateCard(raw);
+        const r = (await readOnly(raw?.id)) ? { error: `it is a card of a scenario pack or of ${BANK} (edit its file)` } : validateCard(raw);
         if (r.error) skipped.push({ id: String(raw?.id || '?'), why: r.error });
         else { await storage.put('cards', r.card.id, r.card); saved.push(r.card.id); }
       }
       return { saved, skipped };
     },
-    async remove(id) { if (fromPack(id)) throw readOnly(id); await storage.remove('cards', id); },
+    async remove(id) { const locked = await readOnly(id); if (locked) throw locked; await storage.remove('cards', id); },
     // Remembers when cards were played, for the "used recently" filter. One record for all cards.
     async touch(list) {
       if (!list.length) return;

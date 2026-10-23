@@ -23,7 +23,7 @@ function check(name, ok, detail = '') {
 // A copy of the content folder (no saves) that a test can change.
 async function copy() {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'lantern-content-'));
-  for (const f of ['items.json', 'abilities.json', 'monster.json', 'seed-cards.json', 'themes.json']) await fs.copyFile(path.join(root, 'data', f), path.join(dir, f));
+  for (const f of ['items.json', 'abilities.json', 'monster.json', 'questions.json', 'themes.json']) await fs.copyFile(path.join(root, 'data', f), path.join(dir, f));
   await fs.cp(path.join(root, 'data', 'scenarios'), path.join(dir, 'scenarios'), { recursive: true });
   return dir;
 }
@@ -184,7 +184,7 @@ async function main() {
   check('the guide documents every kind, goal type, tile, theme, weather, field and placeholder', !missing.length, missing.join(', '));
   // Its full example, taken from the page, must pass npm run check.
   const example = await fs.mkdtemp(path.join(os.tmpdir(), 'lantern-guide-'));
-  for (const f of ['items.json', 'abilities.json', 'monster.json', 'seed-cards.json', 'themes.json']) await fs.copyFile(path.join(root, 'data', f), path.join(example, f));
+  for (const f of ['items.json', 'abilities.json', 'monster.json', 'questions.json', 'themes.json']) await fs.copyFile(path.join(root, 'data', f), path.join(example, f));
   const blocks = [...guide.matchAll(/```json (scenarios\/[^\n]+)\n([\s\S]*?)```/g)];
   for (const [, rel, body] of blocks) { await fs.mkdir(path.dirname(path.join(example, rel)), { recursive: true }); await fs.writeFile(path.join(example, rel), body); }
   const exampleCheck = await runCheck(example, example, 'tiny');
