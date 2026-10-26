@@ -907,6 +907,10 @@ function giveLoan(s, pid, amount, repay, ctx) {
 function startAuction(s, sq, ctx) {
   if (s.auction) throw new Error('An auction is already running.');
   const seller = ownerOf(s, sq);
+  // Auctioning the bank's property the current player is standing on means they didn't buy it:
+  // their square is dealt with, so they don't owe rent when it's sold (whichever button started the auction).
+  const t = s.turn;
+  if (seller == null && t && t.step === 'land' && s.players[t.pid].pos === sq) t.handled = true;
   s.auction = { sq, seller, high: null, bids: 0, startAt: ctx.now, endsAt: ctx.now + s.settings.auctionSecs * 1000, fromTurn: s.turn ? s.turn.pid : null };
   const q = square(s, sq);
   log(s, `Auction: ${q.name}${seller != null ? ` (sold by ${s.players[seller].name})` : ''}.`, 'auction', ctx);

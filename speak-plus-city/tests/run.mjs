@@ -156,6 +156,23 @@ test('passing starts an auction; highest bid wins when time runs out', () => {
   eq(s.auction, null); eq(s.props[7].owner, 2); eq(s.players[2].money, 1440);
   s = run(s, { type: 'end' });
 });
+test('no rent for the player who passed, when the teacher starts the auction from the Properties tab', () => {
+  let s = run(newGame(), { type: 'roll', dice: [3, 4] });   // Ramen Corner, unowned
+  s = run(s, { type: 'auction', sq: 7 });
+  s = run(s, { type: 'bid', pid: 1, amount: 120 });
+  s = run(s, { type: 'auctionClose' });
+  eq(s.props[7].owner, 1);
+  ok(!mustAct(s), 'no rent due');
+  ok(!options(s).some(o => o.id === 'rent'), 'no rent button');
+  eq(s.players[0].money, 1500);
+  s = run(s, { type: 'end' });
+});
+test('the same when nobody bids', () => {
+  let s = run(newGame(), { type: 'roll', dice: [3, 4] });
+  s = run(s, { type: 'auction', sq: 7 });
+  s = run(s, { type: 'auctionClose' });
+  ok(!mustAct(s));
+});
 test('teacher can auction a player property; seller gets the money', () => {
   let s = newGame();
   s.props[10] = { owner: 0, mortgaged: false };
