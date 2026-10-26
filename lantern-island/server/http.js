@@ -115,6 +115,12 @@ export function createHttpHandler({ config, groups, cards, missions, storage, li
     let rel;
     try { rel = decodeURIComponent(url.pathname); } catch { rel = '/'; }
     if (rel === '/') { res.writeHead(302, { location: '/phone/' + url.search }); return res.end(); }
+    if (!config.fanArt && rel === '/shared/heroes.js') {
+      // Fan art switched off (the default in hosted mode): the drawings never leave the server,
+      // and every student plays as the original islander.
+      res.writeHead(200, { 'content-type': MIME['.js'], 'cache-control': 'no-cache' });
+      return res.end(req.method === 'HEAD' ? undefined : 'export const HEROES = [];\nexport const heroById = () => null;\n');
+    }
     let file = path.join(config.publicDir, path.normalize(rel));
     if (!file.startsWith(config.publicDir + path.sep)) { res.writeHead(403); return res.end(); }
     try {

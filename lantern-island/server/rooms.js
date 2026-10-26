@@ -633,7 +633,7 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
       for (let n = 2; room.players.some((q) => q.name.toLowerCase() === name.toLowerCase()); n++) name = `${cleanName(m.name).slice(0, 10)} ${n}`;
       let ci = 0;
       while (room.players.some((q) => q.ci === ci)) ci++;          // first free color
-      p = { id: `p${++room.seq}`, token: crypto.randomBytes(12).toString('hex'), name, ci, hero: cleanHero(m.hero), ws: null, abilities: [], notes: [], items: [], actAt: 0, answerAt: 0, stun: 0, lost: null, slayAt: 0 };
+      p = { id: `p${++room.seq}`, token: crypto.randomBytes(12).toString('hex'), name, ci, hero: config.fanArt ? cleanHero(m.hero) : '', ws: null, abilities: [], notes: [], items: [], actAt: 0, answerAt: 0, stun: 0, lost: null, slayAt: 0 };
       toSpawn(room, p);
       room.players.push(p);
       if (room.phase === 'play') deal(room);                      // a late player gets a share
@@ -679,7 +679,7 @@ export function createRooms({ config, groups, zones, abilities, items, cards, mi
         else if ((role === 'host' || role === 'teacher') && match && Object.hasOwn(M.commands, m.t)) await M.commands[m.t](match, m, ws);
         else if (role === 'player' && m.t === 'hero') {
           // Changing character mid-mission would confuse the team, so only in the lobby or after a mission.
-          if (room.phase !== 'play') { player.hero = cleanHero(m.id); sendRoster(room); }
+          if (room.phase !== 'play') { player.hero = config.fanArt ? cleanHero(m.id) : ''; sendRoster(room); }
         }
         else if (role === 'player' && m.t === 'open') {
           // Reopen the challenge that came in a letter (from Mail).

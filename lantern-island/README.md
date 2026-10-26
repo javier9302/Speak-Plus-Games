@@ -226,7 +226,11 @@ PUBLIC_URL=https://island.example.com TEACHER_PIN=4321 PORT=8080 npm start
 - `PUBLIC_URL` switches hosted mode on. The QR code points to it.
 - Put the server behind a proxy that provides HTTPS and passes WebSockets through. The pages then use `wss://` by themselves.
 - In hosted mode the host screen and teacher panel **always** ask for the PIN. Set `TEACHER_PIN`, or read the random one in the server log.
-- `DATA_DIR` sets where saves go (default `./data`). Use a folder that survives restarts.
+- `DATA_DIR` sets where saves go (default `./data`). Use a folder that survives restarts, or `STORAGE=supabase`.
+- The fan-art characters are **off** in hosted mode: `/shared/heroes.js` is served empty, the server refuses their ids, and the phone hides the character button. `FAN_ART=on` or `off` overrides the default (on when running locally).
+- On Render, `PUBLIC_URL` can be left out: Render's `RENDER_EXTERNAL_URL` is used.
+
+**Render + Supabase, step by step:** see [docs/RENDER.md](docs/RENDER.md). The blueprint is `render.yaml` at the root of the repository.
 
 ## Checking that everything works
 

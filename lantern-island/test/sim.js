@@ -1017,8 +1017,23 @@ async function main() {
   h.send({ t: 'teacher', room: 'ABCD' });
   check('the teacher view needs the PIN', (await h.next('error')).code === 'pin');
   h.send({ t: 'host', pin: '2468' });
-  check('the QR code points to PUBLIC_URL', (await h.next('room')).joinUrl.startsWith('https://island.example.com/phone/?room='));
+  const hroom = await h.next('room');
+  check('the QR code points to PUBLIC_URL', hroom.joinUrl.startsWith('https://island.example.com/phone/?room='));
+  const heroesJs = await (await fetch(`http://127.0.0.1:${hosted.port}/shared/heroes.js`)).text();
+  check('hosted mode never sends the fan-art drawings', !heroesJs.includes('pikachu') && heroesJs.includes('HEROES = []'));
+  const hp = client(hosted.port); await hp.opened;
+  hp.send({ t: 'join', room: hroom.code, name: 'Mika', hero: 'pikachu' });
+  check('hosted mode: everyone plays as the islander', (await hp.next('joined')).hero === '');
+  hp.send({ t: 'hero', id: 'totoro' });
+  await sleep(50);
+  check('hosted mode: changing character is refused too', hosted.rooms.rooms.get(hroom.code).players[0].hero === '');
   await hosted.close();
+  const fanOn = await createApp({ port: 0, dataDir, publicUrl: 'https://island.example.com/', pin: '2468', fanArt: true, quiet: true });
+  check('FAN_ART=on brings them back in hosted mode', (await (await fetch(`http://127.0.0.1:${fanOn.port}/shared/heroes.js`)).text()).includes('pikachu'));
+  await fanOn.close();
+  const local = await createApp({ port: 0, dataDir, publicUrl: '', pin: '2468', quiet: true });
+  check('on your own computer the characters are there', (await (await fetch(`http://127.0.0.1:${local.port}/shared/heroes.js`)).text()).includes('pikachu'));
+  await local.close();
 
   await fs.rm(dataDir, { recursive: true, force: true });
   console.log(`\n${passed} passed, ${failed} failed\n`);

@@ -1,0 +1,30 @@
+# Render blueprint: puts Lantern Island online so students join with mobile data.
+# Step-by-step instructions: lantern-island/docs/RENDER.md
+#
+# Only Lantern Island runs here. The other games of the hub are static pages and
+# don't need this server.
+services:
+  - type: web
+    name: lantern-island
+    runtime: node
+    region: singapore          # the Render region closest to Japan
+    plan: free                 # free: sleeps after 15 min without use. "starter" stays awake.
+    rootDir: lantern-island
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /phone/
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      # Saves go to Supabase: the free Render plan has no disk that survives a restart.
+      - key: STORAGE
+        value: supabase
+      # Asked for when you create the service (never stored in this file):
+      - key: TEACHER_PIN
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      # PUBLIC_URL is not needed: the game uses Render's own address (RENDER_EXTERNAL_URL).
+      # The fan-art characters are off in hosted mode. Don't add FAN_ART=on here.

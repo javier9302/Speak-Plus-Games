@@ -92,6 +92,7 @@ async function main() {
     else console.log('  NO NETWORK FOUND. Connect this computer to Wi-Fi or a phone hotspot; the QR code updates by itself.');
   }
   console.log(`  Teacher PIN (for other devices):        ${config.pin}`);
+  console.log(`  Fan-art characters:                     ${config.fanArt ? 'on (classroom only, never publish)' : 'off (everyone is the islander)'}`);
   console.log(`  Saves:                                  ${config.storage === 'supabase' ? 'Supabase (' + config.supabaseUrl + ')' : 'files in ' + config.dataDir}`);
   console.log('\n  Press Ctrl+C to stop.\n');
 }
