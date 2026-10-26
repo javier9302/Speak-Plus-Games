@@ -1,0 +1,10 @@
+{
+  "name": "speak-plus-city",
+  "private": true,
+  "type": "module",
+  "description": "No dependencies and no build step. `npm start` serves the folder, `npm test` checks the rules.",
+  "scripts": {
+    "start": "npx --yes serve -l 8080 .",
+    "test": "node tests/run.mjs"
+  }
+}

@@ -1,13 +1,13 @@
 # Speak Plus Games
 
 Juegos y actividades para profesores de inglés, con la marca de Speak Plus (スピークプラス).
-Juegos: **Word Drop**, **City Run** y **Trade Gate**.
+Juegos: **Word Drop**, **City Run**, **Trade Gate** y **Speak Plus City**.
 
 ## Cómo abrirlo
 
 No necesita instalación ni servidor. Abre `index.html` en el navegador.
 
-**Trade Gate** es la excepción: necesita un servidor local. Usa Live Server, o ejecuta `python3 -m http.server` en esta carpeta y abre <http://localhost:8000>.
+**Trade Gate** y **Speak Plus City** son la excepción: necesitan un servidor local. Usa Live Server, o ejecuta `python3 -m http.server` en esta carpeta y abre <http://localhost:8000>.
 
 En VS Code también puedes usar la extensión **Live Server** (clic derecho en `index.html` → *Open with Live Server*) para que la página se recargue sola al guardar cambios.
 
@@ -30,6 +30,7 @@ Games/
 │   └── city-run.css        Estilos de City Run
 ├── lantern-island/         Lantern Island: juego con servidor Node, con su propio README
 ├── trade-gate/             Trade Gate: juego aparte, con su propio README, css/, js/, data/ y tests/
+├── speak-plus-city/        Speak Plus City: juego de tablero con dos ventanas, con su propio README, start.command/start.bat y tests/
 ├── CLAUDE.md               Contexto del proyecto para Claude Code
 └── README.md
 ```
@@ -69,6 +70,10 @@ La configuración se guarda en el navegador (localStorage).
 ## Trade Gate
 
 Juego cooperativo para 2 a 4 alumnos en una pantalla. Cada jugador recoge un recurso que no puede usar, así que tienen que encontrarse en una **Trade Gate**, responder una pregunta en inglés y pedir el código al profesor. Reglas, controles, panel del profesor y cómo editar preguntas y niveles: ver `trade-gate/README.md`.
+
+## Speak Plus City
+
+Juego de tablero tipo Monopoly para 2 a 6 alumnos de niveles mezclados: cada acción (comprar, pagar el alquiler, negociar, pujar, pedir un préstamo) es una frase en inglés y el profesor, que hace de banco, la aprueba. Dos ventanas en el mismo navegador: el tablero en el proyector y el panel del profesor en el portátil. Se arranca con `start.command` (Mac) o `start.bat` (Windows), o sirviendo la carpeta del hub. Los textos se cambian en `editor.html`, sin tocar código. Ver `speak-plus-city/README.md`.
 
 ## Lantern Island
 

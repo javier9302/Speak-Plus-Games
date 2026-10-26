@@ -79,14 +79,37 @@
           </div>
         </div>
       </article>
+      <article class="game-card">
+        <div class="game-art" aria-hidden="true">
+          <svg class="spc-art" viewBox="0 0 320 190" preserveAspectRatio="xMidYMid slice">
+            <rect class="spc-art-board" x="95" y="10" width="170" height="170" rx="12"/>
+            <path class="spc-art-cells" d="M95 42H265M95 148H265M127 10V180M233 10V180"/>
+            <rect class="spc-art-g1" x="127" y="148" width="35" height="8"/><rect class="spc-art-g2" x="198" y="148" width="35" height="8"/>
+            <rect class="spc-art-g3" x="127" y="34" width="35" height="8"/><rect class="spc-art-g1" x="198" y="34" width="35" height="8"/>
+            <circle class="spc-art-token" cx="249" cy="164" r="11"/>
+            <g class="spc-art-die" transform="rotate(-12 45 110)"><rect x="22" y="87" width="46" height="46" rx="10"/><circle cx="34" cy="99" r="4.5"/><circle cx="45" cy="110" r="4.5"/><circle cx="56" cy="121" r="4.5"/></g>
+            <g class="spc-art-say"><rect x="138" y="70" width="84" height="40" rx="12"/><path d="M160 110l-6 12 16-12"/><text x="180" y="96">Say it!</text></g>
+          </svg>
+        </div>
+        <div class="game-body">
+          <h2>Speak Plus City</h2>
+          <p>A board game where every move is a sentence. Students buy, trade, bid and negotiate with the bank (you) in English. Board on the projector, bank on your laptop.</p>
+          <div class="tags"><span class="tag">Speaking</span><span class="tag">Negotiation</span><span class="tag">2 to 6 players</span><span class="tag">Mixed levels</span></div>
+          <p class="tg-note" id="spc-file-note" hidden>This game needs a local server. Open this page with Live Server, or run <b>python3 -m http.server</b> in the Games folder and go to <b>http://localhost:8000</b>.</p>
+          <div class="game-actions">
+            <a class="btn btn-primary" href="speak-plus-city/index.html">Play Speak Plus City</a>
+            <a class="btn btn-ghost" href="speak-plus-city/editor.html">Content editor</a>
+          </div>
+        </div>
+      </article>
       <div class="soon">More games are on the way.</div>
     </div>
   </div>
 </section>
 
 <script>
-// Trade Gate loads JSON and ES modules, so it needs a server.
-if (location.protocol === 'file:') document.querySelector('#tg-file-note').hidden = false;
+// Trade Gate and Speak Plus City load JSON and ES modules, so they need a server.
+if (location.protocol === 'file:') for (const id of ['#tg-file-note', '#spc-file-note']) document.querySelector(id).hidden = false;
 </script>
 </body>
 </html>

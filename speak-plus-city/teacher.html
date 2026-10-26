@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;700&family=Zen+Kaku+Gothic+New:wght@500;700&display=swap">
+<link rel="stylesheet" href="css/city.css">
+<link rel="stylesheet" href="css/board.css">
+<link rel="stylesheet" href="css/teacher.css">
+<title>Teacher · Speak Plus City</title>
+</head>
+<body class="teacher-page">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="plus" viewBox="0 0 40 40"><g transform="rotate(12 20 20)"><line x1="20" y1="6" x2="20" y2="34" stroke="#E8483B" stroke-width="8.5" stroke-linecap="round"/><line x1="6" y1="20" x2="34" y2="20" stroke="#E8483B" stroke-width="8.5" stroke-linecap="round"/></g></symbol>
+  </defs>
+</svg>
+<div class="file-warning" id="file-warning" hidden>This page needs a local server: double-click <b>start.command</b> (Mac) or <b>start.bat</b> (Windows), or run <b>npx serve</b> in this folder. See README.md.</div>
+<script>if (location.protocol === "file:") document.getElementById("file-warning").hidden = false;</script>
+<header class="t-top">
+  <div class="brand"><div class="logo">speak<svg><use href="#plus"/></svg></div></div>
+  <div class="t-title">Speak Plus City <span class="muted">· Teacher &amp; bank</span></div>
+  <span id="top-clock" class="top-clock"></span>
+  <span class="spacer"></span>
+  <span id="conn-board" class="conn-pill off">Board not open</span>
+  <button class="btn btn-primary btn-small" data-cmd="open-board" type="button">Open board window</button>
+  <button class="btn btn-ghost btn-small" data-cmd="undo" type="button" title="Ctrl+Z">↶ Undo</button>
+  <button class="btn btn-ghost btn-small" data-cmd="save" type="button">Save game</button>
+  <button class="btn btn-ghost btn-small" data-cmd="load" type="button">Load game</button>
+  <button class="icon-btn" data-cmd="help" type="button" aria-label="Keyboard shortcuts">?</button>
+  <input type="file" id="load-file" accept=".json,application/json" hidden>
+</header>
+
+<section id="view-setup" hidden>
+  <form id="setup-form" class="wrap setup-wrap">
+    <a class="link-back" href="index.html">← Speak Plus City</a>
+    <div class="setup-head"><div><span class="eyebrow">New game</span><h1>Who's playing?</h1></div></div>
+    <div class="setup">
+      <div class="panel">
+        <div class="legend">Players (2–6)</div>
+        <p class="hint">The level decides what the board shows on each player's turn. You can change it any time during the game.</p>
+        <div id="setup-players" class="setup-players"></div>
+        <p class="hint" id="content-note"></p>
+        <div class="start-row">
+          <button class="btn btn-primary btn-big" type="submit">Start the game</button>
+          <button class="btn btn-ghost" id="setup-cancel" type="button" hidden>Back to the current game</button>
+        </div>
+      </div>
+      <div class="panel" id="setup-settings"></div>
+    </div>
+  </form>
+</section>
+
+<section id="view-play" hidden>
+  <div class="t-grid">
+    <div class="col col-turn">
+      <div id="turn-play">
+        <div id="turn-head" class="box"></div>
+        <form id="dice-form" class="box dice-box"><div id="dice-box" class="dice-row">
+          <label for="dice-input" class="label">Real dice: type the total</label>
+          <input id="dice-input" type="text" inputmode="numeric" autocomplete="off" placeholder="7  or  3 4">
+          <button id="dice-go" class="btn btn-primary btn-small" type="submit">Move</button>
+          <button id="dice-random" class="btn btn-ghost btn-small" type="button">Random roll <kbd>Space</kbd></button>
+        </div></form>
+        <div id="pending-box"></div>
+        <div id="player-opts" class="box-lite"></div>
+        <div id="auction-box"></div>
+        <div id="black-box"></div>
+        <div id="trade-box"></div>
+        <div id="requests-box"></div>
+        <div id="turn-ctl" class="box-lite"></div>
+      </div>
+      <div id="end-box" hidden></div>
+      <div class="board mini" id="mini-board"></div>
+    </div>
+    <div class="col col-players"><div id="players"></div></div>
+    <div class="col col-tabs">
+      <nav class="tabs" role="tablist">
+        <button data-tab="bank" type="button" role="tab">Bank</button>
+        <button data-tab="props" type="button" role="tab">Properties</button>
+        <button data-tab="events" type="button" role="tab">Events</button>
+        <button data-tab="hints" type="button" role="tab">Hints</button>
+        <button data-tab="log" type="button" role="tab">Log</button>
+        <button data-tab="settings" type="button" role="tab">Settings</button>
+        <button data-tab="game" type="button" role="tab">Game</button>
+      </nav>
+      <div id="tab-body" class="tab-body"></div>
+    </div>
+  </div>
+</section>
+<div id="toasts" class="toasts"></div>
+<script type="module" src="js/teacher.js"></script>
+</body>
+</html>

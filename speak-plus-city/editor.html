@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;700&family=Zen+Kaku+Gothic+New:wght@500;700&display=swap">
+<link rel="stylesheet" href="css/city.css">
+<link rel="stylesheet" href="css/editor.css">
+<title>Content editor · Speak Plus City</title>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="plus" viewBox="0 0 40 40"><g transform="rotate(12 20 20)"><line x1="20" y1="6" x2="20" y2="34" stroke="#E8483B" stroke-width="8.5" stroke-linecap="round"/><line x1="6" y1="20" x2="34" y2="20" stroke="#E8483B" stroke-width="8.5" stroke-linecap="round"/></g></symbol>
+  </defs>
+</svg>
+<div class="file-warning" id="file-warning" hidden>This page needs a local server: double-click <b>start.command</b> (Mac) or <b>start.bat</b> (Windows), or run <b>npx serve</b> in this folder. See README.md.</div>
+<script>if (location.protocol === "file:") document.getElementById("file-warning").hidden = false;</script>
+<header class="ed-top">
+  <div class="brand"><div class="logo">speak<svg><use href="#plus"/></svg></div></div>
+  <div class="ed-title">Speak Plus City <span class="muted">· Content editor</span></div>
+  <span class="spacer"></span>
+  <button class="btn btn-primary btn-small" id="ed-save" type="button">Save (use in games)</button>
+  <button class="btn btn-ghost btn-small" id="ed-download" type="button">Download content.json</button>
+  <button class="btn btn-ghost btn-small" id="ed-import" type="button">Import a file</button>
+  <button class="btn btn-ghost btn-small" id="ed-reset" type="button">Reset to default</button>
+  <input type="file" id="ed-file" accept=".json,application/json" hidden>
+</header>
+<main class="ed-main">
+  <a class="link-back" href="index.html">← Speak Plus City</a>
+  <p id="ed-status" class="ed-status"></p>
+  <div id="ed-errors" class="ed-errors" hidden></div>
+  <nav id="ed-tabs" class="tabs"></nav>
+  <div id="ed-body"></div>
+</main>
+<div id="toasts" class="toasts"></div>
+<script type="module" src="js/editor.js"></script>
+</body>
+</html>

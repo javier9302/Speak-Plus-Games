@@ -28,3 +28,16 @@ a.btn{text-decoration:none}
 .tg-art-code rect{fill:var(--surface);stroke:var(--line);stroke-width:1.5}
 .tg-art-code text{font-weight:700;font-size:17px;letter-spacing:.2em;text-anchor:middle;fill:var(--fg)}
 .game-body .tg-note{font-size:13px;padding:10px 12px;border-radius:var(--r);background:var(--bg);border:1px solid var(--line)}
+
+/* Speak Plus City */
+.spc-art{position:absolute;inset:0;width:100%;height:100%}
+.spc-art-board{fill:var(--surface);stroke:var(--field-line);stroke-width:3}
+.spc-art-cells{fill:none;stroke:var(--field-line);stroke-width:3}
+.spc-art-g1{fill:var(--accent)}
+.spc-art-g2{fill:var(--sky)}
+.spc-art-g3{fill:var(--primary)}
+.spc-art-token{fill:var(--accent);stroke:var(--surface);stroke-width:3}
+.spc-art-die rect{fill:var(--surface);stroke:var(--fg);stroke-width:3}
+.spc-art-die circle{fill:var(--fg)}
+.spc-art-say rect,.spc-art-say path{fill:var(--primary)}
+.spc-art-say text{font-weight:700;font-size:15px;text-anchor:middle;fill:var(--primary-fg)}

@@ -5,7 +5,7 @@ Hub de juegos para profesores de inglés de Speak Plus, una eikaiwa en Japón. L
 ## Stack
 
 - HTML, CSS y JavaScript sin frameworks ni build. Se abre `index.html` directamente.
-- Una carpeta por juego (`word-drop/`, `city-run/`, `trade-gate/`), cada una con su propio `index.html`. El `index.html` de la raíz es solo el menú y enlaza a cada juego. Lo común está en `shared/`: `styles.css` (marca y piezas de interfaz compartidas) y `hub.css` (solo el menú).
+- Una carpeta por juego (`word-drop/`, `city-run/`, `trade-gate/`, `speak-plus-city/`), cada una con su propio `index.html`. El `index.html` de la raíz es solo el menú y enlaza a cada juego. Lo común está en `shared/`: `styles.css` (marca y piezas de interfaz compartidas) y `hub.css` (solo el menú).
 - Fuentes de Google Fonts: Lexend (latín) y Zen Kaku Gothic New (japonés).
 - Interfaz en inglés. El contenido de las palabras puede estar en cualquier idioma.
 
@@ -56,6 +56,14 @@ Hub de juegos para profesores de inglés de Speak Plus, una eikaiwa en Japón. L
 - Por dentro no se parece a los otros dos (canvas, varios módulos, datos en JSON). En el menú tiene una tarjeta con enlaces al juego y a la hoja del profesor. El juego vuelve al hub con el enlace "← All games" (`#hub-link`), visible solo en el lobby.
 - Necesita servidor (carga JSON y módulos): no funciona con `file://`. La tarjeta del hub lo avisa en ese caso.
 - Su estética es pixel art con paleta propia dentro del canvas; la marca Speak Plus solo se aplica a la tarjeta del hub.
+
+## Speak Plus City (carpeta `speak-plus-city/`)
+
+- Juego de tablero tipo Monopoly para hablar: 48 casillas en el borde de una cuadrícula de 13×13, 2 a 6 jugadores con nivel Beginner / Intermediate / Advanced. Cada acción se pide con una frase ("Say it!") y el profesor la aprueba. Documentación completa en `speak-plus-city/README.md`.
+- Dos páginas en el mismo navegador: `teacher.html` (banco, portátil) y `board.html` (proyector), más `editor.html` (editor de contenido) e `index.html` (inicio). Necesita servidor (módulos ES, `fetch` y `BroadcastChannel`): `start.command`, `start.bat`, `npm start` o servir el hub. Carpeta autónoma: copia los tokens de marca en `css/city.css`, no enlaza `../shared/`.
+- La ventana del profesor es la única fuente de verdad. Toda la lógica está en `js/state.js`: `apply(state, action, ctx)` devuelve un estado nuevo, sin DOM (se prueba en Node con `npm test`). El tablero solo envía acciones de `BOARD_ACTIONS`; el profesor las aplica, guarda en localStorage (`sp-city-state-v1`) tras cada acción y manda el estado (sin log ni notas). Mensajes en `js/sync.js`. Las animaciones son entradas de `state.fx` con id creciente.
+- Contenido editable en `data/content.json` (casillas, cartas Chance y Mystery por nivel, misiones, reglas de la ronda, Black Market, retos de Coffee Break, `sayIt` = frases, vocabulario y ejemplos de cada acción, que también son el banco de pistas). `validateContent` en `js/content.js` lo comprueba; el editor guarda una copia en `sp-city-content-v1`. Las casillas se copian al estado al empezar, así que una partida guardada conserva su tablero.
+- Tras cambiar reglas o contenido, ejecutar `npm test` dentro de `speak-plus-city/`.
 
 ## Lantern Island (carpeta `lantern-island/`)
 

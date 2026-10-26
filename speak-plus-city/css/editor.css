@@ -1,0 +1,36 @@
+/* Content editor */
+.ed-top{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 16px;background:var(--surface);border-bottom:1px solid var(--line)}
+.ed-top .logo{font-size:20px}
+.ed-title{font-weight:700}
+.ed-main{padding:12px 16px 60px;max-width:1500px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+.ed-status{margin:0}
+.dirty{color:var(--accent)}
+.ed-errors{background:var(--accent-soft);border:1.5px solid var(--accent);border-radius:12px;padding:10px 14px;font-size:14px}
+.ed-errors ul{margin:4px 0 0;padding-left:1.2em}
+.tabs{display:flex;flex-wrap:wrap;gap:6px}
+.tabs button{min-height:44px;padding:0 14px;border-radius:999px;border:1.5px solid var(--line);background:var(--surface);font-weight:700;font-size:14px}
+.tabs button[aria-selected=true]{background:var(--primary);color:var(--primary-fg);border-color:var(--primary)}
+.table-wrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px;margin-bottom:10px}
+.ed-table{border-collapse:collapse;width:100%;font-size:14px}
+.ed-table th{position:sticky;top:0;background:var(--surface);text-align:left;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500;padding:8px 6px;border-bottom:1px solid var(--line)}
+.ed-table td{padding:4px;border-bottom:1px solid var(--line);vertical-align:top}
+.ed-table input[type=text],.ed-table input[type=number],.ed-table select,.ed-table textarea{width:100%;min-height:40px;font-size:14px}
+.ed-table textarea{resize:vertical;min-width:240px;font-family:var(--f-jp)}
+.ed-table input[type=number]{width:90px}
+.ed-table input[type=checkbox]{width:22px;height:22px;margin:9px;accent-color:var(--indigo)}
+.ed-table input[type=color]{width:60px;height:40px;border:0;background:none}
+.ed-table td.na{background:var(--bg)}
+.ed-table .idx{color:var(--muted);font-variant-numeric:tabular-nums;padding-top:12px;text-align:right}
+.ed-table .c-emoji input{width:60px;text-align:center}
+.ed-table .c-text textarea{min-width:420px}
+.ed-squares .c-name input{min-width:150px}
+.ed-squares .c-vocab input{min-width:220px}
+.ed-table .tools{white-space:nowrap}
+.ed-table .tools .icon-btn{width:36px;height:36px;margin-left:2px}
+.say-sec{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px}
+.say-sec h3{margin:0 0 10px;font-size:16px}
+.say-sec code{font-size:12px;color:var(--muted);font-weight:400}
+.say-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
+.say-grid label{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:500;color:var(--muted)}
+.say-grid input,.say-grid textarea{color:var(--fg);font-family:var(--f-jp);font-size:14px;width:100%}
+.error{color:var(--accent);font-weight:700}
