@@ -2,6 +2,7 @@
 import { readFileSync } from 'node:fs';
 import { apply, emptyState, options, mustAct, tick, rentOf, priceOf, worth, timeLeft, sessionReport, BOARD_SIZE, JAIL } from '../js/state.js';
 import { validateContent } from '../js/content.js';
+import { phoneView, lobbyView } from '../js/views.js';
 
 const content = JSON.parse(readFileSync(new URL('../data/content.json', import.meta.url)));
 let passed = 0, failed = 0;
@@ -107,8 +108,8 @@ test('rent, full group and market', () => {
   s = run(s, { type: 'roll', dice: [1, 0 + 1] });   // 2 → chance square
   eq(s.players[1].pos, 2);
 });
-test('paying rent moves money between players', () => {
-  let s = newGame();
+test('old rule (rentRule pay): paying rent moves money between players', () => {
+  let s = newGame(3, { rentRule: 'pay' });
   s.props[7] = { owner: 1, mortgaged: false };
   s = run(s, { type: 'roll', dice: [3, 4] });
   eq(options(s)[0].id, 'rent');
@@ -123,8 +124,8 @@ test('no rent on mortgaged property, own property needs nothing', () => {
   ok(!mustAct(s));
 });
 
-test('getting the property in a trade mid-turn lets the player end the turn', () => {
-  let s = newGame();
+test('old rule: getting the property in a trade mid-turn lets the player end the turn', () => {
+  let s = newGame(3, { rentRule: 'pay' });
   s.props[7] = { owner: 1, mortgaged: false };
   s = run(s, { type: 'roll', dice: [3, 4] });
   ok(mustAct(s), 'rent due');
@@ -139,6 +140,130 @@ test('a failed Chance card applies its fail amount and feeds the fund', () => {
   s.pending.card = { text: 'x', reward: -50, fail: -100, fund: true };
   s = run(s, { type: 'deny' });
   eq(s.players[0].money, 1400); eq(s.fund, 100); ok(!mustAct(s));
+});
+
+console.log('Rent: the owner must ask');
+test('landing on someone else\'s property needs nothing; the turn can end', () => {
+  let s = newGame();
+  s.props[7] = { owner: 1, mortgaged: false };
+  s = run(s, { type: 'roll', dice: [3, 4] });
+  ok(!mustAct(s)); ok(!options(s).some(o => o.id === 'rent'));
+  eq(s.rentDue, { sq: 7, from: 0, to: 1 });
+  s = run(s, { type: 'end' });
+  eq(s.rentDue, { sq: 7, from: 0, to: 1 }, 'still open until the next roll');
+});
+test('the owner asks before the next roll, the bank approves, the visitor pays', () => {
+  let s = newGame();
+  s.props[7] = { owner: 1, mortgaged: false };
+  s = run(s, { type: 'roll', dice: [3, 4] });
+  s = run(s, { type: 'end' });                       // Ken's turn now, he hasn't rolled
+  s = run(s, { type: 'claimRent', pid: 1 });
+  eq(s.pending.kind, 'rent'); eq([s.pending.pid, s.pending.to, s.pending.amount], [0, 1, 20]);
+  s = run(s, { type: 'approve' });
+  eq([s.players[0].money, s.players[1].money], [1480, 1520]);
+  eq(s.rentDue, null); eq(s.turn.pid, 1); eq(s.turn.step, 'roll'); ok(!s.turn.handled, 'Ken\'s turn untouched');
+  ok(apply(s, { type: 'claimRent', pid: 1 }, ctx()).error, 'only once');
+});
+test('if the owner forgets until the next roll, no rent', () => {
+  let s = newGame();
+  s.props[7] = { owner: 1, mortgaged: false };
+  s = run(s, { type: 'roll', dice: [3, 4] });
+  s = run(s, { type: 'end' });
+  s = run(s, { type: 'roll', dice: [1, 1] });
+  eq(s.rentDue, null);
+  const r = apply(s, { type: 'claimRent', pid: 1 }, ctx());
+  ok(r.error && r.error.includes('Nobody owes you rent'));
+});
+test('someone else can\'t claim the rent, and the answer gives nothing away', () => {
+  let s = newGame();
+  s.props[7] = { owner: 1, mortgaged: false };
+  s = run(s, { type: 'roll', dice: [3, 4] });
+  const wrong = apply(s, { type: 'claimRent', pid: 2, sq: 7 }, ctx()).error;
+  const none = apply(newGame(), { type: 'claimRent', pid: 2, sq: 7 }, ctx()).error;
+  eq(wrong, none);
+});
+test('a waived claim closes the rent window', () => {
+  let s = newGame();
+  s.props[7] = { owner: 1, mortgaged: false };
+  s = run(s, { type: 'roll', dice: [3, 4] });
+  s = run(s, { type: 'claimRent', pid: 1 });
+  s = run(s, { type: 'deny' });
+  eq(s.players[0].money, 1500); eq(s.rentDue, null); ok(s.turn.handled);
+});
+
+console.log('Phones');
+function phoneGame() {
+  const players = ['Aiko', 'Ken', 'Mari'].map((name, i) => ({ name, token: i, level: 'beginner', phone: 'tok' + i }));
+  return run(emptyState(), { type: 'setup', players, settings: { phones: true } });
+}
+test('seats come from the setup; a phone acts only as its own player', () => {
+  let s = phoneGame();
+  eq(s.seats, { tok0: 0, tok1: 1, tok2: 2 });
+  ok(apply(s, { type: 'roll', from: 'phone', token: 'tok1' }, ctx()).error.includes('not your turn'));
+  s = run(s, { type: 'roll', from: 'phone', token: 'tok0', dice: [3, 4] });
+  eq(s.players[0].pos, 7);
+  ok(apply(s, { type: 'money', from: 'phone', token: 'tok0', pid: 0, delta: 999 }, ctx()).error, 'no bank actions');
+  ok(apply(s, { type: 'roll', from: 'phone', token: 'nobody' }, ctx()).error.includes('Choose your player'));
+});
+test('a phone claims rent as its own player, whatever pid it sends', () => {
+  let s = phoneGame();
+  s.props[7] = { owner: 1, mortgaged: false };
+  s = run(s, { type: 'roll', dice: [3, 4] });
+  ok(apply(s, { type: 'claimRent', from: 'phone', token: 'tok2', pid: 1 }, ctx()).error, 'Mari can\'t claim Ken\'s rent');
+  s = run(s, { type: 'claimRent', from: 'phone', token: 'tok1', sq: 7 });
+  eq(s.pending.to, 1);
+});
+test('phone trades: offered, the other phone answers, then the teacher confirms', () => {
+  let s = phoneGame();
+  s.props[1] = { owner: 0, mortgaged: false };
+  s.props[7] = { owner: 1, mortgaged: false };
+  s = run(s, { type: 'trade', from: 'phone', token: 'tok0', trade: { from: 2, to: 1, give: { props: [1] }, get: { props: [7] } } });
+  eq([s.trade.from, s.trade.status], [0, 'offered'], 'from is always the phone\'s player');
+  ok(apply(s, { type: 'tradeAnswer', from: 'phone', token: 'tok2', yes: true }, ctx()).error, 'only the other player answers');
+  s = run(s, { type: 'tradeAnswer', from: 'phone', token: 'tok1', yes: true });
+  eq(s.trade.status, 'accepted');
+  s = run(s, { type: 'tradeConfirm' });
+  eq([s.props[1].owner, s.props[7].owner], [1, 0]);
+});
+test('asking for a property the other player doesn\'t own fails on their phone only', () => {
+  let s = phoneGame();
+  s.props[7] = { owner: 2, mortgaged: false };
+  s = run(s, { type: 'trade', from: 'phone', token: 'tok0', trade: { to: 1, give: { money: 50 }, get: { props: [7] } } });
+  ok(apply(s, { type: 'tradeAnswer', from: 'phone', token: 'tok1', yes: true }, ctx()).error.includes("You don't own"));
+  s = run(s, { type: 'tradeAnswer', from: 'phone', token: 'tok1', yes: false });
+  eq(s.trade, null);
+});
+test('a late phone takes a free seat only', () => {
+  let s = phoneGame();
+  s = run(s, { type: 'seat', token: 'tok2', pid: null });
+  ok(apply(s, { type: 'seat', from: 'phone', token: 'new', pid: 0 }, ctx()).error, 'taken');
+  s = run(s, { type: 'seat', from: 'phone', token: 'new', pid: 2 });
+  eq(s.seats.new, 2); eq(s.seats.tok2, undefined);
+  eq(lobbyView(s, 'X').players.map(p => p.free), [false, false, false]);
+});
+test('a phone view shows only that player\'s secrets', () => {
+  let s = phoneGame();
+  s.props[1] = { owner: 0, mortgaged: false };
+  s.props[7] = { owner: 1, mortgaged: false };
+  s.players[1].money = 1234;
+  const v = phoneView(s, 0, clock);
+  eq(v.me.money, 1500); eq(v.props.map(p => p.sq), [1]); ok(v.me.mission);
+  const json = JSON.stringify(v);
+  ok(!json.includes('1234'), 'no other money');
+  ok(!json.includes(s.players[1].mission), 'no other mission');
+  eq(v.sold.map(x => x.sq), [7]); ok(!('owner' in v.sold[0]), 'sold, but not who owns it');
+  ok(v.players.every(p => !('money' in p)));
+  ok(v.myTurn && v.options.some(o => o.id === 'roll'));
+  ok(!phoneView(s, 1, clock).myTurn && !phoneView(s, 1, clock).options.length);
+});
+test('the owner\'s phone does not say when rent is due', () => {
+  let s = phoneGame();
+  s.props[7] = { owner: 1, mortgaged: false };
+  const before = phoneView(s, 1, clock);
+  s = run(s, { type: 'roll', dice: [3, 4] });
+  const after = phoneView(s, 1, clock);
+  ok(!JSON.stringify(after).includes('rentDue'));
+  eq(after.props, before.props);
 });
 
 console.log('Auctions');

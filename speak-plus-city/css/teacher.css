@@ -136,3 +136,13 @@
 .end-form input{width:22px;height:22px;accent-color:var(--indigo)}
 .final{margin:0;padding-left:1.4em;display:flex;flex-direction:column;gap:6px;font-size:16px}
 .final .token{width:26px;height:26px;font-size:14px;vertical-align:middle}
+
+/* Phones */
+.setup-join{display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:14px;background:var(--bg);border:1.5px dashed var(--sky)}
+.join-box{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.join-box img{border-radius:10px;background:#fff;image-rendering:pixelated}
+.room-code{font-size:34px;font-weight:700;letter-spacing:.18em;line-height:1.1}
+.phone-mark{font-size:18px}
+.box-rent{border:2px solid var(--sky)}
+.box-rent p{margin:0}
+.ptable td select{min-height:40px}

@@ -2,9 +2,16 @@
   "name": "speak-plus-city",
   "private": true,
   "type": "module",
-  "description": "No dependencies and no build step. `npm start` serves the folder, `npm test` checks the rules.",
+  "description": "The game itself has no build step. The server (npm start) is only needed to play with phones.",
   "scripts": {
-    "start": "npx --yes serve -l 8080 .",
-    "test": "node tests/run.mjs"
+    "start": "node server/index.js",
+    "test": "node tests/run.mjs && node tests/server.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "qrcode": "^1.5.4",
+    "ws": "^8.18.0"
   }
 }

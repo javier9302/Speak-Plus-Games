@@ -54,7 +54,12 @@ export const DEFAULT_SETTINGS = {
   loanInterest: 10,        // % added to a loan from the City Bank square
   missionBonus: 200,
   guessBonus: 100,
-  lastTen: true            // last 10 minutes: rewards are doubled
+  lastTen: true,           // last 10 minutes: rewards are doubled
+  // 'ask': the owner must ask for the rent before the next roll, or it isn't paid.
+  // 'pay': the visitor must pay before ending the turn.
+  rentRule: 'ask',
+  phones: false,           // students play with their phones (needs the game server)
+  showOwners: false        // with phones: show on the board who owns each property
 };
 
 const MAX_LOG = 2000;
@@ -202,7 +207,8 @@ export function emptyState(settings = {}) {
     v: 1, phase: 'setup',
     settings: deepMerge(DEFAULT_SETTINGS, settings),
     squares: [], groups: [], sayIt: {}, players: [], props: {},
-    turn: null, pending: null, auction: null, trade: null, black: null,
+    turn: null, pending: null, auction: null, trade: null, black: null, rentDue: null,
+    seats: {},             // phone token → player index (phone mode)
     market: null, rule: null, ruleQueue: [], hint: null, requests: [],
     decks: {}, round: 1, fund: 0, festivals: 0, lastTen: false,
     timer: null, results: null, log: [], fx: [], fxSeq: 0, reqSeq: 0, hintSeq: 0
@@ -230,6 +236,7 @@ function createGame(prev, { players, settings }, ctx) {
     mission: on(s, 'missions') && missions.length ? missions[i % missions.length] : null,
     missionDone: false, guessed: false
   }));
+  players.forEach((p, i) => { if (p.phone) s.seats[String(p.phone)] = i; });
   s.phase = 'play';
   s.timer = s.settings.gameMinutes > 0 ? { dur: s.settings.gameMinutes * 60000, startAt: ctx.now, pausedAt: null, paused: 0 } : null;
   log(s, `New game: ${s.players.map(p => p.name).join(', ')}.`, 'turn', ctx);
@@ -291,6 +298,7 @@ function roll(s, dice, ctx) {
   if (t.step !== 'roll') throw new Error('This player has already rolled.');
   if (s.pending) throw new Error('Finish the pending action first.');
   const [a, b] = dice;
+  s.rentDue = null;        // the owner had to ask for rent before this roll
   t.dice = dice;
   const pid = t.pid;
   fx(s, { kind: 'dice', dice, pid });
@@ -306,10 +314,17 @@ function land(s, ctx) {
   const q = square(s, p.pos);
   t.step = 'land';
   t.handled = false;
+  if (s.rentDue && s.rentDue.from === t.pid) s.rentDue = null;
+  const owner = q.type === 'property' ? ownerOf(s, p.pos) : null;
   if (q.type === 'gotojail') { sendToJail(s, t.pid, ctx); t.handled = true; }
   else if (['start', 'jail'].includes(q.type)) t.handled = true;
   else if (q.type === 'property' && ownerOf(s, p.pos) === t.pid) t.handled = true;
   else if (q.type === 'property' && isMortgaged(s, p.pos)) t.handled = true;
+  else if (q.type === 'property' && owner != null && s.settings.rentRule !== 'pay') {
+    // Someone else's property: nothing to do now. The owner may ask for the rent until the next roll.
+    s.rentDue = { sq: p.pos, from: t.pid, to: owner };
+    t.handled = true;
+  }
   else if (q.type === 'mystery' && !on(s, 'mystery')) t.handled = true;
   else if (q.type === 'blackmarket' && !on(s, 'blackMarket')) t.handled = true;
 }
@@ -323,7 +338,7 @@ export function mustAct(s) {
   if (q.type === 'property') {
     // Ownership can change during the turn (a trade, the teacher): only unowned or someone else's unmortgaged property needs action.
     const owner = ownerOf(s, sq);
-    return owner == null || (owner !== t.pid && !isMortgaged(s, sq));
+    return owner == null || (s.settings.rentRule === 'pay' && owner !== t.pid && !isMortgaged(s, sq));
   }
   return ['chance', 'mystery', 'bank'].includes(q.type);
 }
@@ -350,7 +365,7 @@ export function options(s) {
     if (q.type === 'property' && owner == null) {
       add('buy', `Buy for ${money(priceOf(s, sq))}`, 'buy', { primary: true });
       add('pass', 'Pass → auction', 'pass');
-    } else if (q.type === 'property' && owner !== pid && !isMortgaged(s, sq)) {
+    } else if (q.type === 'property' && owner !== pid && !isMortgaged(s, sq) && s.settings.rentRule === 'pay') {
       add('rent', `Pay rent ${money(rentOf(s, sq))}`, 'rent', { primary: true });
     } else if (q.type === 'chance') add('card', 'Draw a card', 'card', { primary: true });
     else if (q.type === 'mystery') add('mystery', 'Take the challenge', 'mystery', { primary: true });
@@ -372,10 +387,26 @@ export function options(s) {
 // Actions the board window is allowed to send. Everything else is teacher-only.
 export const BOARD_ACTIONS = new Set(['roll', 'buy', 'pass', 'rent', 'card', 'mystery', 'bank', 'festival', 'blackmarket', 'jailSpeak', 'jailStay', 'end', 'trade', 'ask', 'nudge']);
 
+// Phones: turn actions only on that player's own turn, plus a few actions any time.
+export const PHONE_TURN_ACTIONS = new Set(['roll', 'buy', 'pass', 'rent', 'card', 'mystery', 'bank', 'festival', 'blackmarket', 'jailSpeak', 'jailStay', 'end']);
+export const PHONE_ANYTIME = new Set(['trade', 'tradeAnswer', 'ask', 'claimRent', 'seat']);
+
+function checkPhone(s, a) {
+  if (a.type === 'seat') return;                 // checked in the action itself
+  const pid = s.seats[a.token];
+  if (pid == null) throw new Error('Choose your player first.');
+  a.pid = pid;                                   // a phone always acts as its own player
+  if (PHONE_TURN_ACTIONS.has(a.type)) {
+    if (s.phase !== 'play' || !s.turn || s.turn.pid !== pid) throw new Error("It's not your turn.");
+  } else if (!PHONE_ANYTIME.has(a.type)) throw new Error(`A phone can't do "${a.type}".`);
+  if (a.type === 'trade' && a.trade) a.trade.from = pid;
+}
+
 // Returns { state, error }. On error the original state is returned unchanged.
 export function apply(state, action, ctx) {
   try {
     if (action.from === 'board' && !BOARD_ACTIONS.has(action.type)) throw new Error(`The board can't do "${action.type}".`);
+    if (action.from === 'phone') { action = { ...action }; checkPhone(state, action); }
     const s = structuredClone(state);
     const fn = ACTIONS[action.type];
     if (!fn) throw new Error(`Unknown action "${action.type}".`);
@@ -511,12 +542,55 @@ const ACTIONS = {
     nextTurn(s, ctx);
   },
 
-  // A trade proposal (from the board's trade panel). The teacher confirms it.
+  // A trade proposal. From the board both players are there, so it goes straight to the teacher.
+  // From a phone the other player answers on their phone first ("offered" → "accepted").
   trade(s, a, ctx) {
     needPlay(s);
-    s.trade = cleanTrade(s, a.trade);
+    if (a.from === 'phone' && s.trade) throw new Error('Another deal is waiting. Try again in a moment.');
+    s.trade = { ...cleanTrade(s, a.trade), status: a.from === 'phone' ? 'offered' : 'accepted' };
     const tr = s.trade;
     log(s, `Trade proposed: ${s.players[tr.from].name} ↔ ${s.players[tr.to].name}.`, 'trade', ctx);
+  },
+
+  // The other player's answer to a deal offered from a phone.
+  tradeAnswer(s, a, ctx) {
+    const tr = s.trade;
+    if (!tr || tr.status !== 'offered' || (a.from === 'phone' && tr.to !== a.pid)) throw new Error('That deal is no longer open.');
+    const B = s.players[tr.to];
+    if (!a.yes) {
+      log(s, `${B.name} says no to the deal.`, 'trade', ctx);
+      s.trade = null;
+      return;
+    }
+    for (const sq of tr.get.props) if (ownerOf(s, sq) !== tr.to) throw new Error(`You don't own ${square(s, sq).name}. Say no, or ask for something else.`);
+    tr.status = 'accepted';
+    log(s, `${B.name} accepts the deal. Waiting for the bank.`, 'trade', ctx);
+  },
+
+  // The owner asks for the rent (rentRule 'ask'). Only possible until the next roll.
+  claimRent(s, a, ctx) {
+    needPlay(s);
+    const rd = s.rentDue;
+    const owner = a.pid ?? (rd ? rd.to : null);
+    const where = a.sq != null && s.squares[a.sq] ? ` at ${square(s, a.sq).name}` : '';
+    // The same answer whatever the reason, so a phone can't use it to find out who owns what.
+    if (!rd || rd.to !== owner || (a.sq != null && Number(a.sq) !== rd.sq) || ownerOf(s, rd.sq) !== owner || isMortgaged(s, rd.sq)) {
+      throw new Error(`Nobody owes you rent${where} right now.`);
+    }
+    if (s.pending) throw new Error('The bank is busy. Ask again in a moment.');
+    s.pending = { kind: 'rent', pid: rd.from, to: owner, sq: rd.sq, amount: rentOf(s, rd.sq), tries: 0, extra: true, claim: true };
+    log(s, `${s.players[owner].name} asks ${s.players[rd.from].name} for the rent at ${square(s, rd.sq).name}.`, 'money', ctx);
+  },
+
+  // Which player a phone plays. Teacher: any seat, or null to free it. A phone: only a free seat.
+  seat(s, a, ctx) {
+    const token = String(a.token || '');
+    if (!token) throw new Error('No phone.');
+    const pid = a.pid == null || a.pid === '' ? null : Number(a.pid);
+    if (pid != null) needPlayer(s, pid);
+    if (a.from === 'phone' && pid != null && Object.entries(s.seats).some(([t, i]) => i === pid && t !== token)) throw new Error('Someone already plays that player.');
+    for (const [t, i] of Object.entries(s.seats)) if (t === token || (pid != null && i === pid)) delete s.seats[t];
+    if (pid != null) s.seats[token] = pid;
   },
 
   // "Ask the bank" for a loan, mortgage or discount: goes to the teacher's request list.
@@ -555,6 +629,7 @@ const ACTIONS = {
         fx(s, { kind: 'buy', pid: pe.pid, sq: pe.sq });
         break;
       case 'rent':
+        if (pe.claim) s.rentDue = null;
         pay(s, pe.pid, -amt, null, ctx);
         pay(s, pe.to, amt, null, ctx);
         log(s, `${p.name} pays ${money(amt)} rent to ${s.players[pe.to].name} (${square(s, pe.sq).name}).`, 'money', ctx);
@@ -607,7 +682,7 @@ const ACTIONS = {
     s.pending = null;
     switch (pe.kind) {
       case 'buy': break;                                     // back to Buy / Pass
-      case 'rent': log(s, `Rent waived for ${p.name}.`, 'money', ctx); done(); break;
+      case 'rent': if (pe.claim) s.rentDue = null; log(s, `Rent waived for ${p.name}.`, 'money', ctx); done(); break;
       case 'card':
         if (pe.card.fail) {
           pay(s, pe.pid, pe.card.fail, 'Chance card (not completed)', ctx, 'card');

@@ -1,4 +1,4 @@
-# Lantern Island on Render + Supabase
+# Lantern Island (and Speak Plus City) on Render + Supabase
 
 With this setup, Lantern Island runs on the internet. Students scan the QR code and join with their phone's **mobile data**: no school Wi-Fi, no hotspot.
 
@@ -68,6 +68,15 @@ You don't need to set `PUBLIC_URL`: the game uses Render's address by itself, an
 | "wrong key" | `SUPABASE_SERVICE_KEY` is not the `service_role` key. Render → lantern-island → **Environment**, fix it, **Save** (it restarts). |
 | Forgot the PIN | Render → lantern-island → **Environment** → `TEACHER_PIN`. |
 | Movement feels slow | Check the region is Singapore. Render's paid **Starter** plan also removes the sleep. Change `plan: free` to `plan: starter` in `render.yaml`, or change it in the Render dashboard. |
+
+## Speak Plus City online (phones)
+
+`render.yaml` also has a second service, **speak-plus-city**, so students can play Speak Plus City with their phones from anywhere. It needs no settings and no Supabase: the game is saved in the teacher's browser.
+
+- If you create the Blueprint after this was added, Render creates both services at once.
+- If you already created it with only Lantern Island: Render → **Blueprints** → your blueprint → **Manual sync** (or wait for the next push to `main`). Render shows the new service; approve it.
+- Its address is like `https://speak-plus-city-xxxx.onrender.com`. Open `/teacher.html` on the laptop, **Open board window**, tick **Play with phones** on the setup screen, and students scan the QR code on the board.
+- Same free-plan rule: open the teacher page a couple of minutes before class so it's awake. Render's free plan gives 750 hours a month per account, shared by both games; sleeping services don't use them.
 
 ## Updating the game
 

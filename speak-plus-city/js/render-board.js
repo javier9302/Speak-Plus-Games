@@ -33,6 +33,7 @@ export function buildBoard(el, s, { mini = false } = {}) {
     return `<div class="${cls}" data-sq="${i}" style="grid-row:${row};grid-column:${col}" title="${esc(q.name)}">${band}${inner}<span class="c-owner"></span></div>`;
   }).join('');
   el.classList.toggle('mini', mini);
+  el._html = null;          // ui.patch() must not think the old HTML is still there
   el.innerHTML = `${cells}<div class="center" id="${mini ? 'mini-center' : 'center'}"></div><div class="tokens"></div>`;
   el._sig = boardSig(s);
 }
@@ -41,7 +42,8 @@ export const boardSig = s => s.squares.map(q => q.name + q.type + (q.group || ''
 
 // Update ownership, prices and tokens. `positions` (optional) overrides where
 // tokens are drawn, so the board can animate them square by square.
-export function updateBoard(el, s, { positions, highlight } = {}) {
+// `hideOwners` (phone mode): a sold property shows a plain "sold" mark, not who owns it.
+export function updateBoard(el, s, { positions, highlight, hideOwners = false } = {}) {
   if (el._sig !== boardSig(s)) buildBoard(el, s, { mini: el.classList.contains('mini') });
   const mini = el.classList.contains('mini');
   for (const cell of el.querySelectorAll('.cell')) {
@@ -51,21 +53,22 @@ export function updateBoard(el, s, { positions, highlight } = {}) {
     const ownerEl = cell.querySelector('.c-owner');
     if (owner != null && s.players[owner]) {
       const t = tokenOf(s.players[owner]);
-      ownerEl.style.setProperty('--oc', t.color);
-      ownerEl.textContent = mini ? '' : t.icon;
+      ownerEl.style.setProperty('--oc', hideOwners ? '#8A90A6' : t.color);
+      ownerEl.textContent = mini || hideOwners ? '' : t.icon;
       cell.classList.add('owned');
     } else {
       ownerEl.textContent = '';
       cell.classList.remove('owned');
     }
-    cell.classList.toggle('mortgaged', isMortgaged(s, i));
+    cell.classList.toggle('sold', owner != null && hideOwners);
+    cell.classList.toggle('mortgaged', isMortgaged(s, i) && !hideOwners);
     cell.classList.toggle('market', q.type === 'property' && marketMult(s, q.group) !== 1);
     cell.classList.toggle('here', highlight === i);
     cell.classList.toggle('auctioned', !!(s.auction && s.auction.sq === i));
     const price = cell.querySelector('.c-price');
     if (price) {
       let txt = '';
-      if (q.type === 'property') txt = owner != null ? (isMortgaged(s, i) ? 'mortgaged' : `rent $${rentOf(s, i)}`) : `$${priceOf(s, i)}`;
+      if (q.type === 'property') txt = owner != null ? (hideOwners ? 'sold' : isMortgaged(s, i) ? 'mortgaged' : `rent $${rentOf(s, i)}`) : `$${priceOf(s, i)}`;
       else if (q.type === 'bank') txt = q.bank === 'tax' ? `pay $${q.amount}` : q.bank === 'bonus' ? `+$${q.amount}` : 'loans';
       else if (TYPE_LABEL[q.type] && q.name !== TYPE_LABEL[q.type]) txt = TYPE_LABEL[q.type];
       if (price.textContent !== txt) price.textContent = txt;

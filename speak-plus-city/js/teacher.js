@@ -1,6 +1,7 @@
 // Teacher window: the bank. It holds the one true game state, applies every
 // action (its own and the ones the board sends), saves after each change and
-// sends the new state to the board.
+// sends the new state to the board. In phone mode it also sends each phone its
+// own private view (js/views.js) through the game server (js/phones.js).
 
 import {
   apply, tick, emptyState, options, currentPlayer, ownerOf, isMortgaged, priceOf, rentOf, playerProps, worth,
@@ -9,6 +10,8 @@ import {
 import { openChannel, saveState, loadState, saveSettings, loadSettings } from './sync.js';
 import { loadContent } from './content.js';
 import { buildBoard, updateBoard } from './render-board.js';
+import { phoneView, lobbyView } from './views.js';
+import { serverInfo, createPhones } from './phones.js';
 import { $, $$, esc, patch, tokenHTML, levelBadge, fmtClock, sayVars, download, readFile, helpOverlay, isTyping } from './ui.js';
 
 let C = null;              // content (cards, missions, prompts…)
@@ -24,7 +27,19 @@ let setupSettings = { ...DEFAULT_SETTINGS, ...(loadSettings() || {}) };
 setupSettings.hints = { ...DEFAULT_SETTINGS.hints, ...(setupSettings.hints || {}) };
 setupSettings.surprises = { ...DEFAULT_SETTINGS.surprises, ...(setupSettings.surprises || {}) };
 
+let server = null;          // game server info when this page is served by it (phone mode possible)
+const sentViews = new Map(); // phone token → last view sent (JSON), to send only changes
+
 const ctx = () => ({ content: C, now: Date.now(), rand: Math.random });
+const inSetup = () => S.phase === 'setup' || showSetup;
+const phonesOn = () => !!server && (inSetup() ? setupSettings.phones : S.settings.phones);
+const phones = createPhones({
+  onHosted() { sentViews.clear(); broadcast(); render(); sendViews(); },
+  onStatus() { renderConn(); },
+  onPhone(m) { phoneEvent(m); },
+  onAct(token, action) { phoneAction(token, action); },
+  onReplaced() { toast('The phone game was opened in another teacher window.', 'bad'); }
+});
 const channel = openChannel(onMessage);
 const boardConnected = () => Date.now() - boardSeenAt < 8000;
 
@@ -59,11 +74,61 @@ function onMessage(msg) {
   }
 }
 
-// The board doesn't need the log, the shuffled decks or the teacher's notes.
+// The board doesn't need the log, the shuffled decks, the phone tokens or the teacher's notes.
 function slim(s) {
-  return { ...s, log: [], decks: {}, ruleQueue: [], players: s.players.map(p => ({ ...p, notes: '' })) };
+  return { ...s, log: [], decks: {}, ruleQueue: [], seats: {}, players: s.players.map(p => ({ ...p, notes: '' })) };
 }
-function broadcast() { channel.send({ t: 'state', state: slim(S) }); }
+// `net`: the room code and QR code the board shows in phone mode.
+const netInfo = () => (phonesOn() && phones.info ? { ...phones.info, joined: [...phones.phones.values()].filter(p => p.on).map(p => p.name) } : null);
+function broadcast() { channel.send({ t: 'state', state: slim(S), net: netInfo(), setup: inSetup() }); }
+
+// ---------- Phones ----------
+
+// Every connected phone gets its own view: its player's private game, or the lobby.
+function sendViews() {
+  if (!phonesOn() || !phones.connected) return;
+  for (const [token, ph] of phones.phones) {
+    if (!ph.on) continue;
+    const pid = S.seats[token];
+    let view;
+    if (inSetup()) {
+      const i = setupPlayers.findIndex(x => x.phone === token);
+      view = { ...lobbyView({ phase: 'setup' }, ph.name), you: i >= 0 ? { name: setupPlayers[i].name || ph.name, icon: TOKENS[setupPlayers[i].token % TOKENS.length].icon, color: TOKENS[setupPlayers[i].token % TOKENS.length].color } : null };
+    } else if (pid != null && S.players[pid]) view = phoneView(S, pid);
+    else view = lobbyView(S, ph.name);
+    const json = JSON.stringify(view);
+    if (sentViews.get(token) !== json) { sentViews.set(token, json); phones.send(token, { t: 'view', view }); }
+  }
+}
+
+function phoneEvent({ token, name, on }) {
+  sentViews.delete(token);
+  if (on && inSetup() && setupSettings.phones && !setupPlayers.some(x => x.phone === token)) {
+    // A phone joined during the setup: it becomes a player (the first empty row, or a new one).
+    const empty = setupPlayers.find(x => !x.phone && !x.name.trim());
+    if (empty) { empty.name = name; empty.phone = token; }
+    else if (setupPlayers.length < MAX_PLAYERS) {
+      const used = new Set(setupPlayers.map(x => x.token));
+      setupPlayers.push({ name, token: TOKENS.findIndex((_, k) => !used.has(k)), level: 'beginner', phone: token });
+    } else toast(`📱 ${name} joined, but there are already ${MAX_PLAYERS} players.`, 'bad');
+    toast(`📱 ${name} joined.`);
+  }
+  render();
+  broadcast();
+  sendViews();
+}
+
+function phoneAction(token, raw) {
+  if (!phonesOn() || !raw || typeof raw.type !== 'string') return;
+  const action = { ...raw, from: 'phone', token };
+  delete action.dice; delete action.total;        // phones roll random dice like the board
+  if (inSetup()) return phones.send(token, { t: 'error', text: 'The game hasn\'t started yet.' });
+  const r = apply(S, action, ctx());
+  if (r.error) phones.send(token, { t: 'error', text: r.error });
+  else commit(r.state);
+}
+
+function syncPhones() { if (phonesOn()) phones.start(); }
 
 function act(action) {
   const r = apply(S, action, ctx());
@@ -78,6 +143,7 @@ function commit(next, undoable = true) {
   if (!saveState(S)) toast('Could not auto-save (browser storage is full). Use Save game.', 'bad');
   broadcast();
   render();
+  sendViews();
 }
 
 function undoLast() {
@@ -91,6 +157,7 @@ function undoLast() {
   saveState(S);
   broadcast();
   render();
+  sendViews();
   toast('Undone.');
 }
 
@@ -109,6 +176,7 @@ function render() {
   }
   renderConn();
   tickDisplay();
+  syncPhones();
 }
 
 function renderConn() {
@@ -116,6 +184,34 @@ function renderConn() {
   const ok = boardConnected();
   el.className = 'conn-pill ' + (ok ? 'ok' : 'off');
   el.textContent = ok ? 'Board connected' : 'Board not open';
+  const ph = $('#conn-phones');
+  ph.hidden = !phonesOn();
+  if (phonesOn()) {
+    const n = [...phones.phones.values()].filter(x => x.on).length;
+    ph.className = 'conn-pill ' + (phones.connected ? 'ok' : 'off');
+    ph.textContent = phones.connected ? `📱 ${phones.info.code} · ${n} phone${n === 1 ? '' : 's'}` : '📱 Connecting…';
+  }
+}
+
+// The join box: QR code, room code and address (setup screen and Phones tab).
+function joinBoxHTML() {
+  if (!server) return `<p class="hint">To play with phones, start the game with <b>npm start</b> (or the start script) or use the online version. Now the page is served without the game server.</p>`;
+  if (!phones.connected || !phones.info) return '<p class="hint">Connecting to the game server…</p>';
+  const i = phones.info;
+  return `<div class="join-box"><img src="${i.qr}" alt="QR code to join" width="150" height="150">
+    <div><div class="label">Room code</div><div class="room-code">${esc(i.code)}</div><div class="small muted">${esc(i.joinUrl)}</div>
+    <p class="hint">The board shows this QR code too. Students scan it, type their name, and appear here.</p></div></div>`;
+}
+
+function phoneListHTML() {
+  const list = [...phones.phones];
+  if (!list.length) return '<p class="hint">No phones yet.</p>';
+  return `<table class="ptable"><thead><tr><th>Phone</th><th>Plays</th><th></th></tr></thead><tbody>${list.map(([token, ph]) => {
+    const pid = S.seats[token];
+    return `<tr><td>${ph.on ? '🟢' : '⚪'} ${esc(ph.name)}</td>
+      <td><select data-seat="${esc(token)}" aria-label="Player for ${esc(ph.name)}"><option value="">Not playing</option>${S.players.map((p, k) => `<option value="${k}" ${k === pid ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select></td>
+      <td><button class="btn btn-ghost btn-small" data-cmd="kick" data-token="${esc(token)}" type="button">Remove</button></td></tr>`;
+  }).join('')}</tbody></table>`;
 }
 
 // --- Setup ---
@@ -167,6 +263,12 @@ function settingsFormHTML(st, { inGame }) {
       ${chk('lastTen', 'Last 10 minutes: rewards ×2')}
       ${chk('taxToFund', 'Taxes go to the town fund')}
     </fieldset>
+    <fieldset><legend>Rent and phones</legend>
+      ${sel('rentRule', 'Rent', [['ask', 'The owner must ask (before the next roll)'], ['pay', 'The visitor pays when landing']])}
+      <label class="switch"><input type="checkbox" data-setting="phones" ${st.phones ? 'checked' : ''} ${server ? '' : 'disabled'}> Play with phones (QR code)</label>
+      ${chk('showOwners', 'With phones: show who owns each property on the board')}
+      ${server ? '' : '<p class="hint">Phones need the game server: start with npm start or the start script, or use the online version.</p>'}
+    </fieldset>
     <fieldset><legend>Surprise amounts</legend>
       ${num('starBonus', 'Gold star bonus', 'min="0" step="5"')}
       ${num('ruleFine', 'Rule of the round fine', 'min="0" step="5"')}
@@ -189,12 +291,16 @@ function patchFromPath(path, value) {
 function renderSetup() {
   const rows = setupPlayers.map((p, i) => `<div class="setup-player" data-i="${i}">
       <span class="token" style="--tc:${TOKENS[p.token % TOKENS.length].color}">${TOKENS[p.token % TOKENS.length].icon}</span>
+      ${p.phone ? `<span class="phone-mark" title="Plays on a phone">${phones.phones.get(p.phone)?.on ? '📱' : '📵'}</span>` : ''}
       <input type="text" data-sp="name" value="${esc(p.name)}" placeholder="Player ${i + 1} name" maxlength="24" aria-label="Name of player ${i + 1}">
       <select data-sp="token" aria-label="Token">${TOKENS.map((t, k) => `<option value="${k}" ${k === p.token ? 'selected' : ''}>${t.icon}</option>`).join('')}</select>
       <select data-sp="level" aria-label="Level">${LEVELS.map(l => `<option value="${l}" ${l === p.level ? 'selected' : ''}>${LEVEL_NAMES[l]}</option>`).join('')}</select>
       <button class="icon-btn" data-setup="remove" type="button" aria-label="Remove player" ${setupPlayers.length <= 2 ? 'disabled' : ''}>✕</button></div>`).join('');
   patch($('#setup-players'), rows + (setupPlayers.length < MAX_PLAYERS ? `<button class="btn btn-ghost" data-setup="add" type="button">+ Add player</button>` : ''));
   patch($('#setup-settings'), settingsFormHTML(setupSettings, { inGame: false }));
+  const join = $('#setup-join');
+  join.hidden = !setupSettings.phones;
+  if (setupSettings.phones) patch(join, `<div class="legend">📱 Phones</div>${joinBoxHTML()}`);
   $('#setup-cancel').hidden = S.phase === 'setup';
   $('#content-note').textContent = C && C.__custom ? 'Using the content saved in the content editor.' : 'Using the default content (data/content.json).';
 }
@@ -225,6 +331,11 @@ function renderTurn() {
   patch($('#auction-box'), auctionHTML());
   patch($('#trade-box'), tradeBoxHTML());
   patch($('#black-box'), blackBoxHTML());
+  const rd = S.rentDue;
+  patch($('#rent-box'), rd && !S.pending ? `<div class="box box-rent"><div class="label">Rent can be asked for until the next roll</div>
+    <p><b>${esc(S.players[rd.from].name)}</b> is on <b>${esc(S.squares[rd.sq].name)}</b>, owned by <b>${esc(S.players[rd.to].name)}</b> (rent ${money(rentOf(S, rd.sq))}).
+    ${S.settings.phones ? 'The owner can ask on their phone, or out loud.' : 'If the owner asks, press the button.'} If nobody asks, no rent.</p>
+    <div class="btn-row"><button class="btn btn-primary btn-small" data-act="claimRent" type="button">${esc(S.players[rd.to].name)} asked → collect the rent</button></div></div>` : '');
   patch($('#requests-box'), S.requests.length ? `<div class="box"><div class="label">Requests to the bank</div>${S.requests.map(r => `<div class="req">${tokenHTML(S.players[r.pid])} <b>${esc(S.players[r.pid].name)}</b> asks for a <b>${esc(r.topic)}</b>
       <span class="spacer"></span><button class="btn btn-ghost btn-small" data-tab="bank" data-prefill="${r.pid}" type="button">Bank tab</button><button class="btn btn-ghost btn-small" data-act="requestDone" data-id="${r.id}" type="button">Done</button></div>`).join('')}</div>` : '');
   patch($('#turn-ctl'), `<div class="btn-row">
@@ -264,7 +375,7 @@ function pendingHTML() {
   if (!pe) return '';
   const p = S.players[pe.pid];
   const info = PENDING[pe.kind];
-  const sayKey = { buy: 'buy', rent: 'rent', mystery: 'mystery', bank: 'bank_' + pe.bank, jail: 'jail', festival: 'festival' }[pe.kind];
+  const sayKey = { buy: 'buy', rent: pe.claim ? 'claimRent' : 'rent', mystery: 'mystery', bank: 'bank_' + pe.bank, jail: 'jail', festival: 'festival' }[pe.kind];
   const entry = sayKey && S.sayIt ? S.sayIt[sayKey] : null;
   const vars = sayVars(S, pe.pid, { sq: pe.sq, amount: pe.amount, challenge: pe.challenge });
   let what = '';
@@ -279,7 +390,7 @@ function pendingHTML() {
   const amount = info.amount ? `<label class="f-num inline"><span>${info.amount}</span><input id="pending-amount" type="number" value="${pe.amount ?? 0}" step="10"></label>` : '';
   const boost = S.lastTen && S.settings.lastTen ? '<span class="badge-hot">rewards ×2</span>' : '';
   return `<div class="box box-pending"><div class="label">Waiting for you ${pe.tries ? `· try ${pe.tries + 1}` : ''} ${boost}</div>
-    <div class="pe-title">${tokenHTML(p)} <b>${esc(p.name)}</b> ${info.title}</div><div class="pe-what">${what}</div>${model}
+    <div class="pe-title">${pe.claim ? `${tokenHTML(S.players[pe.to])} <b>${esc(S.players[pe.to].name)}</b> asks <b>${esc(p.name)}</b> for the rent` : `${tokenHTML(p)} <b>${esc(p.name)}</b> ${info.title}`}</div><div class="pe-what">${what}</div>${model}
     <div class="pe-actions">${amount}
       <button class="btn btn-primary" data-cmd="approve" type="button">Approve <kbd>A</kbd></button>
       <button class="btn btn-primary btn-star" data-cmd="approve-bonus" type="button">Approve + ${money(S.settings.sentenceBonus)} <kbd>B</kbd></button>
@@ -309,9 +420,10 @@ function tradeSide(x) {
 function tradeBoxHTML() {
   const tr = S.trade;
   if (!tr) return '';
-  return `<div class="box box-trade"><div class="label">🤝 Trade proposal</div>
+  const offered = tr.status === 'offered';
+  return `<div class="box box-trade"><div class="label">🤝 Trade proposal${offered ? ` · waiting for ${esc(S.players[tr.to].name)}'s answer on the phone` : ''}</div>
     <p><b>${esc(S.players[tr.from].name)}</b> gives ${tradeSide(tr.give)}<br><b>${esc(S.players[tr.to].name)}</b> gives ${tradeSide(tr.get)}</p>
-    <div class="btn-row"><button class="btn btn-primary btn-small" data-act="tradeConfirm" type="button">Confirm the deal</button>
+    <div class="btn-row"><button class="btn ${offered ? 'btn-ghost' : 'btn-primary'} btn-small" data-act="tradeConfirm" type="button">${offered ? 'Confirm anyway' : 'Confirm the deal'}</button>
     <button class="btn btn-ghost btn-small" data-act="tradeCancel" type="button">Cancel</button></div></div>`;
 }
 
@@ -366,7 +478,9 @@ function renderPlayers() {
     const w = worth(S, i);
     const english = st.english === 'rewards' ? `<button class="btn btn-ghost btn-small" data-act="english" data-pid="${i}" data-good="1" type="button" title="Bonus ${money(st.englishBonus)}">✓ English turn</button>`
       : st.english === 'fines' ? `<button class="btn btn-ghost btn-small" data-act="english" data-pid="${i}" data-good="0" type="button" title="Fine ${money(st.englishFine)}">✗ Japanese</button>` : '';
-    patch(card.querySelector('.pc-main'), `<div class="pc-head">${tokenHTML(p)}<div class="pc-name"><b>${esc(p.name)}</b>${p.inJail ? ' ☕' : ''}
+    const seat = Object.keys(S.seats || {}).find(t => S.seats[t] === i);
+    const phoneMark = S.settings.phones ? (seat ? (phones.phones.get(seat)?.on ? ' 📱' : ' 📵') : ' <span class="muted small">(no phone)</span>') : '';
+    patch(card.querySelector('.pc-main'), `<div class="pc-head">${tokenHTML(p)}<div class="pc-name"><b>${esc(p.name)}${phoneMark}</b>${p.inJail ? ' ☕' : ''}
         <select data-level="${i}" aria-label="Level">${LEVELS.map(l => `<option value="${l}" ${l === p.level ? 'selected' : ''}>${LEVEL_NAMES[l]}</option>`).join('')}</select></div>
         <div class="pc-money ${p.money < 0 ? 'neg' : ''}">${money(p.money)}${p.debt ? `<div class="debt">debt ${money(p.debt)}</div>` : ''}<div class="muted small">worth ${money(w.total)}</div></div></div>
       <div class="btn-row money-btns">${[-200, -100, -50, 50, 100, 200].map(d => `<button class="btn btn-ghost btn-small ${d < 0 ? 'minus' : 'plus'}" data-act="money" data-pid="${i}" data-delta="${d}" type="button">${d > 0 ? '+' : '−'}${Math.abs(d)}</button>`).join('')}
@@ -387,7 +501,14 @@ function renderPlayers() {
 
 // --- Tabs ---
 
-const TABS = { bank: bankTab, props: propsTab, events: eventsTab, hints: hintsTab, log: logTab, settings: settingsTab, game: gameTab };
+const TABS = { bank: bankTab, props: propsTab, events: eventsTab, hints: hintsTab, phones: phonesTab, log: logTab, settings: settingsTab, game: gameTab };
+
+function phonesTab() {
+  if (!S.settings.phones) return `<section class="tsec"><h3>📱 Phones</h3><p>Phones are off for this game.${server ? ' Switch them on in Settings → Rent and phones.' : ''}</p>${server ? '' : joinBoxHTML()}</section>`;
+  return `<section class="tsec"><h3>📱 Join</h3>${joinBoxHTML()}</section>
+    <section class="tsec"><h3>Phones</h3>${phoneListHTML()}
+    <p class="hint">A phone that joins late chooses a free player itself, or choose here. Remove a phone to free its player.</p></section>`;
+}
 
 function renderTab() {
   $$('.tabs [data-tab]').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === tab));
@@ -618,8 +739,18 @@ function command(cmd, b) {
       if (S.players.length) setupPlayers = S.players.map(p => ({ name: p.name, token: p.token, level: p.level }));
       showSetup = true;
       render();
+      broadcast();      // the board shows the QR code again, phones go to the lobby
+      sendViews();
       break;
     case 'open-board': openBoard(); break;
+    case 'kick': {
+      const token = b.dataset.token;
+      if (!confirm('Remove this phone? Its player stays in the game and can be taken by another phone.')) return;
+      phones.kick(token);
+      sentViews.delete(token);
+      if (S.seats[token] != null) act({ type: 'seat', token, pid: null }); else render();
+      break;
+    }
     case 'undo': undoLast(); break;
     case 'help': help.toggle(); break;
   }
@@ -647,7 +778,7 @@ async function loadGame(file) {
     s.fx = [];
     if (s.timer && !s.timer.pausedAt && s.phase === 'play') s.timer.pausedAt = Date.now();   // paused until the teacher presses Resume
     showSetup = false;
-    commit(s);
+    commit(normalize(s));
     toast(`Game loaded (saved ${new Date(data.savedAt).toLocaleString()}). The timer is paused: press Resume in the Game tab.`);
   } catch {
     toast('That file is not a Speak Plus City game.', 'bad');
@@ -684,6 +815,7 @@ document.addEventListener('click', e => {
 document.addEventListener('change', e => {
   const el = e.target;
   if (el.dataset.level) act({ type: 'setLevel', pid: Number(el.dataset.level), level: el.value });
+  else if (el.dataset.seat) act({ type: 'seat', token: el.dataset.seat, pid: el.value === '' ? null : Number(el.value) });
   else if (el.dataset.owner) act({ type: 'setOwner', sq: Number(el.dataset.owner), pid: el.value === '' ? null : Number(el.value) });
   else if (el.dataset.actChange === 'setTurn') act({ type: 'setTurn', pid: Number(el.value) });
   else if (el.id === 'log-filter') { logFilter = el.value; renderTab(); }
@@ -693,6 +825,8 @@ document.addEventListener('change', e => {
     if (!$('#view-setup').hidden) {
       setupSettings = { ...setupSettings, ...patchObj, hints: { ...setupSettings.hints, ...(patchObj.hints || {}) }, surprises: { ...setupSettings.surprises, ...(patchObj.surprises || {}) } };
       saveSettings(setupSettings);
+      render();       // "Play with phones" shows the QR code and connects
+      broadcast();
     } else if (act({ type: 'settings', patch: patchObj })) saveSettings(S.settings);
   } else if (el.dataset.sp) {
     const i = Number(el.closest('[data-i]').dataset.i);
@@ -721,10 +855,11 @@ document.addEventListener('input', e => {
 
 $('#setup-form').addEventListener('submit', e => {
   e.preventDefault();
-  const players = setupPlayers.map((p, i) => ({ ...p, name: p.name.trim() || `Player ${i + 1}` }));
+  const players = setupPlayers.map((p, i) => ({ ...p, name: p.name.trim() || `Player ${i + 1}`, phone: setupSettings.phones ? p.phone : undefined }));
   const tokens = players.map(p => p.token);
   if (new Set(tokens).size !== tokens.length) { toast('Each player needs a different token.', 'bad'); return; }
-  localStorage.setItem('sp-city-players-v1', JSON.stringify(players));
+  localStorage.setItem('sp-city-players-v1', JSON.stringify(players.map(({ phone, ...p }) => p)));
+  sentViews.clear();
   saveSettings(setupSettings);
   undo.length = 0;
   revealed.clear();
@@ -736,7 +871,7 @@ $('#setup-form').addEventListener('submit', e => {
     if (!boardConnected()) toast('Now open the board window for the projector.');
   }
 });
-$('#setup-cancel').addEventListener('click', () => { showSetup = false; render(); });
+$('#setup-cancel').addEventListener('click', () => { showSetup = false; render(); broadcast(); sendViews(); });
 
 $('#dice-form').addEventListener('submit', e => {
   e.preventDefault();
@@ -778,6 +913,14 @@ addEventListener('beforeunload', () => channel.send({ t: 'bye' }));
 
 // ---------- Start ----------
 
+// Games saved before a setting existed get its default.
+function normalize(s) {
+  s.settings = { ...DEFAULT_SETTINGS, ...s.settings };
+  s.seats = s.seats || {};
+  if (s.rentDue === undefined) s.rentDue = null;
+  return s;
+}
+
 async function start() {
   try {
     const loaded = await loadContent();
@@ -787,8 +930,9 @@ async function start() {
     document.body.innerHTML = `<div class="wrap"><h1>Could not load the content</h1><p>${esc(err.message)}. Start the game with the start script (see README) so the browser can read data/content.json.</p></div>`;
     return;
   }
+  server = await serverInfo();
   const saved = loadState();
-  S = saved && saved.players ? saved : emptyState(setupSettings);
+  S = normalize(saved && saved.players ? saved : emptyState(setupSettings));
   if (S.phase !== 'setup' && C.sayIt) S.sayIt = C.sayIt;   // keep the prompts up to date with the content editor
   render();
   broadcast();

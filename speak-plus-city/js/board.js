@@ -8,6 +8,8 @@ import { buildBoard, updateBoard, hop, boardSig } from './render-board.js';
 import { $, $$, esc, patch, tokenHTML, levelBadge, fmtClock, sayVars, sayItHTML, helpOverlay, isTyping } from './ui.js';
 
 let S = null;               // latest game state from the teacher
+let NET = null;             // phone mode: { code, joinUrl, qr } to join the game
+let SETUP = false;          // the teacher is on the setup screen
 let lastFx = 0;             // id of the last effect we played
 let lastMsgAt = 0;          // when we last heard from the teacher
 const disp = {};            // where each token is drawn (differs from the state during a move animation)
@@ -36,7 +38,7 @@ const help = helpOverlay('Board shortcuts', [
 
 function onMessage(msg) {
   lastMsgAt = Date.now();
-  if (msg.t === 'state') setState(msg.state);
+  if (msg.t === 'state') { NET = msg.net || null; SETUP = !!msg.setup; setState(msg.state); }
   else if (msg.t === 'error') toast(msg.text, 'bad');
   else if (msg.t === 'bye') lastMsgAt = 0;
   renderConn();
@@ -48,6 +50,9 @@ function send(action) {
 }
 
 const connected = () => Date.now() - lastMsgAt < 8000;
+// Phone mode: money, properties and missions are private (on the phones), and so is who owns what.
+const priv = () => !!(S && S.settings && S.settings.phones);
+const hideOwners = () => priv() && !S.settings.showOwners;
 
 function setState(s) {
   const fresh = !S || !s.players || S.players.length !== s.players.length || boardSig(S) !== boardSig(s) || (s.fxSeq || 0) < lastFx;
@@ -78,7 +83,7 @@ function playFx(e) {
       queue.push(e);
       runQueue();
       break;
-    case 'money': floatMoney(e.pid, e.delta); break;
+    case 'money': if (!priv()) floatMoney(e.pid, e.delta); break;
     case 'announce': banner(e.title, e.text, e.style); break;
     case 'turn': if (S.players[e.pid]) banner(`${S.players[e.pid].name}'s turn`, '', 'turn', 1600); break;
     case 'star': starBurst(e.pid); break;
@@ -114,13 +119,24 @@ async function runQueue() {
     const e = queue.shift();
     if (e.kind === 'dice') await rollDice(e.dice);
     else if (e.kind === 'move') {
-      const hopMs = reduced ? 30 : e.steps > 10 ? 130 : 190;
+      // Slow enough to follow from the back of the room: the token grows, counts down the
+      // squares left, and leaves a short trail; the square it lands on flashes.
+      const hopMs = reduced ? 30 : e.steps > 9 ? 240 : 320;
+      const tok = () => boardEl.querySelector(`.ptoken[data-pid="${e.pid}"]`);
+      tok()?.classList.add('moving');
       for (let k = 1; k <= e.steps; k++) {
         disp[e.pid] = (e.from + k) % 48;
         drawBoard();
+        const t = tok();
+        if (t) t.dataset.left = e.steps - k || '';
+        trail(disp[e.pid]);
         hop(boardEl, e.pid);
         await wait(hopMs);
       }
+      const t = tok();
+      if (t) { t.classList.remove('moving'); delete t.dataset.left; }
+      flashCell(disp[e.pid], 'landed');
+      await wait(reduced ? 0 : 250);
       busy[e.pid]--;
     } else if (e.kind === 'jail') {
       await wait(350);
@@ -134,6 +150,19 @@ async function runQueue() {
   }
   running = false;
   render();
+}
+
+function trail(sq) {
+  const cell = boardEl.querySelector(`.cell[data-sq="${sq}"]`);
+  if (!cell) return;
+  cell.classList.add('trail');
+  setTimeout(() => cell.classList.remove('trail'), 1200);
+}
+function flashCell(sq, cls) {
+  const cell = boardEl.querySelector(`.cell[data-sq="${sq}"]`);
+  if (!cell) return;
+  cell.classList.remove(cls); void cell.offsetWidth; cell.classList.add(cls);
+  setTimeout(() => cell.classList.remove(cls), 1600);
 }
 
 function die(v) {
@@ -160,7 +189,7 @@ async function rollDice(dice) {
 // ---------- Render ----------
 
 function render() {
-  if (!S || !S.squares || !S.squares.length) { renderWelcome(); renderConn(); return; }
+  if (!S || !S.squares || !S.squares.length || SETUP) { renderWelcome(); renderConn(); return; }
   document.body.classList.toggle('last-ten', !!S.lastTen);
   drawBoard();
   renderCenter();
@@ -183,12 +212,16 @@ function drawBoard() {
   if (!S || !S.squares.length) return;
   const cur = S.turn && S.players[S.turn.pid];
   const animating = running || queue.length;
-  updateBoard(boardEl, S, { positions: positions(), highlight: S.phase === 'play' && cur && !animating ? cur.pos : null });
+  updateBoard(boardEl, S, { positions: positions(), highlight: S.phase === 'play' && cur && !animating ? cur.pos : null, hideOwners: hideOwners() });
 }
 
 function renderWelcome() {
-  boardEl.innerHTML = `<div class="welcome"><div class="logo logo-xl">speak<svg><use href="#plus"/></svg></div>
-    <h1>Speak Plus City</h1><p>${connected() ? 'The teacher is setting up the game…' : 'Open the teacher window to start: <b>teacher.html</b>'}</p></div>`;
+  boardEl._sig = null;      // the board cells are gone: rebuild them when the game shows again
+  const join = NET ? `<div class="welcome-join"><img src="${NET.qr}" alt="QR code to join"><div><div class="label">Scan to play on your phone</div>
+      <div class="welcome-code">${esc(NET.code)}</div><div class="welcome-url">${esc(NET.joinUrl)}</div></div></div>
+      ${NET.joined && NET.joined.length ? `<div class="welcome-joined">📱 ${NET.joined.map(n => `<span>${esc(n)}</span>`).join('')}</div>` : ''}` : '';
+  patch(boardEl, `<div class="welcome"><div class="logo logo-xl">speak<svg><use href="#plus"/></svg></div>
+    <h1>Speak Plus City</h1>${join}<p>${connected() ? 'The teacher is setting up the game…' : 'Open the teacher window to start: <b>teacher.html</b>'}</p></div>`);
   patch($('#side-status'), '');
   patch($('#side-players'), '');
 }
@@ -244,7 +277,7 @@ function squareCardHTML(sq, show) {
   let facts = '';
   if (q.type === 'property') {
     facts = owner != null
-      ? `<span>Owner: <b>${esc(S.players[owner].name)}</b></span><span>Rent <b>${money(rentOf(S, sq))}</b></span>`
+      ? `<span>${hideOwners() ? '<b>Sold</b>' : `Owner: <b>${esc(S.players[owner].name)}</b>`}</span><span>Rent <b>${money(rentOf(S, sq))}</b></span>`
       : `<span>Price <b>${money(priceOf(S, sq))}</b></span><span>Rent <b>${money(rentOf(S, sq))}</b></span>`;
   }
   const vocab = q.vocab && show !== 'none' ? `<div class="chips">${q.vocab.map(w => `<span class="chip">${esc(w)}</span>`).join('')}</div>` : '';
@@ -277,7 +310,7 @@ function turnHTML(sayIt) {
   const vars = sayVars(S, t.pid, { amount: primary && primary.id === 'rent' ? rentOf(S, p.pos) : (S.squares[p.pos].amount ?? null) });
   const key = `${t.pid}:${t.step}:${p.pos}:${primary ? primary.id : ''}`;
   const say = primary && sayIt[primary.say] ? sayItHTML(sayIt[primary.say], vars, show, { framesOpen: framesOpenFor(key) }) : '';
-  const buttons = opts.map(o => `<button class="opt ${o.primary ? 'opt-primary' : ''} opt-${o.id}" data-opt="${o.id}" type="button" ${o.disabled ? `disabled title="${esc(o.why || '')}"` : ''}>${esc(o.label)}</button>`).join('');
+  const buttons = opts.filter(o => !(priv() && ['trade', 'ask'].includes(o.id))).map(o => `<button class="opt ${o.primary ? 'opt-primary' : ''} opt-${o.id}" data-opt="${o.id}" type="button" ${o.disabled ? `disabled title="${esc(o.why || '')}"` : ''}>${esc(o.label)}</button>`).join('');
   return `<div class="c-main">${main}${say}</div><div class="opts">${buttons}</div>`;
 }
 
@@ -288,7 +321,7 @@ function pendingHTML(sayIt) {
   const key = `pending:${pe.kind}:${pe.pid}:${pe.sq ?? ''}:${pe.card ? pe.card.text : ''}`;
   const vars = sayVars(S, pe.pid, { sq: pe.sq, amount: pe.amount, challenge: pe.challenge });
   let card = '';
-  let sayKey = { buy: 'buy', rent: 'rent', card: null, mystery: 'mystery', bank: 'bank_' + pe.bank, jail: 'jail', festival: 'festival' }[pe.kind];
+  let sayKey = { buy: 'buy', rent: pe.claim ? 'claimRent' : 'rent', card: null, mystery: 'mystery', bank: 'bank_' + pe.bank, jail: 'jail', festival: 'festival' }[pe.kind];
   if (pe.kind === 'card' || pe.kind === 'mystery') {
     const cd = pe.card;
     const isCard = pe.kind === 'card';
@@ -311,7 +344,8 @@ function stripsHTML() {
   if (S.trade) {
     const tr = S.trade;
     const side = x => [...x.props.map(sq => esc(S.squares[sq].name)), x.money ? money(x.money) : ''].filter(Boolean).join(' + ') || 'nothing';
-    out += `<div class="strip">🤝 Deal waiting for the bank: <b>${esc(S.players[tr.from].name)}</b> gives ${side(tr.give)} ⇄ <b>${esc(S.players[tr.to].name)}</b> gives ${side(tr.get)}</div>`;
+    if (priv()) out += `<div class="strip">🤝 A deal between <b>${esc(S.players[tr.from].name)}</b> and <b>${esc(S.players[tr.to].name)}</b> is waiting.</div>`;
+    else out += `<div class="strip">🤝 Deal waiting for the bank: <b>${esc(S.players[tr.from].name)}</b> gives ${side(tr.give)} ⇄ <b>${esc(S.players[tr.to].name)}</b> gives ${side(tr.get)}</div>`;
   }
   for (const r of S.requests.slice(-2)) out += `<div class="strip">🏦 ${esc(S.players[r.pid].name)} is asking the bank about a <b>${esc(r.topic)}</b>.</div>`;
   return out;
@@ -354,6 +388,7 @@ function renderSide() {
     const g = S.groups.find(x => x.id === S.market.group);
     status += `<div class="market-box ${S.market.mult > 1 ? 'boom' : 'crash'}">${S.market.mult > 1 ? '📈 Boom' : '📉 Crash'}: ${S.market.mult > 1 ? '×2' : '½'} ${g ? esc(g.name) : 'all'} · ${S.market.rounds} round${S.market.rounds > 1 ? 's' : ''} left</div>`;
   }
+  if (NET) status += `<div class="join-mini"><img src="${NET.qr}" alt="QR code to join"><div><span class="label">Join on your phone</span><b>${esc(NET.code)}</b></div></div>`;
   if (st.surprises.townFund) {
     const pct = Math.min(100, Math.round((S.fund / Math.max(1, st.fundTarget)) * 100));
     status += `<div id="fund" class="fund"><span class="label">Town fund 🏮 ${money(S.fund)} / ${money(st.fundTarget)}</span><div class="bar"><i style="width:${pct}%"></i></div></div>`;
@@ -362,17 +397,17 @@ function renderSide() {
   patch($('#side-status'), status);
 
   const rows = S.players.map((p, pid) => {
-    const groups = playerProps(S, pid).map(sq => {
+    const groups = priv() ? '' : playerProps(S, pid).map(sq => {
       const g = S.groups.find(x => x.id === S.squares[sq].group);
       return `<i class="pdot ${S.props[sq].mortgaged ? 'mort' : ''}" style="--gc:${g ? g.color : '#999'}" title="${esc(S.squares[sq].name)}"></i>`;
     }).join('') + p.specials.map(x => `<i class="pspecial" title="${esc(x.name)}">${esc(x.emoji)}</i>`).join('');
     const active = S.turn && S.turn.pid === pid && S.phase === 'play';
     return `<div class="prow ${active ? 'active' : ''}" data-pid="${pid}">
       ${tokenHTML(p)}<div class="pinfo"><div class="pname">${esc(p.name)} ${p.inJail ? '☕' : ''}</div>
-      <div class="pmeta">${levelBadge(p.level)}${p.stars ? `<span class="stars">⭐${p.stars > 1 ? '×' + p.stars : ''}</span>` : ''}${p.debt ? `<span class="debt">debt ${money(p.debt)}</span>` : ''}</div>
+      <div class="pmeta">${levelBadge(p.level)}${p.stars ? `<span class="stars">⭐${p.stars > 1 ? '×' + p.stars : ''}</span>` : ''}${p.debt && !priv() ? `<span class="debt">debt ${money(p.debt)}</span>` : ''}</div>
       <div class="pprops">${groups}</div></div>
-      <div class="pmoney ${p.money < 0 ? 'neg' : ''}" data-money="${pid}">${money(shownMoney[pid] ?? p.money)}</div>
-      ${p.mission ? `<button class="peek-btn" data-peek="${pid}" type="button" title="Secret mission" aria-label="Secret mission for ${esc(p.name)}">🔒</button>` : ''}</div>`;
+      ${priv() ? '' : `<div class="pmoney ${p.money < 0 ? 'neg' : ''}" data-money="${pid}">${money(shownMoney[pid] ?? p.money)}</div>`}
+      ${p.mission && !priv() ? `<button class="peek-btn" data-peek="${pid}" type="button" title="Secret mission" aria-label="Secret mission for ${esc(p.name)}">🔒</button>` : ''}</div>`;
   }).join('');
   patch($('#side-players'), rows);
   S.players.forEach((p, pid) => tweenMoney(pid, p.money));
@@ -693,6 +728,8 @@ document.addEventListener('keydown', e => {
   } else if (k === 'ArrowLeft' || k === 'ArrowRight') {
     e.preventDefault();
     send({ type: 'nudge', d: k === 'ArrowLeft' ? -1 : 1 });
+  } else if (priv()) {
+    // phone mode: trades, the bank and missions are on the phones
   } else if (k === 't' || k === 'T') openTrade();
   else if (k === 'b' || k === 'B') { ui.ask = 'menu'; render(); }
   else if ((k === 'm' || k === 'M') && S.turn && S.players[S.turn.pid].mission) { ui.peek = { pid: S.turn.pid, shown: false }; render(); }

@@ -1,8 +1,8 @@
-# Render blueprint: puts Lantern Island online so students join with mobile data.
-# Step-by-step instructions: lantern-island/docs/RENDER.md
+# Render blueprint: puts the games that use phones online, so students join with
+# mobile data or any Wi-Fi. Step-by-step instructions: lantern-island/docs/RENDER.md
 #
-# Only Lantern Island runs here. The other games of the hub are static pages and
-# don't need this server.
+# Two services: Lantern Island and Speak Plus City. The other games of the hub
+# are static pages and don't need a server.
 services:
   - type: web
     name: lantern-island
@@ -28,3 +28,18 @@ services:
         sync: false
       # PUBLIC_URL is not needed: the game uses Render's own address (RENDER_EXTERNAL_URL).
       # The fan-art characters are off in hosted mode. Don't add FAN_ART=on here.
+
+  - type: web
+    name: speak-plus-city
+    runtime: node
+    region: singapore
+    plan: free                 # sleeps after 15 min without use, like Lantern Island
+    rootDir: speak-plus-city
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /index.html
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      # Nothing secret: the game is saved in the teacher's browser, not on the server.
+      # PUBLIC_URL is not needed: the QR code uses Render's own address (RENDER_EXTERNAL_URL).

@@ -25,6 +25,7 @@
   <span id="top-clock" class="top-clock"></span>
   <span class="spacer"></span>
   <span id="conn-board" class="conn-pill off">Board not open</span>
+  <span id="conn-phones" class="conn-pill off" hidden></span>
   <button class="btn btn-primary btn-small" data-cmd="open-board" type="button">Open board window</button>
   <button class="btn btn-ghost btn-small" data-cmd="undo" type="button" title="Ctrl+Z">↶ Undo</button>
   <button class="btn btn-ghost btn-small" data-cmd="save" type="button">Save game</button>
@@ -42,6 +43,7 @@
         <div class="legend">Players (2–6)</div>
         <p class="hint">The level decides what the board shows on each player's turn. You can change it any time during the game.</p>
         <div id="setup-players" class="setup-players"></div>
+        <div id="setup-join" class="setup-join" hidden></div>
         <p class="hint" id="content-note"></p>
         <div class="start-row">
           <button class="btn btn-primary btn-big" type="submit">Start the game</button>
@@ -68,6 +70,7 @@
         <div id="player-opts" class="box-lite"></div>
         <div id="auction-box"></div>
         <div id="black-box"></div>
+        <div id="rent-box"></div>
         <div id="trade-box"></div>
         <div id="requests-box"></div>
         <div id="turn-ctl" class="box-lite"></div>
@@ -82,6 +85,7 @@
         <button data-tab="props" type="button" role="tab">Properties</button>
         <button data-tab="events" type="button" role="tab">Events</button>
         <button data-tab="hints" type="button" role="tab">Hints</button>
+        <button data-tab="phones" type="button" role="tab">Phones</button>
         <button data-tab="log" type="button" role="tab">Log</button>
         <button data-tab="settings" type="button" role="tab">Settings</button>
         <button data-tab="game" type="button" role="tab">Game</button>

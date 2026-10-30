@@ -73,7 +73,7 @@ Juego cooperativo para 2 a 4 alumnos en una pantalla. Cada jugador recoge un rec
 
 ## Speak Plus City
 
-Juego de tablero tipo Monopoly para 2 a 6 alumnos de niveles mezclados: cada acción (comprar, pagar el alquiler, negociar, pujar, pedir un préstamo) es una frase en inglés y el profesor, que hace de banco, la aprueba. Dos ventanas en el mismo navegador: el tablero en el proyector y el panel del profesor en el portátil. Se arranca con `start.command` (Mac) o `start.bat` (Windows), o sirviendo la carpeta del hub. Los textos se cambian en `editor.html`, sin tocar código. Ver `speak-plus-city/README.md`.
+Juego de tablero tipo Monopoly para 2 a 6 alumnos de niveles mezclados: cada acción (comprar, pedir el alquiler, negociar, pujar, pedir un préstamo) es una frase en inglés y el profesor, que hace de banco, la aprueba. El alquiler solo se cobra si el dueño lo pide antes de la siguiente tirada. Dos ventanas en el mismo navegador: el tablero en el proyector y el panel del profesor en el portátil. Opcional: los alumnos se unen con un código QR y juegan con el móvil, donde ven solo su dinero, sus propiedades y su misión. Se arranca con `start.command` (Mac) o `start.bat` (Windows), o en internet con Render (`render.yaml`). Los textos se cambian en `editor.html`, sin tocar código. Ver `speak-plus-city/README.md`.
 
 ## Lantern Island
 

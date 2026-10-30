@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;700&family=Zen+Kaku+Gothic+New:wght@500;700&display=swap">
+<link rel="stylesheet" href="css/city.css">
+<link rel="stylesheet" href="css/phone.css">
+<meta name="theme-color" content="#1F2F5C">
+<title>Speak Plus City · Phone</title>
+</head>
+<body class="phone-page">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="plus" viewBox="0 0 40 40"><g transform="rotate(12 20 20)"><line x1="20" y1="6" x2="20" y2="34" stroke="#E8483B" stroke-width="8.5" stroke-linecap="round"/><line x1="6" y1="20" x2="34" y2="20" stroke="#E8483B" stroke-width="8.5" stroke-linecap="round"/></g></symbol>
+  </defs>
+</svg>
+<div class="file-warning" id="file-warning" hidden>This page needs a local server: double-click <b>start.command</b> (Mac) or <b>start.bat</b> (Windows), or run <b>npx serve</b> in this folder. See README.md.</div>
+<script>if (location.protocol === "file:") document.getElementById("file-warning").hidden = false;</script>
+
+<!-- JOIN -->
+<section id="s-join" class="screen">
+  <div class="brand"><div class="logo">speak<svg><use href="#plus"/></svg></div><div class="logo-jp">スピークプラス</div></div>
+  <h1>Speak Plus City</h1>
+  <form id="join-form" class="join-form" autocomplete="off">
+    <label>Room code <input id="j-room" maxlength="4" inputmode="text" autocapitalize="characters" placeholder="ABCD" required></label>
+    <label>Your name <input id="j-name" maxlength="16" placeholder="Name" required></label>
+    <p id="j-error" class="error" role="alert" hidden></p>
+    <button class="btn btn-primary btn-big" type="submit">Join the game</button>
+  </form>
+</section>
+
+<!-- LOBBY: joined, waiting for the teacher, or choosing which player you are -->
+<section id="s-wait" class="screen" hidden>
+  <div id="wait-body"></div>
+</section>
+
+<!-- GAME -->
+<section id="s-game" class="screen game" hidden>
+  <header class="ph-head" id="ph-head"></header>
+  <main class="ph-main">
+    <div id="tab-play" class="tab"></div>
+    <div id="tab-city" class="tab" hidden></div>
+    <div id="tab-deal" class="tab" hidden></div>
+    <div id="tab-bank" class="tab" hidden></div>
+  </main>
+  <nav class="ph-nav" id="ph-nav">
+    <button type="button" data-tab="play" aria-selected="true"><span>🎲</span>Play</button>
+    <button type="button" data-tab="city"><span>🏠</span>My city</button>
+    <button type="button" data-tab="deal"><span>🤝</span>Deal</button>
+    <button type="button" data-tab="bank"><span>🏦</span>Bank</button>
+  </nav>
+</section>
+
+<div id="sheet" class="sheet-back" hidden></div>
+<div id="offline" class="offline" hidden>Connecting…</div>
+<div id="toasts" class="toasts"></div>
+<script type="module" src="js/phone.js"></script>
+</body>
+</html>
