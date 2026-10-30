@@ -9,13 +9,9 @@ Time needed: about 30 minutes, once. After that, every push to `main` on GitHub 
 
 ---
 
-## 0. Make the GitHub repository private (do this first)
+## 0. About the repository
 
-The repository `javier9302/Speak-Plus-Games` is **public** right now. It contains the fan-art characters (`public/shared/heroes.js`), which must never be published.
-
-GitHub → the repository → **Settings** → **General** → at the bottom, **Danger Zone** → **Change repository visibility** → **Make private**.
-
-Render works with private repositories (step 2 gives it access).
+The GitHub repository can be public: the fan-art characters are not in it any more. They live in `public/shared/heroes-local.js`, a file that stays on your own computer (see the README, "Characters"). Online, students choose from the original characters. Render works with public and private repositories.
 
 ## 1. Supabase: a place for the saves
 
@@ -56,7 +52,7 @@ You don't need to set `PUBLIC_URL`: the game uses Render's address by itself, an
 - **Free plan:** the server sleeps after 15 minutes without use and takes **about a minute to wake up**. Open the host screen a couple of minutes before the lesson. Once it's open, it stays awake.
 - Students only need the QR code (or the address + room code). Each phone uses very little data.
 - A student without mobile data still needs Wi-Fi or your hotspot.
-- **Characters:** online, everyone plays as the original **Islander** and the "choose a character" button is hidden. The fan-art characters are still there when you run the game on your own laptop (`npm start`), for classroom use only.
+- **Characters:** online, students choose the Islander or the original characters (Fox, Robo, Frog, Penguin). The fan-art characters only appear when you run the game on your own laptop (`npm start`) with `heroes-local.js` in place, for classroom use only.
 
 ## If something goes wrong
 

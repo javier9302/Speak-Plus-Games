@@ -230,7 +230,7 @@ function renderPicker() {
   }).join('');
 }
 function openPicker() { renderPicker(); $('#picker').hidden = false; $('#pick-grid .sel')?.scrollIntoView({ block: 'center' }); }
-// With the fan-art characters switched off (hosted mode) there is nothing to choose.
+// With no characters at all there is nothing to choose (everyone is the islander).
 if (!HEROES.length) for (const id of ['#pick-open', '#pick-change']) $(id).hidden = true;
 $('#pick-open').addEventListener('click', openPicker);
 $('#pick-change').addEventListener('click', openPicker);

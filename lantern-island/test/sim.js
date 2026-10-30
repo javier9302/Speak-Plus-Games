@@ -69,7 +69,7 @@ async function main() {
   const room = await host.next('room');
   check('host gets a room code and a QR code', /^[A-Z]{4}$/.test(room.code) && room.qr.startsWith('data:image/png') && room.joinUrl.endsWith(`/phone/?room=${room.code}`));
   const phones = [];
-  const chosen = { Mika: 'pikachu', Ken: 'not-a-character' };
+  const chosen = { Mika: 'fox', Ken: 'not-a-character' };
   for (const name of ['Mika', 'Ken', 'Yui']) {
     const c = client(app.port);
     await c.opened;
@@ -78,10 +78,10 @@ async function main() {
     phones.push(c);
   }
   await sleep(50);
-  check('a player joins as the character they chose', phones[0].me.hero === 'pikachu' && host.last.roster.players[0].hero === 'pikachu');
+  check('a player joins as the character they chose', phones[0].me.hero === 'fox' && host.last.roster.players[0].hero === 'fox');
   check('an unknown character becomes the islander', phones[1].me.hero === '' && phones[2].me.hero === '');
-  phones[1].send({ t: 'hero', id: 'totoro' });
-  await host.next('roster', (m) => m.players[1].hero === 'totoro');
+  phones[1].send({ t: 'hero', id: 'frog' });
+  await host.next('roster', (m) => m.players[1].hero === 'frog');
   check('a player changes character in the lobby', true);
   check('every character drawing is 16x16 with known colors', HEROES.every((h) => h.art.length === 16 && h.art.every((r) => r.length === 16 && [...r].every((c) => c === '.' || c === 'k' || h.pal[c])) && !/[^.]/.test(h.art[0])));
   check('three players, three colors', host.last.roster.players.length === 3 && new Set(host.last.roster.players.map((p) => p.ci)).size === 3);
@@ -110,9 +110,9 @@ async function main() {
   const world = await phones[0].next('world');
   await host.next('state');
   const zone = app.rooms.rooms.get(room.code).zone;
-  phones[1].send({ t: 'hero', id: 'kirby' });
+  phones[1].send({ t: 'hero', id: 'robot' });
   await sleep(50);
-  check('nobody changes character during a mission', app.rooms.rooms.get(room.code).players[1].hero === 'totoro');
+  check('nobody changes character during a mission', app.rooms.rooms.get(room.code).players[1].hero === 'frog');
   await sleep(100);
   const usage = JSON.parse(await fs.readFile(path.join(dataDir, 'meta', 'card-usage.json'), 'utf8'));
   const drawn = app.rooms.rooms.get(room.code).things.filter((t) => t.card).map((t) => t.card.id);
@@ -1019,21 +1019,30 @@ async function main() {
   h.send({ t: 'host', pin: '2468' });
   const hroom = await h.next('room');
   check('the QR code points to PUBLIC_URL', hroom.joinUrl.startsWith('https://island.example.com/phone/?room='));
+  // The fan-art file (heroes-local.js) is only on the teacher's computer; these checks work with or without it.
+  const hasLocal = HEROES.some((h) => h.fanArt);
+  const fanId = hasLocal ? HEROES.find((h) => h.fanArt).id : 'pikachu';
   const heroesJs = await (await fetch(`http://127.0.0.1:${hosted.port}/shared/heroes.js`)).text();
-  check('hosted mode never sends the fan-art drawings', !heroesJs.includes('pikachu') && heroesJs.includes('HEROES = []'));
+  check('heroes.js holds only original characters', HEROES.filter((h) => !h.fanArt).every((h) => h.from === 'Lantern Island') && !heroesJs.includes('pikachu') && heroesJs.includes("'fox'"));
+  check('hosted mode never sends the fan-art file', (await fetch(`http://127.0.0.1:${hosted.port}/shared/heroes-local.js`)).status === 404);
   const hp = client(hosted.port); await hp.opened;
-  hp.send({ t: 'join', room: hroom.code, name: 'Mika', hero: 'pikachu' });
-  check('hosted mode: everyone plays as the islander', (await hp.next('joined')).hero === '');
-  hp.send({ t: 'hero', id: 'totoro' });
+  hp.send({ t: 'join', room: hroom.code, name: 'Mika', hero: fanId });
+  check('hosted mode refuses a fan-art character', (await hp.next('joined')).hero === '');
+  hp.send({ t: 'hero', id: 'penguin' });
   await sleep(50);
-  check('hosted mode: changing character is refused too', hosted.rooms.rooms.get(hroom.code).players[0].hero === '');
+  check('hosted mode: the original characters can be chosen', hosted.rooms.rooms.get(hroom.code).players[0].hero === 'penguin');
+  hp.send({ t: 'hero', id: fanId });
+  await sleep(50);
+  check('hosted mode: changing to fan art is refused too (back to the islander)', hosted.rooms.rooms.get(hroom.code).players[0].hero === '');
   await hosted.close();
-  const fanOn = await createApp({ port: 0, dataDir, publicUrl: 'https://island.example.com/', pin: '2468', fanArt: true, quiet: true });
-  check('FAN_ART=on brings them back in hosted mode', (await (await fetch(`http://127.0.0.1:${fanOn.port}/shared/heroes.js`)).text()).includes('pikachu'));
-  await fanOn.close();
-  const local = await createApp({ port: 0, dataDir, publicUrl: '', pin: '2468', quiet: true });
-  check('on your own computer the characters are there', (await (await fetch(`http://127.0.0.1:${local.port}/shared/heroes.js`)).text()).includes('pikachu'));
-  await local.close();
+  if (hasLocal) {
+    const fanOn = await createApp({ port: 0, dataDir, publicUrl: 'https://island.example.com/', pin: '2468', fanArt: true, quiet: true });
+    check('FAN_ART=on brings them back in hosted mode', (await fetch(`http://127.0.0.1:${fanOn.port}/shared/heroes-local.js`)).status === 200);
+    await fanOn.close();
+    const local = await createApp({ port: 0, dataDir, publicUrl: '', pin: '2468', quiet: true });
+    check('on your own computer, with heroes-local.js, the fan art is there', (await fetch(`http://127.0.0.1:${local.port}/shared/heroes-local.js`)).status === 200);
+    await local.close();
+  }
 
   await fs.rm(dataDir, { recursive: true, force: true });
   console.log(`\n${passed} passed, ${failed} failed\n`);

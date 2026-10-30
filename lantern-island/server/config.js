@@ -2,8 +2,9 @@
 //   PORT          port to listen on (default 3000)
 //   PUBLIC_URL    set this in hosted mode, e.g. https://island.example.com
 //                 (on Render it can be left out: Render's own RENDER_EXTERNAL_URL is used)
-//   FAN_ART       "on" or "off": the fan-art characters in public/shared/heroes.js.
-//                 Default: on when running on your own computer, off in hosted mode (never publish them).
+//   FAN_ART       "on" or "off": the classroom-only fan-art characters in public/shared/heroes-local.js
+//                 (a file that is never uploaded). Default: on when running on your own computer,
+//                 off in hosted mode. The original characters in heroes.js are always on.
 //   TEACHER_PIN   PIN for the host and teacher pages (a random one is made if missing)
 //   DATA_DIR      where saves go (default ./data)
 //   STORAGE       "file" (default) or "supabase"

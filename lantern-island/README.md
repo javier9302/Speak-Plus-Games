@@ -50,11 +50,11 @@ Portrait only. The page does not zoom or scroll, keeps the screen on where the b
 
 ### Characters
 
-On the join screen, students tap **Your character** to choose who they play: the Islander (the original character in their player colour) or one of 16 famous Japanese characters (Pikachu, the Dragon Quest Slime, Jibanyan, Tanjiro, Nezuko, Zenitsu, Doraemon, Totoro, Kirby, Mario, Goku, Luffy, Naruto, Hello Kitty, Anpanman, Sailor Moon). While waiting for the teacher they can change with **Change character**; during a mission the choice is locked. Two students may pick the same character: names on the map, in each player's colour, tell them apart, and the picker shows who already has which. The big screen's lobby shows each player's character. The phone remembers the last choice.
+On the join screen, students tap **Your character** to choose who they play: the Islander (the original character in their player colour), one of the original characters (Fox, Robo, Frog, Penguin), and, on the teacher's own computer only, the classroom fan-art characters (see below). While waiting for the teacher they can change with **Change character**; during a mission the choice is locked. Two students may pick the same character: names on the map, in each player's colour, tell them apart, and the picker shows who already has which. The big screen's lobby shows each player's character. The phone remembers the last choice.
 
-The drawings are in `public/shared/heroes.js` (16×16, one letter per pixel, with notes at the top of the file). To add a character, copy an entry, give it a new `id` and run `npm test`, which checks every drawing.
+The original drawings are in `public/shared/heroes.js` (16×16, one letter per pixel, with notes at the top of the file). To add a character, copy an entry, give it a new `id` and run `npm test`, which checks every drawing.
 
-**Fan art, for classroom use only.** These characters belong to their owners (Nintendo, The Pokémon Company, Square Enix, Level-5, Shueisha, Sanrio, Studio Ghibli and others). Speak Plus is a business, so do not publish Lantern Island with these characters on the school website or anywhere public, and do not use them in advertising. To publish the game, remove the entries from `HEROES` first: students then play the Islander.
+**Fan art, for classroom use only.** 16 famous characters (Pikachu, the Dragon Quest Slime, Jibanyan, Tanjiro, Nezuko, Zenitsu, Doraemon, Totoro, Kirby, Mario, Goku, Luffy, Naruto, Hello Kitty, Anpanman, Sailor Moon) live in `public/shared/heroes-local.js`. They belong to their owners (Nintendo, The Pokémon Company, Square Enix, Level-5, Shueisha, Sanrio, Studio Ghibli and others), so that file is **never uploaded**: it is listed in `.gitignore`, it is not in the GitHub repository, and online (hosted mode) the server refuses to send it or to accept those characters. Keep your copy of the file in `public/shared/` on the computer you teach with; when it's there and the game runs on that computer (`npm start`), students can choose them. Without the file, the game simply offers the original characters. Never publish the file or use these characters in advertising.
 
 ## Abilities and clues
 
@@ -227,7 +227,7 @@ PUBLIC_URL=https://island.example.com TEACHER_PIN=4321 PORT=8080 npm start
 - Put the server behind a proxy that provides HTTPS and passes WebSockets through. The pages then use `wss://` by themselves.
 - In hosted mode the host screen and teacher panel **always** ask for the PIN. Set `TEACHER_PIN`, or read the random one in the server log.
 - `DATA_DIR` sets where saves go (default `./data`). Use a folder that survives restarts, or `STORAGE=supabase`.
-- The fan-art characters are **off** in hosted mode: `/shared/heroes.js` is served empty, the server refuses their ids, and the phone hides the character button. `FAN_ART=on` or `off` overrides the default (on when running locally).
+- The fan-art characters are **off** in hosted mode: `/shared/heroes-local.js` is never served (even if the file were there) and the server refuses their ids. The original characters in `heroes.js` are always available. `FAN_ART=on` or `off` overrides the default (on when running locally).
 - On Render, `PUBLIC_URL` can be left out: Render's `RENDER_EXTERNAL_URL` is used.
 
 **Render + Supabase, step by step:** see [docs/RENDER.md](docs/RENDER.md). The blueprint is `render.yaml` at the root of the repository.
