@@ -101,6 +101,8 @@ On a phone, four tabs:
 | 🤝 Deal | Offer a deal: choose a player, what you give (your properties, money) and what you want (any property someone has bought — you don't know who owns it, so ask!). The other player answers on their phone, then the teacher confirms. |
 | 🏦 Bank | Ask for a loan, a mortgage or a discount: practise the sentence, press **Call the bank**, then say it to the teacher. |
 
+With phones the board **fills the whole screen**: the side panel goes, and a slim bar inside the board shows the join code, the time, the round, the rule of the round and the players.
+
 What stays private: each phone shows only its own money, properties and mission. The board hides money, debts, property dots and missions, and shows a grey ✓ on sold properties instead of the owner (tick *show who owns each property on the board* in Settings to show owners). The teacher page sees everything, as always. Results at the end are public.
 
 - Students without a phone can still play from the board buttons; the teacher page does the rest.

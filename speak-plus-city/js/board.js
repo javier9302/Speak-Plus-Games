@@ -53,6 +53,8 @@ const connected = () => Date.now() - lastMsgAt < 8000;
 // Phone mode: money, properties and missions are private (on the phones), and so is who owns what.
 const priv = () => !!(S && S.settings && S.settings.phones);
 const hideOwners = () => priv() && !S.settings.showOwners;
+// With phones the board fills the screen (the side panel's private information is on the phones).
+const wide = () => !!NET || priv();
 
 function setState(s) {
   const fresh = !S || !s.players || S.players.length !== s.players.length || boardSig(S) !== boardSig(s) || (s.fxSeq || 0) < lastFx;
@@ -189,6 +191,8 @@ async function rollDice(dice) {
 // ---------- Render ----------
 
 function render() {
+  document.body.classList.toggle('wide', wide());
+  boardEl.classList.toggle('wide', wide());
   if (!S || !S.squares || !S.squares.length || SETUP) { renderWelcome(); renderConn(); return; }
   document.body.classList.toggle('last-ten', !!S.lastTen);
   drawBoard();
@@ -229,7 +233,7 @@ function renderWelcome() {
 function center() {
   let c = $('#center');
   if (!c) return null;
-  if (!$('#center-main')) c.innerHTML = '<div id="dice" class="dice" hidden></div><div id="center-main"></div>';
+  if (!$('#center-main')) c.innerHTML = '<div id="dice" class="dice" hidden></div><div id="center-main"></div><div id="center-info" class="cinfo"></div>';
   return $('#center-main');
 }
 
@@ -240,9 +244,23 @@ function framesOpenFor(key) {
   return ui.framesOpen;
 }
 
+// Phone mode: the public information of the side panel, as a bar at the bottom of the board's centre.
+function renderInfo() {
+  const el = $('#center-info');
+  if (!el) return;
+  if (!wide() || !S.players.length) { patch(el, ''); return; }
+  const left = timeLeft(S, Date.now());
+  const join = NET ? `<div class="cinfo-join"><img src="${NET.qr}" alt="QR code to join"><div><small>Join</small><b>${esc(NET.code)}</b></div></div>` : '';
+  const time = `<div class="cinfo-time">${left != null ? `<span class="game-clock">${fmtClock(left)}</span>` : ''}<span>Round <b>${S.round}</b>${S.lastTen ? ' · ×2' : ''}</span></div>`;
+  const rule = S.rule ? `<div class="cinfo-rule" title="Rule of the round">📜 ${esc(S.rule.text)}</div>` : '<div style="flex:1"></div>';
+  const players = `<div class="cinfo-players">${S.players.map((p, pid) => `<span class="cinfo-p ${S.turn && S.turn.pid === pid && S.phase === 'play' ? 'active' : ''}">${tokenHTML(p)}${esc(p.name)}${p.inJail ? ' ☕' : ''}${p.stars ? ` ⭐${p.stars > 1 ? p.stars : ''}` : ''}</span>`).join('')}</div>`;
+  patch(el, join + time + rule + players);
+}
+
 function renderCenter() {
   const el = center();
   if (!el) return;
+  renderInfo();
   const sayIt = S.sayIt || {};
   const t = S.turn;
   const animating = running || queue.length;
@@ -381,7 +399,7 @@ function renderSide() {
   const st = S.settings;
   const left = timeLeft(S, Date.now());
   let status = '';
-  if (left != null) status += `<div class="timer ${S.timer.pausedAt ? 'paused' : ''}"><span class="label">Time left</span><span id="game-clock" class="clock">${fmtClock(left)}</span></div>`;
+  if (left != null) status += `<div class="timer ${S.timer.pausedAt ? 'paused' : ''}"><span class="label">Time left</span><span id="game-clock" class="clock game-clock">${fmtClock(left)}</span></div>`;
   status += `<div class="round">Round <b>${S.round}</b>${S.lastTen ? ' <span class="badge-hot">Rewards ×2</span>' : ''}</div>`;
   if (S.rule) status += `<div class="rule"><span class="label">Rule of the round</span><p>${esc(S.rule.text)}</p></div>`;
   if (S.market) {
@@ -626,8 +644,7 @@ function tickTimers() {
   if (!S || !S.squares || !S.squares.length) return;
   const now = Date.now();
   const left = timeLeft(S, now);
-  const clock = $('#game-clock');
-  if (clock && left != null) {
+  if (left != null) for (const clock of $$('.game-clock')) {
     clock.textContent = fmtClock(left);
     clock.classList.toggle('low', left <= 600000);
   }

@@ -1,5 +1,5 @@
 // Small DOM helpers shared by the board, teacher and editor pages.
-import { TOKENS, LEVEL_NAMES, fill } from './state.js';
+import { TOKENS, LEVEL_NAMES, fill, priceOf } from './state.js';
 
 export const $ = (sel, root = document) => root.querySelector(sel);
 export const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -48,7 +48,7 @@ export function sayVars(s, pid, extra = {}) {
   const q = s.squares[sq] || {};
   const pr = s.props[sq];
   const v = { player: p.name, name: q.name };
-  if (q.price) v.price = '$' + q.price;
+  if (q.price) v.price = '$' + priceOf(s, sq);   // with the market boom or crash
   if (pr && s.players[pr.owner]) v.owner = s.players[pr.owner].name;
   if (extra.amount != null) v.amount = '$' + extra.amount;
   if (extra.challenge) v.challenge = extra.challenge;
