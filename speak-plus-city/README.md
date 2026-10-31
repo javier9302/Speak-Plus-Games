@@ -116,6 +116,7 @@ What stays private: each phone shows only its own money, properties and mission.
 - **Player cards**: money (+/− quick buttons and custom amounts), level, ⭐ gold star, English rule button, "Rule broken" fine, repay debt, the secret mission (hidden until you press *show*), properties, and a **notes box** for errors and good sentences.
 - **Tabs**: Bank (transfer, loans, repay, trade builder) · Properties (owner of every property, mortgage, auction) · Events (market, Black Market, rule of the round, town fund, a card for any player, announcement, end) · Hints · Log · Settings · Game (timer, save/load, new game).
 - **Undo** (Ctrl+Z) goes back one action at a time.
+- **↺ New game** (top bar) goes back to the setup screen with the same players (and their phones) and the current settings: change anything and press **Start the game** again. **Back to the current game** cancels.
 
 ### Hints
 

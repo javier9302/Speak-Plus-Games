@@ -177,6 +177,7 @@ function render() {
   renderConn();
   tickDisplay();
   syncPhones();
+  $('#btn-new-game').hidden = setup;
 }
 
 function renderConn() {
@@ -734,14 +735,19 @@ function command(cmd, b) {
     case 'save': saveGame(); break;
     case 'load': $('#load-file').click(); break;
     case 'export-md': download(`speak-plus-city-${dateStamp()}.md`, sessionReport(S), 'text/markdown'); break;
-    case 'new-game':
-      if (S.phase === 'play' && !confirm('Start a new game? Save this one first if you want to continue it later.')) return;
-      if (S.players.length) setupPlayers = S.players.map(p => ({ name: p.name, token: p.token, level: p.level }));
+    case 'new-game': {
+      if (S.phase === 'play' && !confirm('Start a new game?\n\nYou go back to the setup screen with the same players and settings, and can change anything before you start again. Press "Back to the current game" there if you change your mind.')) return;
+      // Same players (and their phones) and the settings of this game, ready to change.
+      const phoneOf = pid => Object.keys(S.seats || {}).find(t => S.seats[t] === pid);
+      if (S.players.length) setupPlayers = S.players.map((p, i) => ({ name: p.name, token: p.token, level: p.level, phone: phoneOf(i) }));
+      if (S.phase !== 'setup') setupSettings = { ...setupSettings, ...structuredClone(S.settings) };
       showSetup = true;
       render();
       broadcast();      // the board shows the QR code again, phones go to the lobby
       sendViews();
+      window.scrollTo(0, 0);
       break;
+    }
     case 'open-board': openBoard(); break;
     case 'kick': {
       const token = b.dataset.token;
