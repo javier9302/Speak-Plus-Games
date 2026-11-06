@@ -9,7 +9,8 @@ const GREEN = 4, CYCLE = 7;                   // traffic lights: seconds green, 
 const TRAIN = {cycle:10, warn:5.5, pass:7};   // crossings: open until `warn`, flashing until `pass`, then the train goes by
 const WORKS = {first:4, gap:8};               // road works: steps before the first street closes, then between closures
 const FUEL = {spare:.3, min:4};               // low fuel: extra steps on top of the shortest route
-const PEN = {bump:3, red:5, letter:2, teacher:5, wrong:3, train:5, unfinished:30};
+const PEN = {bump:3, red:5, letter:2, teacher:5, wrong:3, train:5, monster:5, unfinished:30};
+const MONSTER = {wait:4, sight:6, stun:3, drift:.4};   // seconds before it moves, steps away it starts chasing, seconds it rests after a catch, how often it wanders towards the car
 const PLACES = [
   {name:'Bank', icon:'🏦', code:'MONEY', clue:'You keep your money here'}, {name:'Bakery', icon:'🥐', code:'BREAD', clue:'You buy bread here'},
   {name:'Park', icon:'🌳', code:'TREE', clue:'You play outside here'}, {name:'School', icon:'🏫', code:'PENCIL', clue:'You study here with a teacher'},
@@ -28,9 +29,9 @@ const QUIZ = [
   {q:'What is the first month of the year?', a:'JANUARY'}, {q:'What season comes after winter?', a:'SPRING'}, {q:'What is frozen water?', a:'ICE'}
 ];
 const LEVELS = [
-  {l:'Easy', stops:1, lights:false, codes:false, note:'One stop on the way to B. No traffic lights.'},
-  {l:'Medium', stops:2, lights:true, codes:false, note:'Two stops and traffic lights.'},
-  {l:'Hard', stops:3, lights:true, codes:true, note:'Three stops, traffic lights, and a word to spell at every door. Needs a keyboard.'}
+  {l:'Easy', stops:1, lights:false, codes:false, beast:2.1, note:'One stop on the way to B. No traffic lights.'},
+  {l:'Medium', stops:2, lights:true, codes:false, beast:1.7, note:'Two stops and traffic lights.'},
+  {l:'Hard', stops:3, lights:true, codes:true, beast:1.4, note:'Three stops, traffic lights, and a word to spell at every door. Needs a keyboard.'}
 ];
 // The level sets how hard a run is; the mission sets what the job is.
 // ordered: goals in list order · reveal: each goal appears when the one before is done · pairs: pick-ups and drop-offs for n stops
@@ -47,7 +48,7 @@ const MISSIONS = [
   {id:'quiz', l:'Quiz doors', quiz:true, brief:'Every door has a question. The navigator asks it and the driver types the answer.'}
 ];
 const MIX = MISSIONS.length;
-const DEFAULTS = {teams:'Team A\nTeam B', level:2, mission:0, rounds:2, limit:3, sound:true};
+const DEFAULTS = {teams:'Team A\nTeam B', level:2, mission:0, rounds:2, limit:3, sound:true, monster:false};
 let S = {...DEFAULTS};
 try { Object.assign(S, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch {}
 if (!(S.mission >= 0 && S.mission <= MIX)) S.mission = 0;
@@ -70,7 +71,7 @@ const fmt = s => { const t = Math.round(s * 10), m = Math.floor(t / 600); return
 
 /* ---------- Setup ---------- */
 const teamsEl = $('#cr-teams');
-teamsEl.value = S.teams; $('#cr-sound').checked = S.sound;
+teamsEl.value = S.teams; $('#cr-sound').checked = S.sound; $('#cr-monster').checked = S.monster;
 
 function seg(id, k, values, label){
   const box = $('#' + id);
@@ -92,6 +93,7 @@ function updateSetup(){
 }
 teamsEl.addEventListener('input', () => { S.teams = teamsEl.value; save(); updateSetup(); });
 $('#cr-sound').addEventListener('change', e => { S.sound = e.target.checked; save(); });
+$('#cr-monster').addEventListener('change', e => { S.monster = e.target.checked; save(); });
 updateSetup();
 
 $('#cr-back-hub').addEventListener('click', () => show('hub'));
@@ -172,10 +174,11 @@ function tryCity(lv, ms){
   const far = ends.filter(p => dist.get(key(p.x, p.y)) >= MIN_TRIP && (!rail || side(p) !== side(a)));   // with a railway, B is across the tracks
   if (!far.length) return null;
   const b = pick(far);
+  const den = ends.filter(p => p !== a && p !== b).sort((p, q) => dist.get(key(q.x, q.y)) - dist.get(key(p.x, p.y)))[0];   // the monster starts far from A
   const dir = pick([0,1,2,3].filter(i => road.has(key(a.x + DIRS[i][0], a.y + DIRS[i][1]))));
   const stops = shuffle(places.map((_, i) => i)).slice(0, ms.pairs ? 2 * ms.pairs(lv.stops) : lv.stops);
   const lights = lv.lights ? shuffle(ends.filter(p => p !== a && p !== b)).slice(0, 5).map(p => ({x: p.x, y: p.y, off: Math.random() * CYCLE})) : [];
-  return {road, parks, places, a, b, dir, stops, lights, rail};
+  return {road, parks, places, a, b, den, dir, stops, lights, rail};
 }
 function makeCity(lv, ms){ for (;;) { const m = tryCity(lv, ms); if (m) return m; } }
 
@@ -187,13 +190,13 @@ function flip(m, fh, fv){
   if (fv && dir % 2 === 0) dir = 2 - dir;
   return {
     road: new Set([...m.road].map(k => { const [x, y] = k.split(',').map(Number); return key(fx(x), fy(y)); })),
-    parks: m.parks.map(pt), a: pt(m.a), b: pt(m.b), dir, stops: m.stops, lights: m.lights.map(pt),
+    parks: m.parks.map(pt), a: pt(m.a), b: pt(m.b), den: pt(m.den), dir, stops: m.stops, lights: m.lights.map(pt),
     rail: m.rail && {...m.rail, n: m.rail.h ? fy(m.rail.n) : fx(m.rail.n)},
     places: m.places.map(p => ({...p, bx: fh ? 3 - p.bx : p.bx, by: fv ? 2 - p.by : p.by, door: pt(p.door)}))
   };
 }
 
-// Fewest steps from A through every stop (any order) to B
+// Fewest steps from A through every stop (any order) to B, plus going in and out of each place
 function shortest(m){
   const pts = [m.a, ...m.stops.map(i => m.places[i].door), m.b], d = pts.map(p => bfs(m.road, p.x, p.y));
   const leg = (i, j) => d[i].get(key(pts[j].x, pts[j].y)), end = pts.length - 1;
@@ -203,14 +206,14 @@ function shortest(m){
     left.forEach(j => walk(j, left.filter(x => x !== j), sum + leg(at, j)));
   };
   walk(0, m.stops.map((_, i) => i + 1), 0);
-  return best;
+  return best + 2 * m.stops.length;
 }
 
 /* ---------- Game ---------- */
 const mapEl = $('#cr-map'), overlay = $('#cr-overlay'), card = $('#cr-card'), board = $('#cr-board'), codeEl = $('#cr-code'), toastEl = $('#cr-toast'), fuelEl = $('#cr-fuel');
 let G = null;   // the match: teams, rounds, totals
 let R = null;   // the run being driven
-let car = null, train = null, gates = [], cardAt = 0, toastTimer = 0;
+let car = null, mon = null, train = null, gates = [], cardAt = 0, toastTimer = 0;
 
 $('#cr-start').addEventListener('click', startGame);
 function startGame(){
@@ -221,7 +224,7 @@ function startGame(){
   const level = LEVELS[S.level - 1];
   G = {
     teams: teams.map(n => ({name: n, total: 0, pen: 0, runs: 0})),
-    level, rounds: S.rounds, limit: S.limit * 60,
+    level, rounds: S.rounds, limit: S.limit * 60, monster: S.monster,
     missions: S.mission === MIX ? shuffle(MISSIONS.filter(m => !m.quiz || level.codes)) : [MISSIONS[S.mission]],   // one per round, in this order
     ms: null, quiz: [],
     round: 0, order: [], k: 0, city: null, state: 'turn', solo: teams.length === 1
@@ -242,7 +245,8 @@ function prepRun(){
   const m = flip(G.city, G.k & 1, G.k & 2), ms = G.ms;
   const best = ms.id === 'fuel' ? shortest(m) : 0, fuel = ms.id === 'fuel' ? best + Math.max(FUEL.min, Math.round(best * FUEL.spare)) : null;
   R = {team: G.order[G.k], map: m, x: m.a.x, y: m.a.y, dir: m.dir, ang: m.dir * 90,
-    t: 0, pen: 0, steps: 0, bumps: 0, reds: 0, code: null, arrived: false,
+    t: 0, pen: 0, steps: 0, bumps: 0, reds: 0, catches: 0, code: null, arrived: false, inside: -1,
+    mon: G.monster ? {x: m.den.x, y: m.den.y, dir: 0, next: MONSTER.wait, chase: false} : null,
     goals: m.stops.map((p, k) => ({p, type: ms.pairs ? (k % 2 ? 'drop' : 'pickup') : 'visit', done: false})),
     fuel, tank: fuel, works: ms.id === 'works' ? G.level.stops : 0, nextWork: WORKS.first, gate: null};
   drawMap(); hideCode(); renderBoard(); renderSide(); turnCard();
@@ -253,6 +257,8 @@ const at = () => { const i = R.goals.findIndex(g => !g.done); return i < 0 ? R.g
 const isOpen = (g, k) => !g.done && (!G.ms.ordered || k === at());
 const isShown = k => !G.ms.reveal || k <= at();
 const doorAt = (p, x, y) => p.door.x === x && p.door.y === y;
+// The direction from a door into its building
+const entry = p => DIRS.findIndex(([dx, dy]) => { const x = p.door.x + dx, y = p.door.y + dy; return x >= 3*p.bx + 1 && x <= 3*p.bx + 2 && y >= 3*p.by + 1 && y <= 3*p.by + 2; });
 
 function drawMap(){
   const m = R.map, c = v => v * U + U / 2;
@@ -278,14 +284,28 @@ function drawMap(){
   CORNERS.filter(p => onRail(m.rail, p)).forEach(p => s += lamp(p, 'data-gate'));
   s += `<g class="cr-mark cr-a"><circle cx="${c(m.a.x)}" cy="${c(m.a.y)}" r="34"/><text x="${c(m.a.x)}" y="${c(m.a.y) + 16}">A</text></g>`;
   s += `<g class="cr-mark cr-b"><circle cx="${c(m.b.x)}" cy="${c(m.b.y)}" r="34"/><text x="${c(m.b.x)}" y="${c(m.b.y) + 16}">B</text></g>`;
+  if (R.mon) s += `<g id="cr-mon"><g class="cr-mon-body"><ellipse class="cr-mon-foot" cx="-15" cy="30" rx="11" ry="7"/><ellipse class="cr-mon-foot" cx="15" cy="30" rx="11" ry="7"/>` +
+    `<path class="cr-mon-horn" d="M-22-18-30-44-6-28ZM22-18 30-44 6-28Z"/><circle r="32"/><circle class="cr-mon-eye" cy="-6" r="13"/><circle class="cr-mon-pupil" cy="-6" r="6"/>` +
+    `<path class="cr-mon-mouth" d="M-12 14q12 9 24 0"/></g></g>`;
   s += `<g id="cr-car"><g class="cr-car-body"><circle r="34"/><path d="M0-22 17 14 0 5-17 14Z"/></g></g>`;
   if (m.rail) s += `<g id="cr-train"><rect x="-170" y="-31" width="340" height="62" rx="20"/><path d="M-135 0H140"/></g>`;
   mapEl.innerHTML = s;
-  car = $('#cr-car'); train = $('#cr-train'); gates = [...mapEl.querySelectorAll('[data-gate]')];
+  car = $('#cr-car'); mon = $('#cr-mon'); train = $('#cr-train'); gates = [...mapEl.querySelectorAll('[data-gate]')];
   m.lights.forEach((l, i) => { l.el = mapEl.querySelector(`[data-l="${i}"]`); l.red = null; });
-  placeCar(); updateLights(); updateTrain(); markMap();
+  placeCar(); placeMonster(); updateLights(); updateTrain(); markMap();
 }
-function placeCar(){ car.style.transform = `translate(${(R.x + .5) * U}px,${(R.y + .5) * U}px) rotate(${R.ang}deg)`; }
+// Inside a place the car sits just behind its door, a little smaller
+function placeCar(){
+  const p = R.map.places[R.inside], [dx, dy] = p ? DIRS[entry(p)] : [0, 0];
+  car.style.transform = `translate(${(R.x + .5 + dx * .62) * U}px,${(R.y + .5 + dy * .62) * U}px) rotate(${R.ang}deg) scale(${p ? .75 : 1})`;
+}
+function placeMonster(){
+  if (!R.mon) return;
+  mon.style.transform = `translate(${(R.mon.x + .5) * U}px,${(R.mon.y + .5) * U}px)`;
+  const [dx, dy] = DIRS[R.mon.dir];
+  mon.querySelector('.cr-mon-pupil').setAttribute('transform', `translate(${dx * 5} ${dy * 5})`);
+  mon.classList.toggle('chase', R.mon.chase);
+}
 const isRed = l => (R.t + l.off) % CYCLE >= GREEN;
 function updateLights(){
   for (const l of R.map.lights) { const red = isRed(l); if (red !== l.red) { l.red = red; l.el.classList.toggle('red', red); } }
@@ -343,10 +363,30 @@ function closeStreet(){
   toast('Road works! A street is closed', true, 2200); beep('alert');
 }
 
+// The monster wanders the streets (drifting towards the car) and chases the car once it is close. It waits while the car is inside a place.
+function moveMonster(){
+  const mo = R.mon, road = R.map.road;
+  mo.next = R.t + G.level.beast;
+  const near = bfs(road, R.x, R.y), d = near.get(key(mo.x, mo.y));
+  const opts = DIRS.map(([dx, dy], i) => ({i, x: mo.x + dx, y: mo.y + dy})).filter(o => road.has(key(o.x, o.y)));
+  if (!opts.length) return;
+  mo.chase = d !== undefined && d <= MONSTER.sight;
+  const closer = mo.chase || Math.random() < MONSTER.drift ? opts.filter(o => near.get(key(o.x, o.y)) < d) : [];
+  const ahead = opts.filter(o => o.i !== (mo.dir + 2) % 4);
+  const o = pick(closer.length ? closer : ahead.length ? ahead : opts);
+  mo.x = o.x; mo.y = o.y; mo.dir = o.i; placeMonster();
+  if (mo.x === R.x && mo.y === R.y) caught();
+}
+function caught(){
+  const mo = R.mon;
+  R.catches++; mo.x = R.map.den.x; mo.y = R.map.den.y; mo.chase = false; mo.next = R.t + MONSTER.stun;
+  placeMonster(); penalty(PEN.monster, 'The monster got you!');
+}
+
 function renderBoard(){
   board.innerHTML = G.teams.map((t, i) =>
     `<div class="team ${i === R.team ? 'active' : ''}"><span class="team-name">${esc(t.name)}</span><span class="team-score" aria-label="total time">${t.runs ? fmt(t.total) : '–'}</span></div>`).join('');
-  $('#cr-progress').textContent = `Round ${G.round + 1} of ${G.rounds} · ${G.level.l} · ${G.ms.l} · ${S.limit} min limit`;
+  $('#cr-progress').textContent = `Round ${G.round + 1} of ${G.rounds} · ${G.level.l} · ${G.ms.l}${G.monster ? ' · Monster' : ''} · ${G.limit / 60} min limit`;
 }
 function renderSide(){
   const m = R.map, ms = G.ms, n = at();
@@ -385,7 +425,7 @@ function turnCard(){
   openOverlay(`
     <span class="eyebrow">Round ${G.round + 1} of ${G.rounds} · ${G.solo ? 'Ready?' : G.k === 0 ? 'First up' : 'Next up'}</span>
     <h2>${esc(G.teams[R.team].name)}</h2>
-    <p class="cr-brief"><b>Mission: ${G.ms.l}.</b> ${G.ms.brief}</p>
+    <p class="cr-brief"><b>Mission: ${G.ms.l}.</b> ${G.ms.brief}${G.monster ? ` Watch out for the monster: if it catches you, +${PEN.monster} s.` : ''}</p>
     <p class="sub">${swap}Driver: back to the screen, fingers on the arrow keys. Navigator: English only.</p>
     <div class="card-actions"><button class="btn btn-primary btn-big" data-act="go" data-focus type="button">Go</button></div>
     <span class="keyhint">or press <kbd>Space</kbd> · the clock starts right away</span>`, true);
@@ -408,38 +448,62 @@ $('#cr-btn-pause').addEventListener('click', () => G && (G.state === 'play' ? pa
 
 /* ---------- Driving ---------- */
 function forward(){
+  if (R.inside >= 0) return leave();
   const [dx, dy] = DIRS[R.dir], nx = R.x + dx, ny = R.y + dy;
   if (!R.map.road.has(key(nx, ny))) {
-    R.bumps++;
-    const body = car.firstChild; body.classList.remove('bump'); void body.getBoundingClientRect(); body.classList.add('bump');
-    penalty(PEN.bump, 'Bump!'); return;
+    const here = R.map.places.findIndex(p => doorAt(p, R.x, R.y));
+    if (here >= 0 && entry(R.map.places[here]) === R.dir) return enter(here);
+    return bump();
   }
-  R.x = nx; R.y = ny; R.steps++; placeCar(); beep('step');
-  if (R.fuel !== null) { R.fuel--; renderSide(); }
+  R.x = nx; R.y = ny; moved();
   const light = R.map.lights.find(l => l.x === nx && l.y === ny);
   if (light && isRed(light)) { R.reds++; penalty(PEN.red, 'Red light!'); }
   if (onTracks() && R.gate === 'red') penalty(PEN.train, 'Train!');
+  if (R.mon && R.mon.x === nx && R.mon.y === ny) caught();
   if (nx === R.map.b.x && ny === R.map.b.y) {
     if (at() === R.goals.length) return finishRun(true);
     toast('Finish your jobs first', true);
   }
+  afterMove();
+}
+function bump(){
+  R.bumps++;
+  const body = car.firstChild; body.classList.remove('bump'); void body.getBoundingClientRect(); body.classList.add('bump');
+  penalty(PEN.bump, 'Bump!');
+}
+function moved(){
+  R.steps++; placeCar(); beep('step');
+  if (R.fuel !== null) { R.fuel--; renderSide(); }
+}
+function afterMove(){
+  if (G.state !== 'play') return;
   if (R.fuel === 0) return finishRun(false, 'Out of fuel');
   if (R.works && R.steps >= R.nextWork) closeStreet();
 }
 function turn(by){
   R.dir = (R.dir + by + 4) % 4; R.ang += by * 90; placeCar(); beep('turn');
 }
-function action(){
-  const m = R.map, here = m.places.findIndex(p => doorAt(p, R.x, R.y));
-  const g = R.goals.find((g, k) => g.p === here && isOpen(g, k));
+// Facing a door, ↑ goes into the place. Only a place on the list lets you in.
+function enter(i){
+  const m = R.map, g = R.goals.find((g, k) => g.p === i && isOpen(g, k));
   if (!g) {
-    if (G.ms.clues && here >= 0 && !R.goals.some(g => g.p === here)) return penalty(PEN.wrong, 'Wrong place');
-    toast('No door to open here', true); return;
+    const mine = R.goals.filter((g, k) => g.p === i && isShown(k));
+    if (G.ms.clues && !R.goals.some(g => g.p === i)) return penalty(PEN.wrong, 'Wrong place');
+    if (mine.length && mine.every(g => g.done)) return toast(m.places[i].name + ' is done ✓');
+    return toast(mine.length ? 'Not yet. Follow the list' : 'Not on your list', true);
   }
-  if (G.ms.quiz) { if (!G.quiz.length) G.quiz = shuffle(QUIZ); const q = G.quiz.pop(); R.code = {g, word: q.a, q: q.q, n: 0, miss: 0}; }
-  else if (G.level.codes) R.code = {g, word: m.places[here].code, n: 0, miss: 0};
-  else return completeGoal(g);
-  showCode();
+  R.inside = i; moved();
+  if (G.ms.quiz) { if (!G.quiz.length) G.quiz = shuffle(QUIZ); const q = G.quiz.pop(); R.code = {g, word: q.a, q: q.q, n: 0, miss: 0}; showCode(); }
+  else if (G.level.codes) { R.code = {g, word: m.places[i].code, n: 0, miss: 0}; showCode(); }
+  else completeGoal(g);
+  afterMove();
+}
+// Inside, the only way is back out through the door: turn around, then ↑
+function leave(){
+  if (R.dir !== (entry(R.map.places[R.inside]) + 2) % 4) return bump();
+  R.inside = -1; moved();
+  if (R.mon && R.mon.x === R.x && R.mon.y === R.y) caught();
+  afterMove();
 }
 function typeLetter(ch){
   const c = R.code;
@@ -474,6 +538,7 @@ function finishRun(arrived, why){
   const lastRun = G.k === G.order.length - 1, lastRound = G.round === G.rounds - 1;
   const detail = [R.steps + ' steps', R.bumps + (R.bumps === 1 ? ' bump' : ' bumps')];
   if (G.level.lights) detail.push(R.reds + (R.reds === 1 ? ' red light' : ' red lights'));
+  if (R.mon) detail.push(R.catches + (R.catches === 1 ? ' monster catch' : ' monster catches'));
   if (R.fuel !== null) detail.push(R.fuel + ' fuel left');
   detail.push('+' + R.pen + ' s in penalties');
   openOverlay(`
@@ -521,7 +586,7 @@ card.addEventListener('click', e => {
     hub: () => { G = null; show('hub'); }})[a.dataset.act]?.();
 });
 
-const drive = {up: forward, left: () => turn(-1), right: () => turn(1), act: action};
+const drive = {up: forward, left: () => turn(-1), right: () => turn(1)};
 document.querySelector('.cr-pad').addEventListener('click', e => {
   const b = e.target.closest('[data-key]');
   b && b.blur();   // so Space on the keyboard never re-presses a tapped button
@@ -535,8 +600,8 @@ document.addEventListener('keydown', e => {
   if (G.state === 'turn') { if (e.code === 'Space' && !e.repeat) { e.preventDefault(); go(); } return; }
   if (G.state === 'result') { if (e.key === 'Enter' && !e.repeat) { e.preventDefault(); next(); } return; }
   if (G.state !== 'play') return;
-  const k = {ArrowUp: 'up', ArrowLeft: 'left', ArrowRight: 'right', Space: 'act'}[e.code];
-  if (k || e.code === 'ArrowDown') e.preventDefault();   // keep the page still and the focused button unpressed
+  const k = {ArrowUp: 'up', ArrowLeft: 'left', ArrowRight: 'right'}[e.code];
+  if (k || e.code === 'ArrowDown' || e.code === 'Space') e.preventDefault();   // keep the page still and the focused button unpressed
   if (e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
   if (R.code) { if (/^Key[A-Z]$/.test(e.code)) typeLetter(e.code.slice(3)); return; }
   if (k) drive[k]();
@@ -549,6 +614,7 @@ function frame(t){
     R.t += dt;
     $('#cr-time').textContent = fmt(R.t + R.pen);
     updateLights(); updateTrain();
+    if (R.mon && R.inside < 0 && !R.code && R.t >= R.mon.next) moveMonster();
     if (G.state === 'play' && R.t + R.pen >= G.limit) finishRun(false);
   }
   requestAnimationFrame(frame);

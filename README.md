@@ -51,9 +51,11 @@ La configuración se guarda en el navegador (localStorage).
 ## City Run: reglas
 
 - Dos equipos o parejas (máximo 4). El **conductor** se sienta de espaldas a la pantalla con el teclado; el **navegador** ve el mapa y da instrucciones en inglés.
-- Una tecla es un paso: `↑` avanza una casilla, `←` `→` giran sin moverse, `Espacio` abre la puerta de una parada.
+- Una tecla es un paso: `↑` avanza una casilla, `←` `→` giran sin moverse.
+- Para entrar en un sitio hay que parar en su puerta, girar hacia el edificio ("It's on your left") y pulsar `↑` ("Go in"). Para salir, dar la vuelta y `↑` otra vez.
+- Opción **Monster**: un monstruo pasea por la ciudad y persigue al coche cuando está cerca; hay que buscar otro camino. Si atrapa al coche, +5 s.
 - Hay que visitar todas las paradas y después llegar a **B**. Gana el menor tiempo total.
-- Penalizaciones: choque +3 s, semáforo en rojo +5 s, letra equivocada +2 s, y el botón del profesor "Not English" +5 s.
+- Penalizaciones: choque +3 s, semáforo en rojo +5 s, letra equivocada +2 s, monstruo +5 s, y el botón del profesor "Not English" +5 s.
 - Niveles: Easy (1 parada), Medium (2 paradas y semáforos), Hard (3 paradas, semáforos y una palabra que deletrear en cada puerta).
 - Misiones (se eligen en la configuración, o **Mix** para una distinta en cada ronda):
   - **Classic**: visitar las paradas en cualquier orden.
