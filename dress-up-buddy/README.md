@@ -11,7 +11,7 @@ A dress-up app for young English learners (topic: "What we wear"). Each kid make
 
 - **Home:** "New" makes a character; the gallery shows saved characters (tap one to keep dressing it). "Print all" prints them all, one per page. "Teacher" opens the teacher tools.
 - **Make:** name (English or Japanese, optional), then picture tabs:
-  - body (boy, girl, kid) + 5 skin tones · hair (8 styles: short, long, bob, pigtails, ponytail, bun, curly, spiky) + 6 hair colors · face (happy, surprised, silly, cool, sleepy). Choosing these is silent.
+  - body (boy, girl, kid) + 5 skin tones · hair (14 styles: short, long, bob, pigtails, ponytail, bun, curly, bowl, buzz, princess (hime cut), buns, side tail, braids, spiky) + 6 hair colors · face (happy, surprised, silly, cool, sleepy). Choosing these is silent.
   - tops (T-shirt, shirt, sweater, hoodie) · coats (jacket, coat) · bottoms (pants, jeans, shorts, skirt, dress) · feet (socks, shoes, sneakers, boots) · more (hat, cap, scarf, gloves, glasses, bag).
   - One item per slot. Socks and shoes are separate slots; hat and cap share the head (only one at a time); the other accessories can all be worn together.
   - Tap an item: it goes on, the word appears big and is spoken with a sentence ("Sweater. I'm wearing a green sweater."). Tap it again to take it off. Pick one of 10 colors; the color name is spoken.
