@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Dress Up Buddy · Speak Plus</title>
+<title>Dress Up Buddy</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap">
@@ -12,7 +12,10 @@
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
-    <symbol id="plus" viewBox="0 0 40 40"><g transform="rotate(12 20 20)"><line x1="20" y1="6" x2="20" y2="34" stroke="#E8483B" stroke-width="8.5" stroke-linecap="round"/><line x1="6" y1="20" x2="34" y2="20" stroke="#E8483B" stroke-width="8.5" stroke-linecap="round"/></g></symbol>
+    <symbol id="i-teacher" viewBox="0 0 24 24"><circle cx="12" cy="7.5" r="3.8" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M4.5 20.5c.8-4.4 3.6-6.6 7.5-6.6s6.7 2.2 7.5 6.6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="currentColor"/></symbol>
+    <symbol id="i-skip" viewBox="0 0 24 24"><path d="M5 5l9 7-9 7zM17 5v14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 6.5h16M9.5 6.5V4h5v2.5M6.5 6.5l1 13.5h9l1-13.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/></symbol>
     <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11 12 3l9 8M5.5 9.5V20h13V9.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
     <symbol id="i-new" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></symbol>
     <symbol id="i-dice" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="4" fill="none" stroke="currentColor" stroke-width="2.4"/><circle cx="8.5" cy="8.5" r="1.7" fill="currentColor"/><circle cx="12" cy="12" r="1.7" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1.7" fill="currentColor"/></symbol>
@@ -28,7 +31,7 @@
 <section id="view-home" class="view home">
   <header class="home-head">
     <a class="link-back" href="../index.html">← All games</a>
-    <div class="logo" aria-label="Speak Plus">speak<svg><use href="#plus"/></svg></div>
+    <button id="btn-teacher" class="btn" type="button"><svg><use href="#i-teacher"/></svg>Teacher</button>
   </header>
   <h1>Dress Up Buddy</h1>
   <div class="home-actions">
@@ -49,7 +52,13 @@
     <button id="btn-print" class="btn" type="button"><svg><use href="#i-print"/></svg><span class="lbl">Print</span></button>
   </header>
   <div class="stage" id="stage">
+    <div id="game" class="game" hidden>
+      <button id="btn-again" class="btn btn-icon btn-primary" type="button" aria-label="Listen again"><svg><use href="#i-sound"/></svg></button>
+      <p id="game-text" class="lbl"></p>
+      <button id="btn-skip" class="btn btn-icon" type="button" aria-label="Next"><svg><use href="#i-skip"/></svg></button>
+    </div>
     <div id="figure" class="figure"></div>
+    <div id="star" class="star" hidden><svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 6l13 27 29 4-21 20 5 29-26-14-26 14 5-29L8 37l29-4z"/></svg></div>
     <div id="word" class="word" hidden><b id="word-big"></b><span id="word-small"></span></div>
     <div id="talk" class="talk" hidden>
       <p id="talk-text"></p>
@@ -71,6 +80,24 @@
     <button id="btn-print-go" class="btn btn-primary" type="button"><svg><use href="#i-print"/></svg>Print</button>
   </header>
   <div id="pages" class="pages"></div>
+</section>
+
+<!-- TEACHER -->
+<section id="view-teacher" class="view teacher" hidden>
+  <header class="bar">
+    <button id="btn-teacher-back" class="btn" type="button"><svg><use href="#i-back"/></svg>Back</button>
+    <h1>Teacher</h1>
+  </header>
+  <div class="t-tools">
+    <button id="btn-game" class="btn btn-big btn-primary" type="button"><svg><use href="#i-play"/></svg>Listen and dress</button>
+    <button id="btn-words" class="btn btn-big" type="button" aria-pressed="true"><svg><use href="#i-words"/></svg>Words on buttons</button>
+  </div>
+  <p class="note">Listen and dress: the app says "Put on a yellow hat!" and the kid does it. It uses a new buddy that is not saved.<br>
+    Words on buttons: turn off for icons only (listening practice).</p>
+  <h2>Characters</h2>
+  <div id="t-list" class="t-list"></div>
+  <p id="t-empty" class="note" hidden>No characters yet.</p>
+  <button id="btn-clear" class="btn" type="button"><svg><use href="#i-trash"/></svg>Delete all</button>
 </section>
 
 <script src="art/core.js"></script>

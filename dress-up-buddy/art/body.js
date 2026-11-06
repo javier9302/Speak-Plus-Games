@@ -7,8 +7,15 @@
 (function (D) {
   'use strict';
 
-  D.SKIN = '#F9D9BF';
-  D.HAIR = '#5D4037';
+  D.SKINS = [
+    { id: 's1', hex: '#FCE3D0' }, { id: 's2', hex: '#F3C9A5' }, { id: 's3', hex: '#D9A07A' },
+    { id: 's4', hex: '#A86E4B' }, { id: 's5', hex: '#6E452E' }
+  ];
+  D.HAIR_COLORS = [
+    { id: 'black', hex: '#3B3536' }, { id: 'dark', hex: '#5D4037' }, { id: 'brown', hex: '#8D5A3B' },
+    { id: 'blonde', hex: '#E8C15A' }, { id: 'ginger', hex: '#C1592B' }, { id: 'gray', hex: '#B9B4AE' }
+  ];
+  D.SKIN = '#F3C9A5'; // only used to pick detail-line colors on the face
   D.UNDER = '#FFFFFF';
   D.BLUSH = '#F7A6B4';
 
@@ -18,8 +25,7 @@
     { id: 'neutral', word: 'kid' }
   ];
 
-  D.drawBody = function (c) {
-    const s = D.SKIN;
+  D.drawBody = function (c, s) {
     let o = '';
     // legs and feet
     o += D.limb(c, 104, 256, 104, 328, 30, s) + D.limb(c, 136, 256, 136, 328, 30, s);
@@ -60,7 +66,7 @@
     { id: 'sleepy', word: 'sleepy',
       draw: c => D.pair(D.detail(c, `M${EYE_L - 9},${EYE_Y} Q${EYE_L},${EYE_Y + 7} ${EYE_L + 9},${EYE_Y}`, D.SKIN, 4.5)) +
         D.ellipse(c, 120, 127, 5, 5.5, '#9C3B3B') +
-        D.detail(c, 'M166,34 L178,34 L166,46 L178,46 M184,18 L193,18 L184,27 L193,27', D.SKIN, 3.5) }
+        D.detail(c, 'M192,54 L204,54 L192,66 L204,66 M208,32 L217,32 L208,41 L217,41', D.SKIN, 3.5) }
   ];
 
   /* features that come with the body type */
@@ -73,12 +79,32 @@
   };
 
   /* ---------- hair: back part (behind the body) and front part ---------- */
+  const part = (c, h) => D.shape(c, 'M60,104 C54,54 84,26 120,26 C156,26 186,54 180,104 C174,84 160,70 120,66 C80,70 66,84 60,104 Z', h) + D.detail(c, 'M120,30 L120,64', h, 3);
+  const swoop = (c, h) => D.shape(c, 'M58,104 C50,52 82,24 120,24 C158,24 190,52 182,104 C176,92 170,82 163,76 C150,86 132,82 120,70 C108,82 88,88 77,78 C70,86 62,96 58,104 Z', h);
+  const tie = (c, x, y) => D.circle(c, x, y, 7, '#F06292');
+
   D.HAIRS = [
-    { id: 'short', word: 'short hair',
-      front: (c, h) => D.shape(c, 'M58,104 C50,52 82,24 120,24 C158,24 190,52 182,104 C176,92 170,82 163,76 C150,86 132,82 120,70 C108,82 88,88 77,78 C70,86 62,96 58,104 Z', h) },
-    { id: 'long', word: 'long hair',
+    { id: 'short', word: 'short', front: swoop },
+    { id: 'long', word: 'long',
       back: (c, h) => D.shape(c, 'M56,96 C50,44 88,22 120,22 C152,22 190,44 184,96 L190,196 Q186,206 174,204 L150,200 L148,170 L92,170 L90,200 L66,204 Q54,206 50,196 Z', h),
-      front: (c, h) => D.shape(c, 'M60,106 C54,54 84,26 120,26 C156,26 186,54 180,106 C178,92 172,80 165,74 Q158,92 145,76 Q134,92 122,76 Q110,92 98,77 Q88,92 76,76 C68,84 62,94 60,106 Z', h) }
+      front: (c, h) => D.shape(c, 'M60,106 C54,54 84,26 120,26 C156,26 186,54 180,106 C178,92 172,80 165,74 Q158,92 145,76 Q134,92 122,76 Q110,92 98,77 Q88,92 76,76 C68,84 62,94 60,106 Z', h) },
+    { id: 'bob', word: 'bob',
+      back: (c, h) => D.shape(c, 'M54,100 C48,44 88,22 120,22 C152,22 192,44 186,100 L188,142 Q172,152 156,142 L84,142 Q68,152 52,142 Z', h),
+      front: (c, h) => D.shape(c, 'M60,104 C54,54 84,26 120,26 C156,26 186,54 180,104 C178,94 175,86 170,80 Q120,88 70,80 C65,86 62,94 60,104 Z', h) },
+    { id: 'pigtails', word: 'pigtails',
+      back: (c, h) => D.pair(D.shape(c, 'M60,82 C30,86 20,128 32,168 C38,184 54,178 50,160 C46,132 52,112 68,100 Z', h)),
+      front: (c, h) => part(c, h) + tie(c, 60, 86) + tie(c, 180, 86) },
+    { id: 'ponytail', word: 'ponytail',
+      back: (c, h) => D.shape(c, 'M168,58 C204,66 212,120 200,164 C194,182 176,178 182,160 C190,128 184,100 162,84 Z', h) + tie(c, 172, 66),
+      front: part },
+    { id: 'bun', word: 'bun',
+      back: (c, h) => D.circle(c, 120, 26, 17, h) + D.detail(c, 'M110,24 Q118,14 128,22 Q130,32 120,32', h, 3),
+      front: part },
+    { id: 'curly', word: 'curly',
+      front: (c, h) => D.shape(c, 'M56,108 C40,98 42,76 54,68 C48,48 68,30 88,34 C96,18 120,14 133,26 C148,16 172,24 173,42 C192,46 198,68 187,80 C197,92 192,106 184,110 C178,98 170,90 160,86 C152,94 138,94 132,86 C124,96 108,96 102,86 C94,94 80,94 76,86 C68,92 60,100 56,108 Z', h) +
+        D.detail(c, 'M76,56 Q84,48 92,56 M112,40 Q120,32 128,40 M148,56 Q156,48 164,56', h, 3) },
+    { id: 'spiky', word: 'spiky',
+      front: (c, h) => D.shape(c, 'M58,104 C52,80 54,62 62,52 L54,32 L80,40 L84,16 L104,32 L120,10 L136,32 L156,16 L160,40 L186,32 L178,52 C186,62 188,80 182,104 C176,92 168,84 160,80 L150,88 L140,76 L128,86 L118,74 L108,86 L96,76 L86,88 L80,80 C70,86 62,94 58,104 Z', h) }
   ];
 
   D.find = (list, id) => list.find(x => x.id === id) || list[0];

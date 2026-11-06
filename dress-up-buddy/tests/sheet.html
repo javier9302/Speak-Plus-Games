@@ -21,6 +21,14 @@
 <script src="../art/clothes.js"></script>
 <script>
   const D = window.DUB, out = document.getElementById('out');
+  {
+    let html = '<h2>Hairstyles, skin tones and hair colors</h2><div class="row">';
+    D.HAIRS.forEach((h, i) => {
+      const ch = { body: 'neutral', hair: h.id, face: D.FACES[i % D.FACES.length].id, skin: D.SKINS[i % D.SKINS.length].id, hairColor: D.HAIR_COLORS[i % D.HAIR_COLORS.length].id };
+      html += `<figure>${D.render(ch, 'color')}${h.word}</figure>`;
+    });
+    out.insertAdjacentHTML('beforeend', html + '</div>');
+  }
   for (const mode of ['color', 'line']) {
     for (const b of D.BODIES) {
       let html = `<h2>${b.word} · ${mode}</h2><div class="row">`;

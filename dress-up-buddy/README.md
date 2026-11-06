@@ -7,10 +7,19 @@ A dress-up app for young English learners (topic: "What we wear"). Each kid make
 - Characters are saved in this browser (localStorage, key `sp-dressup-v1`). If the browser blocks saving, the app still works until the page is closed.
 - Speech uses the browser's own English voice (Web Speech API). On iPad, turn off silent mode to hear it.
 
-## Status
+## What's inside
 
-Step 1 of 3 is done: the base (3 body types, 2 hairstyles, 5 faces), 3 items (T-shirt, pants, shoes), colors, speech, Random, Talk, saving and printing (one character or all).
-Still to come: the rest of the items, the Teacher button (delete, "Listen and dress", hide words).
+- **Home:** "New" makes a character; the gallery shows saved characters (tap one to keep dressing it). "Print all" prints them all, one per page. "Teacher" opens the teacher tools.
+- **Make:** name (English or Japanese, optional), then picture tabs:
+  - body (boy, girl, kid) + 5 skin tones · hair (8 styles: short, long, bob, pigtails, ponytail, bun, curly, spiky) + 6 hair colors · face (happy, surprised, silly, cool, sleepy). Choosing these is silent.
+  - tops (T-shirt, shirt, sweater, hoodie) · coats (jacket, coat) · bottoms (pants, jeans, shorts, skirt, dress) · feet (socks, shoes, sneakers, boots) · more (hat, cap, scarf, gloves, glasses, bag).
+  - One item per slot. Socks and shoes are separate slots; hat and cap share the head (only one at a time); the other accessories can all be worn together.
+  - Tap an item: it goes on, the word appears big and is spoken with a sentence ("Sweater. I'm wearing a green sweater."). Tap it again to take it off. Pick one of 10 colors; the color name is spoken.
+  - **Random** dresses the character. **Talk** shows and reads the whole outfit: "I'm wearing a yellow hat, a red coat, blue jeans and black boots."
+- **Teacher:**
+  - **Listen and dress:** the app says "Put on a yellow hat!" (the speaker button repeats it, the arrow skips). When the kid does it, a big star and a happy sound (made with Web Audio). It uses a new buddy that is not saved.
+  - **Words on buttons:** off = icons only, for listening practice.
+  - Delete one character (tap Delete, then "Sure?") or all.
 
 ## Files
 
@@ -18,9 +27,9 @@ Still to come: the rest of the items, the Teacher button (delete, "Listen and dr
 |------|--------------|
 | `index.html` | The screens: home (gallery), make, print preview |
 | `style.css` | Screen layout and the A4 print page (`@media print`) |
-| `app.js` | Saving, tabs, speech, Random, Talk, printing |
+| `app.js` | Saving, tabs, speech, Random, Talk, printing, teacher tools, Listen and dress |
 | `art/core.js` | Colors and drawing helpers (color mode / outline mode) |
-| `art/body.js` | Body, faces, hair |
+| `art/body.js` | Body, skin tones, faces, hair styles and colors |
 | `art/clothes.js` | Clothes, layer order, sentences, rendering |
 | `tests/sheet.html` | Fit check: every item on every body, in color and outline |
 | `tests/test.mjs` | Automatic checks (fit, a/an, outline-only print) |
@@ -48,7 +57,7 @@ Each tablet keeps its own saved characters (they are not shared between devices)
 
 ## Printing
 
-Press **Print** (one character) or **Print all** on the home screen (one page each). The preview shows A4 portrait pages: "Speak Plus", "My name is ___", the character in outline only, "I'm wearing ___." and 3 dotted handwriting lines. **Word list** adds small outline pictures of the clothes with the word under each. In the print dialog, choose A4 and turn off "Headers and footers" if your browser shows them.
+Press **Print** (one character) or **Print all** on the home screen (one page each). The preview shows A4 portrait pages: "My name is ___", the character in outline only, "I'm wearing ___." and 3 dotted handwriting lines. **Word list** adds small outline pictures of the clothes with the word under each. In the print dialog, choose A4 and turn off "Headers and footers" if your browser shows them.
 
 ## Checks
 

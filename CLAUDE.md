@@ -5,7 +5,7 @@ Hub de juegos para profesores de inglés de Speak Plus, una eikaiwa en Japón. L
 ## Stack
 
 - HTML, CSS y JavaScript sin frameworks ni build. Se abre `index.html` directamente.
-- Una carpeta por juego (`word-drop/`, `city-run/`, `trade-gate/`, `speak-plus-city/`), cada una con su propio `index.html`. El `index.html` de la raíz es solo el menú y enlaza a cada juego. Lo común está en `shared/`: `styles.css` (marca y piezas de interfaz compartidas) y `hub.css` (solo el menú).
+- Una carpeta por juego (`word-drop/`, `city-run/`, `trade-gate/`, `speak-plus-city/`, `dress-up-buddy/`), cada una con su propio `index.html`. El `index.html` de la raíz es solo el menú y enlaza a cada juego. Lo común está en `shared/`: `styles.css` (marca y piezas de interfaz compartidas) y `hub.css` (solo el menú).
 - Fuentes de Google Fonts: Lexend (latín) y Zen Kaku Gothic New (japonés).
 - Interfaz en inglés. El contenido de las palabras puede estar en cualquier idioma.
 
@@ -77,6 +77,15 @@ Hub de juegos para profesores de inglés de Speak Plus, una eikaiwa en Japón. L
 - No se abre con `file://` ni tiene tarjeta en el menú: se arranca con `npm start`. Pruebas: `npm test` (simula host y móviles).
 - En internet: Render + Supabase con `render.yaml` en la raíz (región Singapur, `rootDir: lantern-island`, `STORAGE=supabase`); pasos en `lantern-island/docs/RENDER.md`. En modo hosted (`PUBLIC_URL` o `RENDER_EXTERNAL_URL`) el fan art está apagado (`config.fanArt`, `FAN_ART=on|off`): `/shared/heroes-local.js` nunca se sirve y el servidor rechaza sus ids; los personajes originales siguen disponibles. El repositorio puede ser público porque el fan art no está en él.
 - Pixel art dibujado en código (`public/shared/pixel.js`), con paleta propia; la marca Speak Plus solo en el lobby y el panel del profesor.
+
+## Dress Up Buddy (carpeta `dress-up-buddy/`)
+
+- App para vestir un personaje (tema "What we wear") para niños de 4 a 10 años; luego se imprime como página para colorear. HTML/CSS/JS sin build, funciona con `file://` y en GitHub Pages (`.nojekyll` en la raíz). Documentación en `dress-up-buddy/README.md`.
+- Sin la marca Speak Plus (lo pidió el profesor): ni logo ni texto de la escuela, paleta propia y fuente Fredoka. No enlaza `../shared/`. Solo la tarjeta del hub usa la marca.
+- Todo el dibujo es SVG en código: `art/core.js` (colores, modo `color`/`line`), `art/body.js` (cuerpo, pieles, caras, peinados), `art/clothes.js` (prendas, `LAYERS` = orden de capas, frases). Todas las piezas usan el mismo lienzo de 240×380 y el mismo esqueleto para los 3 cuerpos. Cada prenda tiene un `slot` (uno por slot; hat y cap comparten `head`).
+- Modo `line` (impresión): rellenos blancos y líneas negras. Las frases usan a/an según el color y nada para plurales (`plural: true`).
+- Elegir cuerpo, pelo o cara no habla (lo pidió el profesor). Guardado en localStorage `sp-dressup-v1` con try/catch.
+- Tras tocar el dibujo: `node dress-up-buddy/tests/test.mjs` (encaje de cada prenda en los 3 cuerpos, abrigo sobre cada top, a/an, impresión solo contorno) y mirar `tests/sheet.html`.
 
 ## Al añadir juegos nuevos
 
