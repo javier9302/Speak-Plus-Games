@@ -41,3 +41,13 @@ a.btn{text-decoration:none}
 .spc-art-die circle{fill:var(--fg)}
 .spc-art-say rect,.spc-art-say path{fill:var(--primary)}
 .spc-art-say text{font-weight:700;font-size:15px;text-anchor:middle;fill:var(--primary-fg)}
+
+/* Dress Up Buddy */
+.dub-art{position:absolute;inset:0;width:100%;height:100%}
+.dub-art-shirt{fill:var(--accent);stroke:var(--fg);stroke-width:5;stroke-linejoin:round}
+.dub-art-line{fill:none;stroke:var(--fg);stroke-width:4;stroke-linecap:round}
+.dub-art-dots circle:nth-child(1){fill:var(--sky)}
+.dub-art-dots circle:nth-child(2){fill:var(--primary)}
+.dub-art-dots circle:nth-child(3){fill:#FDD835}
+.dub-art-say rect{fill:var(--surface);stroke:var(--fg);stroke-width:3}
+.dub-art-say text{font-weight:700;font-size:17px;text-anchor:middle;fill:var(--fg)}

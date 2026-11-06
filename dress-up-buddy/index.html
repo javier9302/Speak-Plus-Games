@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dress Up Buddy · Speak Plus</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="plus" viewBox="0 0 40 40"><g transform="rotate(12 20 20)"><line x1="20" y1="6" x2="20" y2="34" stroke="#E8483B" stroke-width="8.5" stroke-linecap="round"/><line x1="6" y1="20" x2="34" y2="20" stroke="#E8483B" stroke-width="8.5" stroke-linecap="round"/></g></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11 12 3l9 8M5.5 9.5V20h13V9.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-new" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></symbol>
+    <symbol id="i-dice" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="4" fill="none" stroke="currentColor" stroke-width="2.4"/><circle cx="8.5" cy="8.5" r="1.7" fill="currentColor"/><circle cx="12" cy="12" r="1.7" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1.7" fill="currentColor"/></symbol>
+    <symbol id="i-talk" viewBox="0 0 24 24"><path d="M4 5.5h16v10H10l-4.5 4v-4H4z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/></symbol>
+    <symbol id="i-print" viewBox="0 0 24 24"><path d="M7 9V3.5h10V9M7 17H4.5V9h15v8H17M7 14h10v6.5H7z" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linejoin="round"/></symbol>
+    <symbol id="i-sound" viewBox="0 0 24 24"><path d="M4 9.5h4l5-4.5v14l-5-4.5H4z" fill="currentColor"/><path d="M16 9a4.5 4.5 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-words" viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h13" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></symbol>
+  </defs>
+</svg>
+
+<!-- HOME -->
+<section id="view-home" class="view home">
+  <header class="home-head">
+    <a class="link-back" href="../index.html">← All games</a>
+    <div class="logo" aria-label="Speak Plus">speak<svg><use href="#plus"/></svg></div>
+  </header>
+  <h1>Dress Up Buddy</h1>
+  <div class="home-actions">
+    <button id="btn-new" class="btn btn-big btn-primary" type="button"><svg><use href="#i-new"/></svg>New</button>
+    <button id="btn-print-all" class="btn btn-big" type="button"><svg><use href="#i-print"/></svg>Print all</button>
+  </div>
+  <div id="gallery" class="gallery"></div>
+  <p id="store-note" class="note" hidden>Saving is off in this browser. Characters stay until you close the page.</p>
+</section>
+
+<!-- MAKE -->
+<section id="view-make" class="view make" hidden>
+  <header class="bar">
+    <button id="btn-home" class="btn btn-icon" type="button" aria-label="Home"><svg><use href="#i-home"/></svg></button>
+    <input id="name" class="name" type="text" placeholder="Name" maxlength="20" autocomplete="off" spellcheck="false" aria-label="Name">
+    <button id="btn-random" class="btn" type="button"><svg><use href="#i-dice"/></svg><span class="lbl">Random</span></button>
+    <button id="btn-talk" class="btn" type="button" aria-pressed="false"><svg><use href="#i-talk"/></svg><span class="lbl">Talk</span></button>
+    <button id="btn-print" class="btn" type="button"><svg><use href="#i-print"/></svg><span class="lbl">Print</span></button>
+  </header>
+  <div class="stage" id="stage">
+    <div id="figure" class="figure"></div>
+    <div id="word" class="word" hidden><b id="word-big"></b><span id="word-small"></span></div>
+    <div id="talk" class="talk" hidden>
+      <p id="talk-text"></p>
+      <button id="btn-say" class="btn btn-icon btn-primary" type="button" aria-label="Listen"><svg><use href="#i-sound"/></svg></button>
+    </div>
+  </div>
+  <div class="panel">
+    <nav id="tabs" class="tabs" aria-label="Choose"></nav>
+    <div id="items" class="items"></div>
+    <div id="palette" class="palette" aria-label="Colors"></div>
+  </div>
+</section>
+
+<!-- PRINT -->
+<section id="view-print" class="view print" hidden>
+  <header class="bar print-bar">
+    <button id="btn-print-back" class="btn" type="button"><svg><use href="#i-back"/></svg>Back</button>
+    <button id="btn-wordlist" class="btn" type="button" aria-pressed="true"><svg><use href="#i-words"/></svg>Word list</button>
+    <button id="btn-print-go" class="btn btn-primary" type="button"><svg><use href="#i-print"/></svg>Print</button>
+  </header>
+  <div id="pages" class="pages"></div>
+</section>
+
+<script src="art/core.js"></script>
+<script src="art/body.js"></script>
+<script src="art/clothes.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

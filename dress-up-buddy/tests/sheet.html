@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dress Up Buddy · Fit check</title>
+<style>
+  body{font-family:system-ui,sans-serif;margin:16px;background:#F7F4EE;color:#1F2F5C}
+  h2{margin:24px 0 8px}
+  .row{display:flex;flex-wrap:wrap;gap:10px}
+  figure{margin:0;background:#fff;border:1px solid #ddd;border-radius:10px;padding:6px;text-align:center;font-size:13px}
+  figure svg{width:120px;height:190px;display:block}
+</style>
+</head>
+<body>
+<h1>Fit check: every item on every body</h1>
+<p>Open this page to see each item alone on each body type, in color and as a print outline.</p>
+<div id="out"></div>
+<script src="../art/core.js"></script>
+<script src="../art/body.js"></script>
+<script src="../art/clothes.js"></script>
+<script>
+  const D = window.DUB, out = document.getElementById('out');
+  for (const mode of ['color', 'line']) {
+    for (const b of D.BODIES) {
+      let html = `<h2>${b.word} · ${mode}</h2><div class="row">`;
+      const all = {};
+      for (const it of D.ITEMS) {
+        html += `<figure>${D.render({ body: b.id, hair: 'short', face: 'happy', wear: { [it.slot]: { id: it.id, color: it.color } } }, mode)}${it.word}</figure>`;
+        if (!all[it.slot]) all[it.slot] = { id: it.id, color: it.color };
+      }
+      html += `<figure>${D.render({ body: b.id, hair: 'long', face: 'happy', wear: all }, mode)}all slots</figure></div>`;
+      out.insertAdjacentHTML('beforeend', html);
+    }
+  }
+</script>
+</body>
+</html>
