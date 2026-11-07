@@ -5,7 +5,8 @@
 // A view holds the player's OWN money, properties and mission. About the other
 // players it holds only what everyone can see at the table: names, tokens and
 // where they stand. Never their money, properties or missions, and never who
-// owns a property, so nobody's phone can tell them when rent is due.
+// owns a property. Only the owner's own phone is told when rent is due, and
+// only with the rentAlert setting on.
 
 import { options, ownerOf, isMortgaged, rentOf, priceOf, playerProps, ownsGroup, timeLeft, TOKENS } from './state.js';
 
@@ -41,7 +42,8 @@ export function phoneView(s, pid, now = Date.now()) {
     me: {
       pid, name: p.name, icon: tok(p).icon, color: tok(p).color, level: p.level,
       money: p.money, debt: p.debt, stars: p.stars, inJail: p.inJail, mission: p.mission,
-      specials: p.specials
+      specials: p.specials,
+      salaryDue: p.salaryDue || 0, salaryAsked: s.requests.some(r => r.pid === pid && r.topic === 'salary')
     },
     props: playerProps(s, pid).map(sq => {
       const q = s.squares[sq];
@@ -65,8 +67,22 @@ export function phoneView(s, pid, now = Date.now()) {
       left: Math.max(0, s.auction.endsAt - now) } : null,
     black: s.black ? { item: s.black.item, left: Math.max(0, s.black.endsAt - now), closed: !!s.black.closed } : null,
     hint: s.hint && (s.hint.pid == null || s.hint.pid === pid) ? { id: s.hint.id, title: s.hint.title, lines: s.hint.lines } : null,
-    pending: null, trade: null, results: null
+    playerPay: s.settings.playerPay !== false,
+    pending: null, trade: null, results: null, paid: null
   };
+
+  // rentAlert: someone is on my property and I can ask for the rent (until the next roll).
+  const rd = s.rentDue;
+  if (s.settings.rentAlert !== false && rd && rd.to === pid && ownerOf(s, rd.sq) === pid && !isMortgaged(s, rd.sq) && !(pe && pe.kind === 'rent' && pe.claim)) {
+    const q = s.squares[rd.sq];
+    view.rentAlert = { sq: rd.sq, name: q.name, emoji: q.emoji || '', who: s.players[rd.from].name, amount: rentOf(s, rd.sq) };
+  } else view.rentAlert = null;
+
+  // The last payment between players, for both of them (the phone shows it once).
+  const lp = s.lastPay;
+  if (lp && (lp.from === pid || lp.to === pid)) {
+    view.paid = { id: lp.id, out: lp.from === pid, other: s.players[lp.from === pid ? lp.to : lp.from].name, amount: lp.amount, why: lp.why };
+  }
 
   if (pe) {
     const mine = pe.pid === pid || (pe.kind === 'rent' && pe.to === pid);

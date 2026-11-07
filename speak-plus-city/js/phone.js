@@ -30,8 +30,13 @@ let hintClosed = 0;
 let lastMoney = null;
 let wasMyTurn = false;
 let deal = freshDeal();
+let payment = { to: null, amount: 0, why: 'rent' };   // the Pay tab
+let seenPay = null;         // id of the last payment already shown as a toast
+let seenRentAlert = '';
 
 function freshDeal() { return { to: null, give: { money: 0, props: [] }, get: { money: 0, props: [] } }; }
+
+const PAY_WHY = [['rent', 'Rent'], ['deal', 'A deal'], ['gift', 'A present'], ['other', 'Other']];
 
 // ---------- Connection ----------
 
@@ -89,16 +94,33 @@ function render() {
   if (V.kind === 'lobby') { show('wait'); renderWait(); return; }
   show('game');
   renderHead();
-  for (const t of ['play', 'city', 'deal', 'bank']) $(`#tab-${t}`).hidden = t !== tab;
+  $('#ph-nav [data-tab="pay"]').hidden = !V.playerPay;
+  if (tab === 'pay' && !V.playerPay) tab = 'play';
+  for (const t of ['play', 'city', 'deal', 'pay', 'bank']) $(`#tab-${t}`).hidden = t !== tab;
   $$('#ph-nav [data-tab]').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === tab));
   // A badge on Play when something needs this player there and they are on another tab.
-  $('#ph-nav [data-tab="play"]').classList.toggle('alert', tab !== 'play' && (V.myTurn || (V.pending && V.pending.mine) || (V.trade && V.trade.status === 'offered' && !V.trade.iProposed)));
+  $('#ph-nav [data-tab="play"]').classList.toggle('alert', tab !== 'play' && (V.myTurn || (V.pending && V.pending.mine) || (V.trade && V.trade.status === 'offered' && !V.trade.iProposed)
+    || !!V.rentAlert || (V.me.salaryDue > 0 && !V.me.salaryAsked)));
   if (tab === 'play') renderPlay();
   else if (tab === 'city') renderCity();
   else if (tab === 'deal') renderDeal();
+  else if (tab === 'pay') { if (document.activeElement?.id !== 'pay-amount') renderPay(); }   // don't redraw under the student's finger
   else renderBank();
-  if (V.myTurn && !wasMyTurn && navigator.vibrate && navigator.userActivation?.hasBeenActive) navigator.vibrate([120, 80, 120]);
+  const buzz = navigator.vibrate && navigator.userActivation?.hasBeenActive;
+  if (V.myTurn && !wasMyTurn && buzz) navigator.vibrate([120, 80, 120]);
   wasMyTurn = V.myTurn;
+  // Someone is on my property: buzz once and say so, whatever tab is open.
+  const ra = V.rentAlert ? `${V.rentAlert.sq}:${V.rentAlert.who}:${V.turn && V.turn.dice}` : '';
+  if (ra && ra !== seenRentAlert) {
+    toast(`🏠 ${V.rentAlert.who} is on your ${V.rentAlert.name}! Ask for the rent.`);
+    if (buzz) navigator.vibrate([200, 100, 200]);
+  }
+  seenRentAlert = ra;
+  // A payment between players: tell both of them once (not the old one after a reload).
+  if (V.paid && seenPay != null && V.paid.id !== seenPay) {
+    toast(V.paid.out ? `You paid ${money(V.paid.amount)} to ${V.paid.other}.` : `💸 ${V.paid.other} paid you ${money(V.paid.amount)}!`, 'good');
+  }
+  seenPay = V.paid ? V.paid.id : 0;
   if (lastMoney != null && V.me.money !== lastMoney) floatMoney(V.me.money - lastMoney);
   lastMoney = V.me.money;
   tickTimers();
@@ -155,6 +177,7 @@ function renderPlay() {
     html += `<div class="card hint"><div class="label">💡 Hint</div><h3>${esc(V.hint.title)}</h3>${V.hint.lines.map(l => `<p>${esc(l)}</p>`).join('')}
       <button class="btn btn-ghost btn-small" data-ui="hint-close" type="button">OK</button></div>`;
   }
+  html += alertsHTML();
   html += pendingHTML();
   html += tradeOfferHTML();
   if (V.auction) {
@@ -199,6 +222,26 @@ function turnHTML() {
     ${opts.find(o => o.id === 'end' && o.disabled) ? `<p class="muted small">${esc(opts.find(o => o.id === 'end').why || '')}</p>` : ''}</div>`;
 }
 
+// Things to do now that aren't the turn: rent to ask for, a salary to ask the bank for.
+function alertsHTML() {
+  let html = '';
+  const ra = V.rentAlert;
+  if (ra) {
+    html += `<div class="card alert-card attention"><div class="label">🏠 Rent!</div>
+      <p class="lead"><b>${esc(ra.who)}</b> is on your ${esc(ra.emoji)} <b>${esc(ra.name)}</b>.</p>
+      <p>Ask them for <b>${money(ra.amount)}</b> rent before the next player rolls!</p>
+      <button class="btn btn-primary btn-big" data-claim="${ra.sq}" type="button">Ask for rent</button></div>`;
+  }
+  const due = V.me.salaryDue;
+  if (due > 0) {
+    html += `<div class="card alert-card ${V.me.salaryAsked ? '' : 'attention'}"><div class="label">🏁 You passed Start!</div>
+      ${V.me.salaryAsked ? `<p>You asked for your <b>${money(due)}</b> salary.</p><p class="waiting"><span class="dot-pulse"></span> Say it to the bank. The teacher is listening…</p>`
+        : `<p class="lead">Ask the bank for your <b>${money(due)}</b> salary.</p>${sayBox('salary', vars({ amount: money(due) }))}
+          <button class="btn btn-primary btn-big" data-ui="ask-salary" type="button">Call the bank</button>`}</div>`;
+  }
+  return html;
+}
+
 function pendingHTML() {
   const pe = V.pending;
   if (!pe) return '';
@@ -216,8 +259,14 @@ function pendingHTML() {
   }
   if (pe.kind === 'rent') body += `<p class="lead">${pe.role === 'owner' ? `You asked <b>${esc(pe.other)}</b> for ${money(pe.amount)} rent.` : `<b>${esc(pe.other)}</b> asks you for ${money(pe.amount)} rent.`}</p>`;
   if (pe.kind === 'buy' && pe.square) body += squareHTML(pe.square);
-  return `<div class="card pending"><div class="label">Say it to the bank! ${pe.tries ? `<span class="tries">Try ${pe.tries + 1}</span>` : ''}</div>
-    ${body}${key ? sayBox(key, v, { big: true }) : ''}<p class="waiting"><span class="dot-pulse"></span> The teacher is listening…</p></div>`;
+  // The visitor can pay the rent from the phone (playerPay): no need to wait for the teacher.
+  if (pe.kind === 'rent' && pe.role === 'player' && V.playerPay) {
+    return `<div class="card pending attention"><div class="label">🏠 Pay the rent</div>${body}${sayBox('rent', v, { big: true })}
+      <button class="btn btn-primary btn-big" data-ui="pay-rent" type="button">Pay ${money(pe.amount)} to ${esc(pe.other)}</button></div>`;
+  }
+  const wait = pe.kind === 'rent' && pe.role === 'owner' && V.playerPay ? `Waiting for ${esc(pe.other)} to pay…` : 'The teacher is listening…';
+  return `<div class="card pending"><div class="label">Say it to the ${pe.kind === 'rent' && pe.role === 'owner' ? 'player' : 'bank'}! ${pe.tries ? `<span class="tries">Try ${pe.tries + 1}</span>` : ''}</div>
+    ${body}${key ? sayBox(key, v, { big: true }) : ''}<p class="waiting"><span class="dot-pulse"></span> ${wait}</p></div>`;
 }
 
 function tradeOfferHTML() {
@@ -264,6 +313,33 @@ function renderDeal() {
     ${sayBox('trade', vars({}))}
     <button class="btn btn-primary btn-big wide" data-ui="deal-send" type="button" ${V.trade ? 'disabled' : ''}>Send the offer</button>
     ${V.trade ? '<p class="muted small">A deal is already waiting (Play tab).</p>' : ''}`;
+}
+
+// Pay another player straight away (playerPay). The money moves when the player presses Pay now.
+function renderPay() {
+  if (V.phase !== 'play') { $('#tab-pay').innerHTML = '<p class="muted">No payments now.</p>'; return; }
+  const others = V.players.filter(p => p.pid !== V.me.pid);
+  if (payment.to == null || !others.some(p => p.pid === payment.to)) payment.to = others[0] ? others[0].pid : null;
+  const quick = [10, 20, 50, 100].map(n => `<button class="btn btn-ghost btn-small" data-pay-add="${n}" type="button">+${n}</button>`).join('');
+  $('#tab-pay').innerHTML = `<h2 class="tab-title">Pay a player</h2>
+    <p class="muted">The money goes straight to them. Say it in English while you pay!</p>
+    <label class="field">To <select id="pay-to">${others.map(p => `<option value="${p.pid}" ${p.pid === payment.to ? 'selected' : ''}>${p.icon} ${esc(p.name)}</option>`).join('')}</select></label>
+    <div class="card"><div class="label">How much?</div>
+      <div class="pay-amount">$<input id="pay-amount" type="number" inputmode="numeric" min="0" step="1" value="${payment.amount || ''}" placeholder="0"></div>
+      <div class="stepper">${quick}<button class="btn btn-ghost btn-small" data-pay-add="0" type="button">Clear</button></div>
+      <p class="muted small">You have ${money(V.me.money)}.</p></div>
+    <div class="card"><div class="label">What for?</div><div class="chips pay-why">${PAY_WHY.map(([k, l]) =>
+      `<button class="chip ${payment.why === k ? 'on' : ''}" data-pay-why="${k}" type="button" aria-pressed="${payment.why === k}">${l}</button>`).join('')}</div></div>
+    <button class="btn btn-primary btn-big wide" data-ui="pay-next" type="button">Pay…</button>`;
+}
+
+function paySheet() {
+  const to = V.players.find(p => p.pid === payment.to);
+  if (!to) return;
+  openSheet(`<h2>💸 Pay ${esc(to.name)}</h2><p class="big">${money(payment.amount)}${payment.why !== 'other' ? ` <small>for ${esc(PAY_WHY.find(w => w[0] === payment.why)[1].toLowerCase())}</small>` : ''}</p>
+    ${sayBox('pay', vars({ name: to.name, amount: money(payment.amount) }))}
+    <p class="muted small">Say it to ${esc(to.name)}, then pay.</p>
+    <div class="opts"><button class="btn btn-primary btn-big" data-ui="pay-send" type="button">Pay now</button><button class="btn btn-ghost btn-big" data-ui="sheet-close" type="button">Cancel</button></div>`);
 }
 
 function renderBank() {
@@ -341,6 +417,12 @@ document.addEventListener('click', e => {
   if (b.dataset.claimSend) { act({ type: 'claimRent', sq: Number(b.dataset.claimSend) }); closeSheet(); tab = 'play'; render(); return; }
   if (b.dataset.bank) { bankSheet(b.dataset.bank); return; }
   if (b.dataset.bankSend) { act({ type: 'ask', topic: b.dataset.bankSend }); closeSheet(); toast('The bank is listening. Say it to the teacher!'); return; }
+  if (b.dataset.payAdd) {
+    const n = Number(b.dataset.payAdd);
+    payment.amount = n ? Math.min(Math.max(0, V.me.money), payment.amount + n) : 0;
+    renderPay(); return;
+  }
+  if (b.dataset.payWhy) { payment.why = b.dataset.payWhy; renderPay(); return; }
   if (b.dataset.money) {
     const [key, d] = b.dataset.money.split(':');
     deal[key].money = Math.max(0, deal[key].money + Number(d));
@@ -351,6 +433,19 @@ document.addEventListener('click', e => {
     case 'hint-close': hintClosed = V.hint ? V.hint.id : 0; render(); break;
     case 'mission': missionShown = !missionShown; render(); break;
     case 'sheet-close': closeSheet(); break;
+    case 'pay-rent': act({ type: 'payRent' }); break;
+    case 'ask-salary': act({ type: 'askSalary' }); break;
+    case 'pay-next':
+      if (!(payment.amount > 0)) { toast('Choose how much to pay.', 'bad'); return; }
+      if (payment.amount > V.me.money) { toast(`You only have ${money(V.me.money)}.`, 'bad'); return; }
+      paySheet();
+      break;
+    case 'pay-send':
+      act({ type: 'payPlayer', to: payment.to, amount: payment.amount, why: payment.why });
+      payment.amount = 0;
+      closeSheet();
+      render();
+      break;
     case 'deal-send': {
       if (!deal.give.props.length && !deal.get.props.length && !deal.give.money && !deal.get.money) { toast('Choose what you give or want first.', 'bad'); return; }
       act({ type: 'trade', trade: { to: deal.to, give: deal.give, get: deal.get } });
@@ -364,6 +459,7 @@ document.addEventListener('click', e => {
 
 // Re-draw the open sheet (after "Show sentence frames").
 function refreshSheet() {
+  if ($('#sheet [data-ui="pay-send"]')) { paySheet(); return; }
   const btn = $('#sheet [data-claim-send]') || $('#sheet [data-bank-send]');
   if (!btn) return;
   if (btn.dataset.claimSend) claimSheet(Number(btn.dataset.claimSend)); else bankSheet(btn.dataset.bankSend);
@@ -373,6 +469,7 @@ $('#sheet').addEventListener('click', e => { if (e.target.id === 'sheet') closeS
 document.addEventListener('change', e => {
   const el = e.target;
   if (el.id === 'deal-to') { deal.to = Number(el.value); render(); }
+  else if (el.id === 'pay-to') payment.to = Number(el.value);
   else if (el.dataset.deal) {
     const list = deal[el.dataset.deal].props;
     const sq = Number(el.value);
@@ -380,6 +477,9 @@ document.addEventListener('change', e => {
   }
 });
 
+document.addEventListener('input', e => {
+  if (e.target.id === 'pay-amount') payment.amount = Math.max(0, Math.round(Number(e.target.value) || 0));
+});
 $('#join-form').addEventListener('submit', e => {
   e.preventDefault();
   const room = $('#j-room').value.trim().toUpperCase();

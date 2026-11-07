@@ -56,7 +56,7 @@ Use the **same browser** for both windows. The game saves itself in the browser 
 | Mystery (4) | A challenge: describe a picture, speak for 30 seconds, two truths and a lie, explain a word without saying it, role play. |
 | Bank (4) | Tax Office / Luxury Tax (pay, or persuade for a discount: type the new amount before approving), City Hall (bonus), City Bank (loan offer). |
 | Black Market (1) | Opens the Black Market: a rare item sold to the best pitch. |
-| Start | Salary for passing it. |
+| Start | Salary for passing it. With phones, the player has to ask the bank for it (see below). |
 | Coffee Break | Jail. On their next turn the player speaks their way out (Approve) or misses the turn. |
 | Town Festival | Optional talk about a festival, for a reward. |
 | Go to Coffee Break | Straight to the Coffee Break corner. |
@@ -66,7 +66,8 @@ Use the **same browser** for both windows. The game saves itself in the browser 
 Landing on someone else's property costs nothing by itself. The **owner** has to notice and ask: *"Excuse me, Ken! You're on my Ramen Corner. Please pay me $20 rent."* They can ask until the **next player rolls the dice**; after that, the visitor got away with it.
 
 - Board only: the teacher page shows a **Rent can be asked for** box (who, where, how much). When the owner asks out loud, press **… asked → collect the rent**, then approve as usual.
-- With phones: the owner presses **Ask for rent** next to the property on their phone (My city tab). Phones never say when rent is due, and in phone mode the board doesn't show who owns what, so students have to watch and remember.
+- With phones: the owner's phone buzzes and shows **🏠 Rent!** (who is on which property, and how much). The owner presses **Ask for rent** (there, or next to the property in the My city tab) and asks out loud. The visitor's phone then shows **Pay $… to …**: they say it and pay themselves, no teacher needed (the teacher can still Approve or Waive on the laptop).
+- Want students to watch and remember instead? Settings → *Rent and phones* → untick *tell the owner when someone lands on their property*: then phones never say when rent is due, and in phone mode the board doesn't show who owns what.
 
 Settings → *Rent and phones* → *Rent: The visitor pays when landing* brings back the classic rule (a **Pay rent** button that must be used before ending the turn).
 
@@ -92,16 +93,21 @@ Change a player's level any time on their card. Settings → *Hints on the board
 2. On the teacher setup screen tick **Play with phones (QR code)**. A room code and QR code appear on the teacher page and big on the board.
 3. Students scan the QR code (or open the address and type the code) and type their name. Each phone becomes a player row on the setup screen; choose levels and tokens, then **Start the game**.
 
-On a phone, four tabs:
+On a phone, five tabs:
 
 | Tab | What's there |
 | --- | --- |
 | 🎲 Play | Whose turn it is. On your turn: the square, the "Say it!" box for your level, and your buttons (Roll, Buy, Pass, Draw a card, End turn…). Requests waiting for the bank, deals offered to you (**It's a deal!** / **No, thanks**), auctions, the Black Market, the rule of the round, hints the teacher sends you. |
 | 🏠 My city | Your secret mission (tap to show), your properties with their rent, and **Ask for rent**. |
 | 🤝 Deal | Offer a deal: choose a player, what you give (your properties, money) and what you want (any property someone has bought — you don't know who owns it, so ask!). The other player answers on their phone, then the teacher confirms. |
+| 💸 Pay | Pay another player straight away: choose who, how much and what for (rent, a deal, a present…), say it, and press **Pay now**. Both phones and the teacher page show the payment, and it's in the log. You can't pay more than you have. |
 | 🏦 Bank | Ask for a loan, a mortgage or a discount: practise the sentence, press **Call the bank**, then say it to the teacher. |
 
 With phones the board **fills the whole screen**: the side panel goes, and a slim bar inside the board shows the join code, the time, the round, the rule of the round and the players.
+
+**Passing Start with phones**: the salary isn't paid by itself. The phone shows **🏁 You passed Start!** with a sentence to say; the student presses **Call the bank** and asks the teacher, and the request appears on the teacher page with a **Pay $200** button. Students without a phone: the teacher page lists the salary as "not asked yet" with an *Asked out loud → pay* button. An unasked salary waits; it doesn't expire.
+
+Each of these can be switched off in Settings → *Rent and phones*: *players pay each other*, *tell the owner when someone lands on their property*, *passing Start, players ask the bank for the salary*.
 
 What stays private: each phone shows only its own money, properties and mission. The board hides money, debts, property dots and missions, and shows a grey ✓ on sold properties instead of the owner (tick *show who owns each property on the board* in Settings to show owners). The teacher page sees everything, as always. Results at the end are public.
 

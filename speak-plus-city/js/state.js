@@ -59,6 +59,9 @@ export const DEFAULT_SETTINGS = {
   // 'pay': the visitor must pay before ending the turn.
   rentRule: 'ask',
   phones: false,           // students play with their phones (needs the game server)
+  playerPay: true,         // with phones: players pay each other (Pay tab, and rent) without the teacher
+  rentAlert: true,         // with phones: the owner's phone says when someone lands on their property
+  askSalary: true,         // with phones: passing Start, the player must ask the bank for the salary
   showOwners: false        // with phones: show on the board who owns each property
 };
 
@@ -211,7 +214,8 @@ export function emptyState(settings = {}) {
     seats: {},             // phone token → player index (phone mode)
     market: null, rule: null, ruleQueue: [], hint: null, requests: [],
     decks: {}, round: 1, fund: 0, festivals: 0, lastTen: false,
-    timer: null, results: null, log: [], fx: [], fxSeq: 0, reqSeq: 0, hintSeq: 0
+    timer: null, results: null, log: [], fx: [], fxSeq: 0, reqSeq: 0, hintSeq: 0,
+    lastPay: null, paySeq: 0   // the last payment between players (both phones show it)
   };
 }
 
@@ -281,8 +285,15 @@ function moveBy(s, pid, steps, ctx) {
   const from = p.pos;
   p.pos = (from + steps) % BOARD_SIZE;
   fx(s, { kind: 'move', pid, from, steps });
-  if (from + steps >= BOARD_SIZE) pay(s, pid, s.settings.salary, 'salary for passing Start', ctx);
+  if (from + steps < BOARD_SIZE) return;
+  if (salaryAsked(s)) {
+    // With phones the salary isn't paid by itself: the phone tells the player to ask the bank for it.
+    p.salaryDue = (p.salaryDue || 0) + s.settings.salary;
+    log(s, `${p.name} passes Start: ${money(p.salaryDue)} salary to ask the bank for.`, 'money', ctx);
+  } else pay(s, pid, s.settings.salary, 'salary for passing Start', ctx);
 }
+
+const salaryAsked = s => s.settings.phones && s.settings.askSalary !== false;
 
 function sendToJail(s, pid, ctx) {
   const p = s.players[pid];
@@ -389,7 +400,12 @@ export const BOARD_ACTIONS = new Set(['roll', 'buy', 'pass', 'rent', 'card', 'my
 
 // Phones: turn actions only on that player's own turn, plus a few actions any time.
 export const PHONE_TURN_ACTIONS = new Set(['roll', 'buy', 'pass', 'rent', 'card', 'mystery', 'bank', 'festival', 'blackmarket', 'jailSpeak', 'jailStay', 'end']);
-export const PHONE_ANYTIME = new Set(['trade', 'tradeAnswer', 'ask', 'claimRent', 'seat']);
+export const PHONE_ANYTIME = new Set(['trade', 'tradeAnswer', 'ask', 'claimRent', 'seat', 'payPlayer', 'payRent', 'askSalary']);
+
+// What a payment between players is for (the phone's Pay tab). Only for the log.
+export const PAY_REASONS = { rent: 'rent', deal: 'a deal', gift: 'a present', other: '' };
+
+const playerPayOn = s => s.settings.playerPay !== false;   // games saved before the setting existed: on
 
 function checkPhone(s, a) {
   if (a.type === 'seat') return;                 // checked in the action itself
@@ -580,6 +596,55 @@ const ACTIONS = {
     if (s.pending) throw new Error('The bank is busy. Ask again in a moment.');
     s.pending = { kind: 'rent', pid: rd.from, to: owner, sq: rd.sq, amount: rentOf(s, rd.sq), tries: 0, extra: true, claim: true };
     log(s, `${s.players[owner].name} asks ${s.players[rd.from].name} for the rent at ${square(s, rd.sq).name}.`, 'money', ctx);
+  },
+
+  // A player gives money to another player straight away (phones, playerPay): no teacher needed.
+  payPlayer(s, a, ctx) {
+    needPlay(s);
+    if (!playerPayOn(s)) throw new Error('Paying from the phone is off. Ask the bank.');
+    const p = needPlayer(s, a.pid);
+    const to = Number(a.to);
+    needPlayer(s, to);
+    if (to === a.pid) throw new Error('Choose another player.');
+    const n = amountOf(a.amount);
+    if (n <= 0) throw new Error('Choose how much to pay.');
+    if (n > p.money) throw new Error(`You only have ${money(p.money)}.`);
+    const why = PAY_REASONS[a.why] ? a.why : null;
+    pay(s, a.pid, -n, null, ctx); pay(s, to, n, null, ctx);
+    log(s, `${p.name} pays ${money(n)} to ${s.players[to].name}${why ? ` for ${PAY_REASONS[why]}` : ''}.`, 'money', ctx);
+    s.paySeq = (s.paySeq || 0) + 1;
+    s.lastPay = { id: s.paySeq, from: a.pid, to, amount: n, why };
+  },
+
+  // The visitor pays the rent they are asked for from their phone: the same as the teacher's Approve.
+  payRent(s, a, ctx) {
+    const pe = s.pending;
+    if (!playerPayOn(s)) throw new Error('Paying from the phone is off. Wait for the bank.');
+    if (!pe || pe.kind !== 'rent' || pe.pid !== a.pid) throw new Error('No rent to pay right now.');
+    ACTIONS.approve(s, {}, ctx);
+    s.paySeq = (s.paySeq || 0) + 1;
+    s.lastPay = { id: s.paySeq, from: pe.pid, to: pe.to, amount: pe.amount, why: 'rent' };
+  },
+
+  // After passing Start (askSalary): the player asks the bank for the salary. It goes to the request list.
+  askSalary(s, a, ctx) {
+    needPlay(s);
+    const p = needPlayer(s, a.pid);
+    if (!(p.salaryDue > 0)) throw new Error('No salary to ask for. Pass Start first!');
+    if (s.requests.some(r => r.pid === a.pid && r.topic === 'salary')) throw new Error('The bank already knows. Say it to the teacher!');
+    s.requests.push({ id: ++s.reqSeq, pid: a.pid, topic: 'salary', amount: p.salaryDue, t: ctx.now });
+    log(s, `${p.name} asks the bank for the salary (${money(p.salaryDue)}).`, 'money', ctx);
+  },
+
+  // Teacher: pay the salary a player asked for (or is owed: id or pid).
+  paySalary(s, a, ctx) {
+    const r = a.id != null ? s.requests.find(x => x.id === a.id) : null;
+    const pid = r ? r.pid : a.pid;
+    const p = needPlayer(s, pid);
+    if (!(p.salaryDue > 0)) throw new Error(`${p.name} has no salary to collect.`);
+    pay(s, pid, p.salaryDue, 'salary for passing Start', ctx);
+    p.salaryDue = 0;
+    s.requests = s.requests.filter(x => !(x.pid === pid && x.topic === 'salary'));
   },
 
   // Which player a phone plays. Teacher: any seat, or null to free it. A phone: only a free seat.

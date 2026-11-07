@@ -125,7 +125,10 @@ function phoneAction(token, raw) {
   if (inSetup()) return phones.send(token, { t: 'error', text: 'The game hasn\'t started yet.' });
   const r = apply(S, action, ctx());
   if (r.error) phones.send(token, { t: 'error', text: r.error });
-  else commit(r.state);
+  else {
+    commit(r.state);
+    if (action.type === 'payPlayer' || action.type === 'payRent') toast('💸 ' + S.log[S.log.length - 1].text);
+  }
 }
 
 function syncPhones() { if (phonesOn()) phones.start(); }
@@ -267,6 +270,9 @@ function settingsFormHTML(st, { inGame }) {
       ${sel('rentRule', 'Rent', [['ask', 'The owner must ask (before the next roll)'], ['pay', 'The visitor pays when landing']])}
       <label class="switch"><input type="checkbox" data-setting="phones" ${st.phones ? 'checked' : ''} ${server ? '' : 'disabled'}> Play with phones (QR code)</label>
       ${chk('showOwners', 'With phones: show who owns each property on the board')}
+      ${chk('playerPay', 'With phones: players pay each other (Pay tab, and rent without the bank)')}
+      ${chk('rentAlert', 'With phones: tell the owner when someone lands on their property')}
+      ${chk('askSalary', 'With phones: passing Start, players ask the bank for the salary')}
       ${server ? '' : '<p class="hint">Phones need the game server: start with npm start or the start script, or use the online version.</p>'}
     </fieldset>
     <fieldset><legend>Surprise amounts</legend>
@@ -336,8 +342,16 @@ function renderTurn() {
     <p><b>${esc(S.players[rd.from].name)}</b> is on <b>${esc(S.squares[rd.sq].name)}</b>, owned by <b>${esc(S.players[rd.to].name)}</b> (rent ${money(rentOf(S, rd.sq))}).
     ${S.settings.phones ? 'The owner can ask on their phone, or out loud.' : 'If the owner asks, press the button.'} If nobody asks, no rent.</p>
     <div class="btn-row"><button class="btn btn-primary btn-small" data-act="claimRent" type="button">${esc(S.players[rd.to].name)} asked → collect the rent</button></div></div>` : '');
-  patch($('#requests-box'), S.requests.length ? `<div class="box"><div class="label">Requests to the bank</div>${S.requests.map(r => `<div class="req">${tokenHTML(S.players[r.pid])} <b>${esc(S.players[r.pid].name)}</b> asks for a <b>${esc(r.topic)}</b>
-      <span class="spacer"></span><button class="btn btn-ghost btn-small" data-tab="bank" data-prefill="${r.pid}" type="button">Bank tab</button><button class="btn btn-ghost btn-small" data-act="requestDone" data-id="${r.id}" type="button">Done</button></div>`).join('')}</div>` : '');
+  // Salaries from passing Start that nobody has asked for yet (askSalary): the player can also ask out loud.
+  const owed = S.players.map((p, i) => ({ p, i })).filter(({ p, i }) => p.salaryDue > 0 && !S.requests.some(r => r.pid === i && r.topic === 'salary'));
+  const reqRow = r => r.topic === 'salary'
+    ? `<div class="req">${tokenHTML(S.players[r.pid])} <b>${esc(S.players[r.pid].name)}</b> asks for the <b>salary</b> (${money(S.players[r.pid].salaryDue || 0)})
+      <span class="spacer"></span><button class="btn btn-primary btn-small" data-act="paySalary" data-id="${r.id}" type="button">Pay ${money(S.players[r.pid].salaryDue || 0)}</button><button class="btn btn-ghost btn-small" data-act="requestDone" data-id="${r.id}" type="button">Not yet</button></div>`
+    : `<div class="req">${tokenHTML(S.players[r.pid])} <b>${esc(S.players[r.pid].name)}</b> asks for a <b>${esc(r.topic)}</b>
+      <span class="spacer"></span><button class="btn btn-ghost btn-small" data-tab="bank" data-prefill="${r.pid}" type="button">Bank tab</button><button class="btn btn-ghost btn-small" data-act="requestDone" data-id="${r.id}" type="button">Done</button></div>`;
+  patch($('#requests-box'), S.requests.length || owed.length ? `<div class="box"><div class="label">Requests to the bank</div>${S.requests.map(reqRow).join('')}
+    ${owed.map(({ p, i }) => `<div class="req muted">${tokenHTML(p)} <b>${esc(p.name)}</b> passed Start: ${money(p.salaryDue)} salary, not asked yet
+      <span class="spacer"></span><button class="btn btn-ghost btn-small" data-act="paySalary" data-pid="${i}" type="button">Asked out loud → pay</button></div>`).join('')}</div>` : '');
   patch($('#turn-ctl'), `<div class="btn-row">
       <button class="btn btn-ghost btn-small" data-act="end" type="button">End turn <kbd>N</kbd></button>
       <button class="btn btn-ghost btn-small" data-act="skip" type="button">Skip turn</button>
@@ -380,6 +394,7 @@ function pendingHTML() {
   const vars = sayVars(S, pe.pid, { sq: pe.sq, amount: pe.amount, challenge: pe.challenge });
   let what = '';
   if (pe.kind === 'buy' || pe.kind === 'rent') what = `<b>${esc(S.squares[pe.sq].name)}</b>${pe.kind === 'rent' ? ` → to ${esc(S.players[pe.to].name)}` : ''}`;
+  if (pe.kind === 'rent' && S.settings.playerPay && Object.values(S.seats).includes(pe.pid)) what += `<div class="muted small">${esc(p.name)} can pay from their phone.</div>`;
   if (pe.kind === 'bank') what = { tax: `Tax ${money(pe.amount)} — they may ask for a discount`, bonus: `City Hall bonus ${money(pe.amount)}`, loan: `City Bank: loan offer (repay +${S.settings.loanInterest}%)` }[pe.bank];
   if (pe.card) {
     what = `<div class="pcard">${esc(pe.card.text)}${pe.card.picture ? `<div class="big">${esc(pe.card.picture)}</div>` : ''}${pe.card.word ? `<div>Word: <b>${esc(pe.card.word)}</b> · don't say: ${esc((pe.card.taboo || []).join(', '))}</div>` : ''}

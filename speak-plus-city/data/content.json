@@ -260,6 +260,22 @@
       "vocab": ["excuse me", "you're on my…", "rent", "please pay me"],
       "examples": ["Excuse me, {player}! You're on my {name}. Please pay me {amount} rent. Thank you!"]
     },
+    "pay": {
+      "label": "Pay a player",
+      "task": "Give {amount} to {name}. Say what the money is for.",
+      "stretch": "Say why you are paying, and thank them.",
+      "frames": ["Here you are, {name}. That's {amount}.", "Here's {amount} for the rent.", "Here's {amount} for our deal."],
+      "vocab": ["here you are", "here's…", "for the rent", "for our deal", "thank you"],
+      "examples": ["Here's {amount} for our deal, {name}. Nice doing business with you!"]
+    },
+    "salary": {
+      "label": "Ask for the salary",
+      "task": "You passed Start. Ask the bank for your {amount} salary.",
+      "stretch": "Say what you will do with the money.",
+      "frames": ["Excuse me, I passed Start.", "Can I have my {amount} salary, please?", "Thank you very much!"],
+      "vocab": ["excuse me", "I passed Start", "salary", "can I have…?"],
+      "examples": ["Excuse me, I passed Start. Can I have my {amount} salary, please? I want to buy a new shop!"]
+    },
     "card": {
       "label": "Draw card",
       "task": "Draw a Chance card and do what it says.",

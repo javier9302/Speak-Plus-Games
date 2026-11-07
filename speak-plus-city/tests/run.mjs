@@ -256,14 +256,79 @@ test('a phone view shows only that player\'s secrets', () => {
   ok(v.myTurn && v.options.some(o => o.id === 'roll'));
   ok(!phoneView(s, 1, clock).myTurn && !phoneView(s, 1, clock).options.length);
 });
-test('the owner\'s phone does not say when rent is due', () => {
+test('with rentAlert off, the owner\'s phone does not say when rent is due', () => {
   let s = phoneGame();
+  s = run(s, { type: 'settings', patch: { rentAlert: false } });
   s.props[7] = { owner: 1, mortgaged: false };
   const before = phoneView(s, 1, clock);
   s = run(s, { type: 'roll', dice: [3, 4] });
   const after = phoneView(s, 1, clock);
   ok(!JSON.stringify(after).includes('rentDue'));
+  eq(after.rentAlert, null);
   eq(after.props, before.props);
+});
+test('rentAlert: only the owner\'s phone is told, until the claim or the next roll', () => {
+  let s = phoneGame();
+  s.props[7] = { owner: 1, mortgaged: false };
+  s = run(s, { type: 'roll', dice: [3, 4] });
+  const v = phoneView(s, 1, clock);
+  eq([v.rentAlert.sq, v.rentAlert.who, v.rentAlert.amount], [7, 'Aiko', rentOf(s, 7)]);
+  eq(phoneView(s, 2, clock).rentAlert, null, 'Mari is not told');
+  eq(phoneView(s, 0, clock).rentAlert, null, 'the visitor is not told');
+  s = run(s, { type: 'claimRent', from: 'phone', token: 'tok1', sq: 7 });
+  eq(phoneView(s, 1, clock).rentAlert, null, 'gone once asked');
+});
+test('payRent: the visitor pays from the phone, without the teacher', () => {
+  let s = phoneGame();
+  s.props[7] = { owner: 1, mortgaged: false };
+  s = run(s, { type: 'roll', dice: [3, 4] });
+  s = run(s, { type: 'claimRent', from: 'phone', token: 'tok1', sq: 7 });
+  const rent = s.pending.amount;
+  ok(apply(s, { type: 'payRent', from: 'phone', token: 'tok2' }, ctx()).error, 'only the visitor pays');
+  s = run(s, { type: 'payRent', from: 'phone', token: 'tok0' });
+  eq([s.players[0].money, s.players[1].money], [1500 - rent, 1500 + rent]);
+  eq(s.pending, null); eq(s.rentDue, null);
+  ok(phoneView(s, 1, clock).paid && !phoneView(s, 1, clock).paid.out, 'the owner sees the payment');
+  ok(phoneView(s, 0, clock).paid.out);
+  eq(phoneView(s, 2, clock).paid, null, 'nobody else');
+});
+test('payPlayer: money moves between phones straight away, within what the payer has', () => {
+  let s = phoneGame();
+  s = run(s, { type: 'payPlayer', from: 'phone', token: 'tok2', pid: 0, to: 1, amount: 120, why: 'deal' });
+  eq(s.players.map(p => p.money), [1500, 1620, 1380], 'the payer is always the phone\'s player');
+  ok(s.log[s.log.length - 1].text.includes('for a deal'));
+  ok(apply(s, { type: 'payPlayer', from: 'phone', token: 'tok2', to: 1, amount: 5000 }, ctx()).error.includes('only have'));
+  ok(apply(s, { type: 'payPlayer', from: 'phone', token: 'tok2', to: 2, amount: 10 }, ctx()).error, 'not yourself');
+  ok(apply(s, { type: 'payPlayer', from: 'phone', token: 'tok2', to: 1, amount: -10 }, ctx()).error, 'no negative amounts');
+  ok(apply(s, { type: 'payPlayer', from: 'phone', token: 'tok2', to: 9, amount: 10 }, ctx()).error, 'a real player');
+  s = run(s, { type: 'settings', patch: { playerPay: false } });
+  ok(apply(s, { type: 'payPlayer', from: 'phone', token: 'tok2', to: 1, amount: 10 }, ctx()).error, 'off in Settings');
+  ok(!phoneView(s, 0, clock).playerPay);
+});
+test('askSalary: with phones, passing Start waits for the player to ask the bank', () => {
+  let s = phoneGame();
+  s.players[0].pos = 44;
+  s = run(s, { type: 'roll', dice: [3, 4] });
+  eq(s.players[0].money, 1500, 'not paid by itself');
+  eq(phoneView(s, 0, clock).me.salaryDue, 200);
+  ok(apply(s, { type: 'askSalary', from: 'phone', token: 'tok1' }, ctx()).error, 'Ken has no salary');
+  s = run(s, { type: 'askSalary', from: 'phone', token: 'tok0' });
+  ok(phoneView(s, 0, clock).me.salaryAsked);
+  ok(apply(s, { type: 'askSalary', from: 'phone', token: 'tok0' }, ctx()).error, 'only once');
+  ok(apply(s, { type: 'paySalary', from: 'phone', token: 'tok0', id: s.requests[0].id }, ctx()).error, 'only the teacher pays');
+  s = run(s, { type: 'paySalary', id: s.requests[0].id });
+  eq([s.players[0].money, s.players[0].salaryDue, s.requests.length], [1700, 0, 0]);
+});
+test('without phones, or with askSalary off, the salary is paid by itself', () => {
+  let s = newGame();
+  s.players[0].pos = 44;
+  s = run(s, { type: 'roll', dice: [3, 4] });
+  eq(s.players[0].money, 1700);
+  s = phoneGame();
+  s = run(s, { type: 'settings', patch: { askSalary: false } });
+  s.players[0].pos = 44;
+  s = run(s, { type: 'roll', dice: [3, 4] });
+  eq(s.players[0].money, 1700);
 });
 
 console.log('Auctions');
