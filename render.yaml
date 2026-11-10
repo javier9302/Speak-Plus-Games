@@ -1,8 +1,9 @@
 # Render blueprint: puts the games that use phones online, so students join with
 # mobile data or any Wi-Fi. Step-by-step instructions: lantern-island/docs/RENDER.md
+# and Commands/stealth-squad/docs/DEPLOY.md
 #
-# Two services: Lantern Island and Speak Plus City. The other games of the hub
-# are static pages and don't need a server.
+# Three services: Lantern Island, Speak Plus City and Stealth Squad. The other
+# games of the hub are static pages and don't need a server.
 services:
   - type: web
     name: lantern-island
@@ -43,3 +44,17 @@ services:
         value: "22"
       # Nothing secret: the game is saved in the teacher's browser, not on the server.
       # PUBLIC_URL is not needed: the QR code uses Render's own address (RENDER_EXTERNAL_URL).
+
+  - type: web
+    name: stealth-squad
+    runtime: node
+    region: singapore
+    plan: free                 # free: sleeps after 15 min and drops rooms. "starter" stays awake.
+    rootDir: Commands/stealth-squad
+    buildCommand: npm ci && npm run build
+    startCommand: npm start    # sets NODE_ENV=production: one port serves the game and the page
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      # Rooms live in memory: keep a single instance, never scale out.

@@ -87,6 +87,12 @@ Hub de juegos para profesores de inglés de Speak Plus, una eikaiwa en Japón. L
 - Elegir cuerpo, pelo o cara no habla (lo pidió el profesor). Guardado en localStorage `sp-dressup-v1` con try/catch.
 - Tras tocar el dibujo: `node dress-up-buddy/tests/test.mjs` (encaje de cada prenda en los 3 cuerpos, abrigo sobre cada top, a/an, impresión solo contorno) y mirar `tests/sheet.html`.
 
+## Stealth Squad (carpeta `Commands/stealth-squad/`)
+
+- Juego cooperativo de sigilo en pixel art: hasta 6 alumnos con su móvil y el profesor en `/host`. Monorepo TypeScript (`shared/`, `server/` con Colyseus 0.16, `client/` con Phaser + Vite). Instrucciones completas en `Commands/stealth-squad/CLAUDE.md`; el encargo original en `Commands/claude-code-prompt-stealth-squad.md`.
+- Necesita servidor y build: `npm install`, `npm run dev` en clase; `npm run build` + `npm start` en producción (un solo puerto sirve juego y página). No tiene tarjeta en el menú.
+- En internet: servicio `stealth-squad` en `render.yaml` (región Singapur, `rootDir: Commands/stealth-squad`, sin variables). Las salas viven en memoria: una sola instancia. Pasos en `Commands/stealth-squad/docs/DEPLOY.md`.
+
 ## Al añadir juegos nuevos
 
 - Crear una carpeta en minúsculas con guiones (`mi-juego/`) con su `index.html`, su JS y su CSS. Enlazar `../shared/styles.css` y copiar la cabecera (fuentes y `<symbol id="plus">`) de `word-drop/index.html`.

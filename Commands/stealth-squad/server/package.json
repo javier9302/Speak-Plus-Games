@@ -1,0 +1,28 @@
+{
+  "name": "@stealth-squad/server",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "esbuild src/index.ts --bundle --platform=node --format=esm --target=node20 --tsconfig=tsconfig.json --external:express --external:@colyseus/* --outfile=dist/index.mjs",
+    "start": "NODE_ENV=production node dist/index.mjs",
+    "check-level": "tsx src/tools/checkLevel.ts",
+    "loadtest": "tsx src/tools/loadtest.ts"
+  },
+  "dependencies": {
+    "@colyseus/core": "0.16.26",
+    "@colyseus/monitor": "0.16.7",
+    "@colyseus/schema": "3.0.76",
+    "@colyseus/ws-transport": "0.16.5",
+    "@stealth-squad/shared": "*",
+    "express": "^4.22.3"
+  },
+  "devDependencies": {
+    "@types/express": "4.17.21",
+    "@types/node": "22.10.1",
+    "colyseus.js": "0.16.22",
+    "esbuild": "0.28.2",
+    "tsx": "^4.23.15"
+  }
+}

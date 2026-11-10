@@ -1,0 +1,154 @@
+/* DOM overlay for lobby / join / host screens. The Phaser canvas sits below. */
+:root {
+  --bg: #11161d;
+  --panel: #161e28;
+  --line: #2c3a4a;
+  --text: #e6edf3;
+  --muted: #8b9aab;
+  --accent: #7fd1ff;
+  --danger: #ff7a7a;
+}
+
+#ui {
+  position: fixed;
+  inset: 0;
+  color: var(--text);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  background: var(--panel);
+}
+#ui.hidden { display: none; }
+/* Host top bar while playing: only the bar takes input, the map stays visible. */
+#ui.bar {
+  inset: 0 0 auto 0;
+  overflow: visible;
+  background: rgba(17, 22, 29, 0.85);
+}
+
+.screen {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 16px;
+  box-sizing: border-box;
+}
+h1 { color: var(--accent); font: 700 22px/1.2 monospace; margin: 4px 0 12px; letter-spacing: 1px; }
+h2 { font-size: 15px; color: var(--muted); font-weight: 600; margin: 16px 0 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+p { margin: 6px 0; }
+.muted { color: var(--muted); }
+.error { color: var(--danger); min-height: 1.3em; }
+
+/* --- forms --- */
+.join-form { display: grid; gap: 10px; max-width: 360px; }
+label { display: grid; gap: 4px; font-size: 14px; color: var(--muted); }
+input, select, button { font: inherit; font-size: 18px; border-radius: 10px; }
+input, select {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  background: #0c1117;
+  color: var(--text);
+}
+input.code { text-transform: uppercase; letter-spacing: 6px; font-family: monospace; font-size: 24px; }
+button {
+  padding: 12px 18px;
+  border: 0;
+  background: var(--accent);
+  color: #0c1117;
+  font-weight: 700;
+  cursor: pointer;
+}
+button:disabled { opacity: 0.4; cursor: default; }
+button.secondary { background: #2c3a4a; color: var(--text); }
+
+/* --- role cards (phone) --- */
+.roles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.role {
+  text-align: left;
+  padding: 10px;
+  border-radius: 10px;
+  background: #1a2430;
+  color: var(--text);
+  border: 2px solid transparent;
+  font-size: 14px;
+  font-weight: 400;
+}
+.role b { display: block; font-size: 16px; color: var(--role-color); }
+.role small { color: var(--muted); display: block; margin-top: 4px; }
+.role.mine { border-color: var(--role-color); background: #22303f; }
+.role.taken { opacity: 0.45; }
+
+/* --- player list (phone + host) --- */
+.players { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+.players li { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: #1a2430; border-radius: 8px; }
+.players .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--role-color, #666); flex: none; }
+.players .name { flex: 1; }
+.players .offline { color: var(--danger); font-size: 12px; }
+.players select { font-size: 15px; padding: 6px 8px; }
+
+/* --- host layout --- */
+.host-grid { display: grid; grid-template-columns: 300px 1fr; gap: 24px; }
+@media (max-width: 700px) { .host-grid { grid-template-columns: 1fr; } }
+.code-big { font: 700 64px/1 monospace; letter-spacing: 10px; color: var(--accent); margin: 8px 0; }
+.qr { background: #fff; padding: 8px; border-radius: 10px; display: inline-block; }
+.qr canvas { display: block; }
+.url { font-family: monospace; font-size: 13px; word-break: break-all; }
+.suggest { background: #1a2430; border-radius: 8px; padding: 10px; font-size: 14px; }
+.suggest .ok { color: #b6f27a; }
+.suggest .warn { color: #ffe066; }
+.bar-inner { display: flex; align-items: center; gap: 16px; padding: 8px 16px; }
+.bar-inner .code { font: 700 20px monospace; color: var(--accent); letter-spacing: 3px; }
+.bar-inner { flex-wrap: wrap; }
+.bar-buttons { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+.bar-inner button { padding: 8px 14px; font-size: 15px; }
+.warn { color: #ffe066; }
+
+/* Host skills table: a chip per skill, its <select> moves it to another player. */
+.players.skills li { flex-wrap: wrap; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: #22303f; border-radius: 999px; padding: 2px 4px 2px 10px;
+  font-size: 13px; color: var(--text);
+}
+.chip select { font-size: 12px; padding: 2px 4px; border-radius: 999px; }
+.skills-panel { padding: 0 16px 12px; max-height: 60vh; overflow-y: auto; }
+
+/* Briefing / role card / mission complete. */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 600px) { .two-col { grid-template-columns: 1fr; } }
+.briefing p { font-size: 17px; line-height: 1.45; margin: 8px 0; }
+.host-briefing { max-width: 1000px; }
+.host-briefing .briefing p { font-size: 30px; }
+.host-briefing h1 { font-size: 40px; }
+.role-card { border: 2px solid var(--role-color); border-radius: 12px; padding: 12px 14px; background: #1a2430; }
+.role-card h2 { color: var(--role-color); margin-top: 4px; }
+.skill-help, .phrases { margin: 0; padding-left: 18px; }
+.skill-help li { margin: 4px 0; font-size: 14px; }
+.phrases li { margin: 6px 0; font-size: 18px; font-weight: 600; list-style: none; margin-left: -18px; }
+.won { text-align: center; padding-top: 10vh; }
+.won h1 { font-size: 36px; }
+.big { font-size: 22px; }
+
+/* Phones held upright while playing: ask to rotate (the game is landscape). */
+#rotate-hint { display: none; }
+@media (orientation: portrait) and (max-width: 600px) {
+  body.playing:not(.host) #rotate-hint {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 20px;
+  }
+}
+
+/* --- difficulty + mission stars --- */
+.difficulty { color: var(--muted); margin: -4px 0 12px; }
+.stars { font: 700 48px/1 monospace; color: #ffd166; letter-spacing: 8px; margin: 8px 0; }
+.star-list { list-style: none; padding: 0; margin: 8px 0 16px; color: var(--muted); }
+.star-list li { margin: 4px 0; }
+.star-list li.got { color: var(--text); }

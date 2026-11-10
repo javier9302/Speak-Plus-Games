@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- Landscape, touch-friendly, no user zoom (we handle our own input). -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+    <title>Stealth Squad</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #11161d;
+        overflow: hidden;
+        font-family: system-ui, sans-serif;
+      }
+      #game {
+        width: 100vw;
+        height: 100vh;
+        touch-action: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="game"></div>
+    <div id="ui"></div>
+    <div id="rotate-hint">Please turn your phone sideways ↻</div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

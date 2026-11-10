@@ -1,0 +1,25 @@
+{
+  "name": "stealth-squad",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Cooperative pixel-art stealth game for English conversation class (Speak Plus).",
+  "workspaces": [
+    "shared",
+    "server",
+    "client"
+  ],
+  "scripts": {
+    "dev": "concurrently -n server,client -c cyan,magenta \"npm:dev:server\" \"npm:dev:client\"",
+    "dev:server": "npm run dev --workspace server",
+    "dev:client": "npm run dev --workspace client",
+    "build": "npm run build --workspace client && npm run build --workspace server",
+    "typecheck": "tsc -p shared --noEmit && tsc -p server --noEmit && tsc -p client",
+    "check-level": "npm run check-level --workspace server",
+    "loadtest": "npm run loadtest --workspace server --",
+    "start": "npm run start --workspace server"
+  },
+  "devDependencies": {
+    "concurrently": "9.1.0",
+    "typescript": "5.7.2"
+  }
+}
