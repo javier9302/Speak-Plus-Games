@@ -184,7 +184,7 @@ client/   @stealth-squad/client — Phaser + Vite
 3. On the phone open `http://<same-ip>:5173`. The client derives the server URL
    from the page host automatically (`client/src/net.ts`). Override with
    `VITE_SERVER_URL` for cloud deploys.
-- Colyseus dev dashboard: `http://localhost:2567/colyseus`.
+- Colyseus dev dashboard: `http://localhost:2567/colyseus` (open on this computer; other devices and cloud hosts need `ADMIN_PASSWORD`, see docs/DEPLOY.md).
 
 ## Key design rules (don't break these)
 - **Abilities and information are individual.** Only the Scout's client renders

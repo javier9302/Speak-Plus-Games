@@ -2,7 +2,7 @@
 
 A cooperative pixel-art adventure for English conversation classes. Students join from their phones by scanning a QR code and walk their own characters around a shared island shown on the classroom screen. Everyone wins together.
 
-**Built so far: stages 1 to 3 of 8.** Server, host screen with QR code and lobby, phone join, characters moving in real time, groups with saves, the 12 abilities shared among the players, private clues, and now items, doors and challenge tablets that pull cards (choice, typed, spelling, and code cards checked by the teacher). The teacher's full live panel, chat, the monster and missions come in the next stages.
+**All 8 stages are built:** server, host screen with QR code and lobby, phone join, real-time movement, groups with saves, the 12 abilities and private clues, objects and challenge tablets, missions and the teacher panel, chat, the hidden monster, the full beach zone with landmarks, and hosting on Render + Supabase with a second zone, sounds and scenario packs.
 
 ## Run it on the teacher's laptop
 
@@ -54,7 +54,7 @@ On the join screen, students tap **Your character** to choose who they play: the
 
 The original drawings are in `public/shared/heroes.js` (16×16, one letter per pixel, with notes at the top of the file). To add a character, copy an entry, give it a new `id` and run `npm test`, which checks every drawing.
 
-**Fan art, for classroom use only.** 16 famous characters (Pikachu, the Dragon Quest Slime, Jibanyan, Tanjiro, Nezuko, Zenitsu, Doraemon, Totoro, Kirby, Mario, Goku, Luffy, Naruto, Hello Kitty, Anpanman, Sailor Moon) live in `public/shared/heroes-local.js`. They belong to their owners (Nintendo, The Pokémon Company, Square Enix, Level-5, Shueisha, Sanrio, Studio Ghibli and others), so that file is **never uploaded**: it is listed in `.gitignore`, it is not in the GitHub repository, and online (hosted mode) the server refuses to send it or to accept those characters. Keep your copy of the file in `public/shared/` on the computer you teach with; when it's there and the game runs on that computer (`npm start`), students can choose them. Without the file, the game simply offers the original characters. Never publish the file or use these characters in advertising.
+**Fan art, for classroom use only.** Characters from well-known anime and games can live in `public/shared/heroes-local.js`. They belong to their owners, so that file is **never uploaded**: it is listed in `.gitignore`, it is not in the GitHub repository, and online (hosted mode) the server refuses to send it or to accept those characters. Keep your copy of the file in `public/shared/` on the computer you teach with; when it's there and the game runs on that computer (`npm start`), students can choose them. Without the file, the game simply offers the original characters. Never publish the file or use these characters in advertising.
 
 ## Abilities and clues
 

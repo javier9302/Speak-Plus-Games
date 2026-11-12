@@ -11,6 +11,14 @@ npm start            # one port (PORT, default 2567) serves the game AND the web
 ```
 Open `http://<this-computer>:2567/host`. Live numbers: `http://<this-computer>:2567/metrics`.
 
+**The host screen is for the teacher's laptop, not the projector.** It shows every robot's vision
+cone, which only the Scout is meant to see; projected, nobody would need to ask the Scout.
+
+**Admin pages.** `/colyseus` (the room monitor, which can close live rooms) and `/metrics` open
+without a password only on the computer running the server. From any other device, and always on a
+cloud host, they need the `ADMIN_PASSWORD` environment variable (the browser asks; any user name). If
+it isn't set they answer "Not found".
+
 ## Docker
 ```bash
 docker build -t stealth-squad .
@@ -26,7 +34,7 @@ so don't scale to several instances).
 | Host | Notes |
 |---|---|
 | **Fly.io** (recommended) | `fly launch` (uses the Dockerfile), set internal port 2567, keep 1 machine, turn **auto-stop off** so rooms aren't killed mid-lesson. Smallest machine (shared CPU, 256–512 MB) is enough. |
-| Render | "Web Service" from the Dockerfile. The free tier sleeps when idle and drops connections — use a paid instance. |
+| Render | The `stealth-squad` service in `render.yaml` (free plan, no Docker needed). The free plan sleeps after 15 minutes with no visitors and forgets its rooms: open `/host` a minute before class and keep it open, and the game stays awake while students play. For daily classes a paid instance never sleeps. |
 | Plain VM (any provider) | Install Docker, run the image, put Caddy or nginx in front for HTTPS. |
 
 ## Resource report (bot load test)

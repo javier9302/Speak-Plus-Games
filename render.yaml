@@ -3,7 +3,8 @@
 # and Commands/stealth-squad/docs/DEPLOY.md
 #
 # Three services: Lantern Island, Speak Plus City and Stealth Squad. The other
-# games of the hub are static pages and don't need a server.
+# games of the hub are static pages: GitHub Pages serves them (.github/workflows/pages.yml).
+# The Speak Plus brand is off by default; add ?brand=speakplus to an address once to turn it on.
 services:
   - type: web
     name: lantern-island
@@ -49,7 +50,8 @@ services:
     name: stealth-squad
     runtime: node
     region: singapore
-    plan: free                 # free: sleeps after 15 min and drops rooms. "starter" stays awake.
+    plan: free                 # sleeps after 15 min with no visitors and forgets its rooms: open /host a minute
+                               # before class. "starter" (paid) never sleeps. See Commands/stealth-squad/docs/DEPLOY.md
     rootDir: Commands/stealth-squad
     buildCommand: npm ci && npm run build
     startCommand: npm start    # sets NODE_ENV=production: one port serves the game and the page
@@ -57,4 +59,7 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "22"
+      # Asked for when you create the service: the password for /colyseus and /metrics (never stored here).
+      - key: ADMIN_PASSWORD
+        sync: false
       # Rooms live in memory: keep a single instance, never scale out.
