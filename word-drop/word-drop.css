@@ -1,0 +1,28 @@
+/* Word Drop: the play field and falling blocks (shared pieces are in ../shared/styles.css) */
+#words{min-height:260px;font-family:var(--f-jp);font-size:18px;line-height:1.7}
+.task-row{display:flex;flex-direction:column;gap:6px}
+#teams{min-height:96px}
+.field{position:relative;flex:1;margin:0 16px 16px;border-radius:18px;background:var(--field);overflow:hidden;
+  background-image:linear-gradient(var(--field-line) 1px,transparent 1px);background-size:100% 64px}
+.floor{position:absolute;left:0;right:0;bottom:0;height:8px;background:var(--accent)}
+.floor.flash{animation:flash .9s}
+@keyframes flash{0%,100%{height:8px}30%{height:28px}}
+.block{position:absolute;left:0;top:0;border:0;border-radius:14px;padding:.32em .7em;background:var(--block-bg);color:var(--block-fg);
+  font-family:var(--f-jp);font-weight:700;font-size:clamp(30px,5.2vw,68px);line-height:1.15;white-space:normal;text-align:center;max-width:min(78%,13em);overflow-wrap:anywhere;box-shadow:0 6px 0 var(--block-edge);
+  touch-action:manipulation;will-change:transform;user-select:none}
+.block.long{font-size:clamp(22px,3.4vw,44px)}
+.block:hover{filter:brightness(1.15)}
+.block-in{animation:blockin .25s ease-out}
+@keyframes blockin{from{opacity:0}to{opacity:1}}
+.block.pop{animation:pop .35s ease-out forwards;pointer-events:none;background:var(--good);color:#fff;box-shadow:none}
+@keyframes pop{to{opacity:0;scale:1.35}}
+.block.steal{outline:4px solid var(--accent);outline-offset:3px}
+.block.steal::after{content:attr(data-bonus);position:absolute;top:-14px;right:-10px;font-family:var(--f-display);font-size:13px;font-weight:700;padding:2px 9px;border-radius:999px;background:var(--accent);color:#fff}
+.block.missed{background:var(--accent);color:#fff;box-shadow:none;pointer-events:none}
+.block.fade{opacity:.25;pointer-events:none;transition:opacity .25s}
+.plus1{position:absolute;font-weight:700;font-size:36px;color:var(--good);pointer-events:none;animation:rise .7s ease-out forwards}
+@keyframes rise{to{transform:translateY(-60px);opacity:0}}
+
+.field .task-pill{position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:2;pointer-events:none}
+@media (max-width:600px){.field{margin:0 10px 10px}}
+@media (prefers-reduced-motion:reduce){.block.pop,.plus1,.floor.flash{animation-duration:.01s}}

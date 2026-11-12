@@ -1,0 +1,75 @@
+{
+  "$schema": "../tools/game.schema.json",
+  "id": "city-run",
+  "order": 20,
+  "status": "stable",
+  "name": {
+    "en": "City Run",
+    "es": "Carrera en la ciudad"
+  },
+  "summary": {
+    "en": "The driver can't see the screen. The navigator can, and gives directions to get across the city, stop at the right places and reach B.",
+    "es": "El conductor no ve la pantalla. El navegador sí, y le da instrucciones para cruzar la ciudad, parar en los lugares correctos y llegar a B."
+  },
+  "entry": "index.html",
+  "ages": [
+    8,
+    99
+  ],
+  "levels": [
+    "A1",
+    "A2",
+    "B1"
+  ],
+  "players": {
+    "min": 2,
+    "max": 60,
+    "grouping": "pairs"
+  },
+  "skills": [
+    "speaking",
+    "listening",
+    "directions"
+  ],
+  "minutes": [
+    10,
+    30
+  ],
+  "setupMinutes": 1,
+  "devices": {
+    "teacher": [
+      "laptop",
+      "tablet"
+    ],
+    "students": "none"
+  },
+  "needs": {
+    "server": "none",
+    "keyboard": true
+  },
+  "offline": true,
+  "uiLanguages": [
+    "en",
+    "es"
+  ],
+  "contentTypes": [
+    "places",
+    "questions"
+  ],
+  "tags": {
+    "en": [
+      "Speaking",
+      "Directions",
+      "Pairs or teams"
+    ],
+    "es": [
+      "Hablar",
+      "Direcciones",
+      "Parejas o equipos"
+    ]
+  },
+  "authors": [
+    "Classroom Games contributors"
+  ],
+  "license": "MIT"
+}

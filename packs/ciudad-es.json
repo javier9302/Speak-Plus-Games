@@ -1,0 +1,103 @@
+{
+  "id": "ciudad-es",
+  "type": "places",
+  "title": "Un pueblo en español",
+  "language": "es",
+  "subject": "Español",
+  "levels": [
+    "A1",
+    "A2"
+  ],
+  "ages": [
+    6,
+    99
+  ],
+  "author": "Classroom Games contributors",
+  "license": "CC-BY-4.0",
+  "phrases": [
+    "Sigue recto tres pasos",
+    "Gira a la izquierda",
+    "Gira a la derecha",
+    "¡Para!",
+    "Espera… ¡ya!",
+    "Un paso más",
+    "Da la vuelta",
+    "Vuelve atrás",
+    "Espera el tren",
+    "Está cerrada"
+  ],
+  "items": [
+    {
+      "icon": "🏦",
+      "name": "Banco",
+      "clue": "Aquí guardas tu dinero",
+      "code": "DINERO"
+    },
+    {
+      "icon": "🥐",
+      "name": "Panadería",
+      "clue": "Aquí compras pan",
+      "code": "PAN"
+    },
+    {
+      "icon": "🌳",
+      "name": "Parque",
+      "clue": "Aquí juegas al aire libre",
+      "code": "ÁRBOL"
+    },
+    {
+      "icon": "🏫",
+      "name": "Colegio",
+      "clue": "Aquí estudias con un profesor",
+      "code": "LÁPIZ"
+    },
+    {
+      "icon": "🏥",
+      "name": "Hospital",
+      "clue": "Vas aquí cuando estás enfermo",
+      "code": "MÉDICO"
+    },
+    {
+      "icon": "📚",
+      "name": "Biblioteca",
+      "clue": "Aquí te prestan libros",
+      "code": "LIBRO"
+    },
+    {
+      "icon": "📮",
+      "name": "Correo",
+      "clue": "Aquí envías cartas",
+      "code": "CARTA"
+    },
+    {
+      "icon": "🚉",
+      "name": "Estación",
+      "clue": "Aquí tomas el tren",
+      "code": "TREN"
+    },
+    {
+      "icon": "☕",
+      "name": "Cafetería",
+      "clue": "Aquí tomas café",
+      "code": "CAFÉ"
+    },
+    {
+      "icon": "🎬",
+      "name": "Cine",
+      "clue": "Aquí ves películas",
+      "code": "PELÍCULA"
+    },
+    {
+      "icon": "🏨",
+      "name": "Hotel",
+      "clue": "Aquí duermes en un viaje",
+      "code": "CAMA"
+    },
+    {
+      "icon": "🏛️",
+      "name": "Museo",
+      "clue": "Aquí ves cuadros famosos",
+      "code": "PINTURA"
+    }
+  ]
+}

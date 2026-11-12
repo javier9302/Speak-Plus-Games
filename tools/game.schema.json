@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Classroom Games: game.json",
+  "description": "The manifest of one game. tools/check.mjs validates it; tools/build.mjs copies it into shared/registry.js for the hub.",
+  "type": "object",
+  "required": ["id", "name", "summary", "entry", "ages", "levels", "players", "skills", "minutes", "setupMinutes", "devices", "needs", "offline", "uiLanguages", "status", "authors", "license"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "id": { "type": "string", "pattern": "^[a-z0-9-]+$", "description": "Unique, lowercase, dashes." },
+    "order": { "type": "number", "description": "Position on the hub (lower first)." },
+    "status": { "enum": ["stable", "experimental"], "description": "New games start as experimental and show a 'New' label." },
+    "template": { "type": "boolean", "description": "True for the game contributors copy to start (Hot Seat)." },
+    "name": { "$ref": "#/$defs/text" },
+    "brandNames": { "type": "object", "description": "A different name under a brand, e.g. {\"speakplus\": {\"en\": \"Speak Plus City\"}}.", "additionalProperties": { "$ref": "#/$defs/text" } },
+    "summary": { "$ref": "#/$defs/text" },
+    "entry": { "type": "string", "description": "The page the Play button opens, relative to the folder." },
+    "docs": { "type": "string", "description": "A guide, relative to the folder (shown for server games)." },
+    "links": { "type": "array", "items": { "type": "object", "required": ["label", "href"], "properties": { "label": { "$ref": "#/$defs/text" }, "href": { "type": "string" } } } },
+    "ages": { "$ref": "#/$defs/range", "description": "[youngest, oldest]; 99 means adults." },
+    "levels": { "type": "array", "minItems": 1, "items": { "enum": ["pre-A1", "A1", "A2", "B1", "B2", "C1", "C2"] } },
+    "players": { "type": "object", "required": ["min", "max", "grouping"], "properties": { "min": { "type": "integer", "minimum": 1 }, "max": { "type": "integer" }, "grouping": { "enum": ["individual", "pairs", "teams", "co-op"] } } },
+    "skills": { "type": "array", "minItems": 1, "items": { "type": "string" }, "description": "speaking, listening, reading, writing, vocabulary, …" },
+    "minutes": { "$ref": "#/$defs/range", "description": "[shortest, longest] game in minutes." },
+    "setupMinutes": { "type": "number", "description": "How long a teacher needs to start it mid-class." },
+    "devices": { "type": "object", "required": ["teacher", "students"], "properties": { "teacher": { "type": "array", "items": { "enum": ["laptop", "tablet", "phone"] } }, "students": { "enum": ["none", "shared", "optional", "required"] } } },
+    "needs": { "type": "object", "required": ["server"], "properties": { "server": { "enum": ["none", "static", "node"], "description": "none: opens from a file. static: needs a web address. node: needs a Node.js server." }, "keyboard": { "type": "boolean" }, "controllers": { "enum": [true, false, "optional"] } } },
+    "start": { "type": "string", "description": "For needs.server = node: the command that starts it." },
+    "offline": { "type": "boolean", "description": "Kept by sw.js for use with no connection." },
+    "uiLanguages": { "type": "array", "items": { "type": "string" }, "contains": { "const": "en" } },
+    "contentTypes": { "type": "array", "items": { "enum": ["word-list", "places", "questions"] } },
+    "tags": { "type": "object", "additionalProperties": { "type": "array", "items": { "type": "string" } } },
+    "authors": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+    "license": { "type": "string" }
+  },
+  "$defs": {
+    "text": { "type": "object", "required": ["en"], "additionalProperties": { "type": "string" }, "description": "Text by language: {\"en\": \"…\", \"es\": \"…\"}" },
+    "range": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2 }
+  }
+}

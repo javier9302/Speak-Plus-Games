@@ -1,165 +1,148 @@
 (() => {
-const $ = s => document.querySelector(s);
-const SAMPLES = {
-  jp: '必要, 約束, 経験, 天気, 便利, 旅行, 季節, 失敗, 友達, 図書館, 自信, 準備, 会議, 説明, 興味, 危険, 練習, 予約, 返事, 安全',
-  cap: 'France, Japan, Brazil, Canada, Australia, Egypt, Mexico, Italy, Kenya, South Korea, Spain, Thailand, Argentina, Germany, India, Peru'
-};
-const SPEEDS = [{l:'Very slow',t:20},{l:'Slow',t:15},{l:'Medium',t:11},{l:'Fast',t:8},{l:'Very fast',t:6}];
-const DEFAULTS = {words:SAMPLES.jp, teams:'Team A\nTeam B', lives:3, speed:2, max:2, sound:true};
-const KEY = 'sp-worddrop-v1';
+const { $, esc, t, shuffle, store } = Kit;
+const SPEEDS = [20, 15, 11, 8, 6];                     // seconds to reach the floor, "Very slow" → "Very fast"
+const TASKS = ['answer', 'sentence', 'describe', 'question'];
 const MAX_TEAMS = 8;
-let S = {...DEFAULTS};
-try { Object.assign(S, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch {}
-const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch {} };
+const KEY = 'sp-worddrop-v1';
+const firstPack = Kit.packs('word-list')[0];
+const DEFAULTS = {
+  words: firstPack ? Kit.itemsToText(firstPack.items) : 'apple, book, chair, dog, egg, friend',
+  teams: t('kit.teamX', { x: 'A' }) + '\n' + t('kit.teamX', { x: 'B' }),
+  lives: 3, speed: 2, max: 2, sound: true, task: 'answer', title: firstPack ? firstPack.title : '',
+};
+const S = Object.assign({}, DEFAULTS, store.get(KEY, {}));
+if (!(S.lives >= 0 && S.lives <= 5)) S.lives = 3;
+if (!TASKS.includes(S.task)) S.task = 'answer';
+const save = () => store.set(KEY, S);
+Kit.sound.on = S.sound;
 
-const views = {setup:$('#view-setup'), game:$('#view-game')};
-function show(name){
+const views = { setup: $('#view-setup'), game: $('#view-game') };
+function show(name) {
   if (name === 'hub') { location.href = '../index.html'; return; }
   for (const k in views) views[k].hidden = k !== name;
-  if (name !== 'game') releaseWake();
-  window.scrollTo(0,0);
+  if (name !== 'game') Kit.wake.off();
+  window.scrollTo(0, 0);
 }
 
-const parseList = s => { const seen = new Set(); return s.split(/[,、，\n]+/).map(x => x.trim()).filter(x => x && !seen.has(x) && seen.add(x)); };
-const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
-const hearts = (n, total) => '<span class="hearts" aria-label="' + n + ' of ' + total + ' lives">' +
-  Array.from({length: total}, (_, i) => '<svg class="' + (i < n ? 'heart-on' : 'heart-off') + '"><use href="#heart"/></svg>').join('') + '</span>';
-const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const hearts = (n, total) => total ? '<span class="hearts" aria-label="' + n + ' / ' + total + '">' +
+  Array.from({ length: total }, (_, i) => '<svg class="' + (i < n ? 'heart-on' : 'heart-off') + '"><use href="#heart"/></svg>').join('') + '</span>' : '';
+const withAnswer = it => esc(it.prompt) + (it.answer ? ' <small>→ ' + esc(it.answer) + '</small>' : '');
 
 /* ---------- Setup ---------- */
 const wordsEl = $('#words'), teamsEl = $('#teams');
 wordsEl.value = S.words; teamsEl.value = S.teams; $('#sound').checked = S.sound;
 
-function seg(id, key, values, label){
+function seg(id, key, values, label) {
   const box = $('#' + id);
-  box.innerHTML = values.map(v => `<input type="radio" name="${key}" id="${key}-${v}" value="${v}" ${S[key] == v ? 'checked' : ''}><label for="${key}-${v}">${label ? label(v) : v}</label>`).join('');
-  box.addEventListener('change', e => { S[key] = +e.target.value; save(); updateCounts(); });
+  box.innerHTML = values.map(v => `<input type="radio" name="${key}" id="${key}-${v}" value="${v}" ${S[key] == v ? 'checked' : ''}><label for="${key}-${v}">${esc(label ? label(v) : v)}</label>`).join('');
+  box.addEventListener('change', e => { S[key] = isNaN(+e.target.value) ? e.target.value : +e.target.value; save(); updateCounts(); });
 }
-seg('seg-lives', 'lives', [1,2,3,4,5]);
-seg('seg-speed', 'speed', [1,2,3,4,5]);
-seg('seg-max', 'max', [1,2,3,4]);
+seg('seg-lives', 'lives', [0, 1, 2, 3, 4, 5], v => v ? v : t('off'));
+seg('seg-speed', 'speed', [1, 2, 3, 4, 5]);
+seg('seg-max', 'max', [1, 2, 3, 4]);
+seg('seg-task', 'task', TASKS, v => t('wd.task.' + v));
 
-function updateCounts(){
-  const w = parseList(wordsEl.value).length, t = parseList(teamsEl.value).length;
-  $('#word-count').textContent = w + (w === 1 ? ' word' : ' words');
-  $('#team-count').textContent = (t === 1 ? 'Solo' : t + ' teams') + ' · max ' + MAX_TEAMS;
-  $('#team-count').style.color = t > MAX_TEAMS ? 'var(--accent)' : '';
+function updateCounts() {
+  const items = Kit.parseItems(wordsEl.value), w = items.length, teams = Kit.parseTeams(teamsEl.value), n = teams.length;
+  const answers = items.filter(x => x.answer).length;
+  $('#word-count').textContent = t('wd.wordsN', { n: w }) + (answers ? ' · ' + t('wd.withAnswers', { n: answers }) : '');
+  $('#team-count').textContent = (n === 1 ? t('solo') : t('teamsN', { n })) + ' · ' + t('maxN', { n: MAX_TEAMS });
+  $('#team-count').style.color = n > MAX_TEAMS ? 'var(--accent)' : '';
   const note = $('#split-note');
-  if (t > 1 && t <= MAX_TEAMS && w >= t) {
-    const per = Math.floor(w / t), extra = w - per * t;
-    note.textContent = per + (per === 1 ? ' word' : ' words') + ' per team' + (extra ? ' · ' + extra + (extra === 1 ? ' word' : ' words') + ' left unused' : '');
+  if (n > 1 && n <= MAX_TEAMS && w >= n) {
+    const per = Math.floor(w / n), extra = w - per * n;
+    note.textContent = t('wd.perTeam', { n: per }) + (extra ? ' · ' + t('wd.unused', { n: extra }) : '');
   } else note.textContent = '';
-  const sp = SPEEDS[S.speed - 1];
-  $('#speed-note').textContent = sp.l + ' · about ' + sp.t + ' seconds to reach the floor';
+  $('#speed-note').textContent = t('wd.speedNote', { label: t('wd.speed' + S.speed), n: SPEEDS[S.speed - 1] });
+  $('#lives-note').textContent = S.lives ? t('wd.livesOn') : t('wd.livesOff');
 }
 wordsEl.addEventListener('input', () => { S.words = wordsEl.value; save(); updateCounts(); });
 teamsEl.addEventListener('input', () => { S.teams = teamsEl.value; save(); updateCounts(); });
-$('#sound').addEventListener('change', e => { S.sound = e.target.checked; save(); });
-document.querySelectorAll('[data-sample]').forEach(b => b.addEventListener('click', () => {
-  wordsEl.value = SAMPLES[b.dataset.sample]; S.words = wordsEl.value; save(); updateCounts();
-}));
+$('#sound').addEventListener('change', e => { S.sound = Kit.sound.on = e.target.checked; save(); });
+Kit.mountContent($('#content-tools'), {
+  type: 'word-list',
+  getPack: () => ({ title: S.title || t('wd.title'), items: Kit.parseItems(wordsEl.value) }),
+  setPack: p => { wordsEl.value = p.items ? Kit.itemsToText(p.items) : p.text || ''; S.title = p.title || ''; S.words = wordsEl.value; save(); updateCounts(); },
+});
+Kit.mountRoster($('#roster'), teamsEl, MAX_TEAMS);
 updateCounts();
 
 $('#back-hub').addEventListener('click', () => show('hub'));
-
-/* ---------- Sound ---------- */
-let ac;
-function beep(kind){
-  if (!S.sound) return;
-  try {
-    ac = ac || new (window.AudioContext || window.webkitAudioContext)();
-    const o = ac.createOscillator(), g = ac.createGain(), t = ac.currentTime;
-    o.connect(g); g.connect(ac.destination);
-    if (kind === 'hit') { o.type = 'triangle'; o.frequency.setValueAtTime(660, t); o.frequency.exponentialRampToValueAtTime(1320, t + .12); }
-    else if (kind === 'go') { o.type = 'sine'; o.frequency.setValueAtTime(520, t); o.frequency.exponentialRampToValueAtTime(780, t + .15); }
-    else { o.type = 'sawtooth'; o.frequency.setValueAtTime(240, t); o.frequency.exponentialRampToValueAtTime(80, t + .4); }
-    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.16, t + .02); g.gain.exponentialRampToValueAtTime(.0001, t + .42);
-    o.start(t); o.stop(t + .45);
-  } catch {}
-}
-
-/* ---------- Wake lock / fullscreen ---------- */
-let wake = null;
-function requestWake(){ try { navigator.wakeLock?.request('screen').then(l => wake = l).catch(() => {}); } catch {} }
-function releaseWake(){ try { wake?.release(); } catch {} wake = null; }
-$('#btn-full').addEventListener('click', () => {
-  try {
-    if (document.fullscreenElement) document.exitFullscreen?.();
-    else document.documentElement.requestFullscreen?.().catch(() => {});
-  } catch {}
-});
+$('#btn-full').addEventListener('click', Kit.toggleFullscreen);
 
 /* ---------- Game ---------- */
-const field = $('#field'), overlay = $('#overlay'), card = $('#card'), board = $('#board');
+const field = $('#field'), overlay = $('#overlay'), card = $('#card'), board = $('#board'), pill = $('#task-pill');
 let G = null;
 
 $('#start').addEventListener('click', startGame);
-function startGame(){
-  const words = parseList(wordsEl.value), teams = parseList(teamsEl.value);
+function startGame() {
+  const items = Kit.parseItems(wordsEl.value), teams = Kit.parseTeams(teamsEl.value);
   const err = $('#setup-error');
-  if (!words.length) { err.textContent = 'Add at least one word to start.'; err.hidden = false; wordsEl.focus(); return; }
-  if (!teams.length) { err.textContent = 'Add at least one team or student name.'; err.hidden = false; teamsEl.focus(); return; }
-  if (teams.length > MAX_TEAMS) { err.textContent = 'Use ' + MAX_TEAMS + ' teams or fewer. Group students into teams if the class is bigger.'; err.hidden = false; teamsEl.focus(); return; }
-  if (words.length < teams.length) { err.textContent = 'Add at least ' + teams.length + ' words so every team gets one.'; err.hidden = false; wordsEl.focus(); return; }
+  const fail = (msg, el) => { err.textContent = msg; err.hidden = false; el.focus(); };
+  if (!items.length) return fail(t('wd.errNoWords'), wordsEl);
+  if (!teams.length) return fail(t('wd.errNoTeams'), teamsEl);
+  if (teams.length > MAX_TEAMS) return fail(t('wd.errTooMany', { max: MAX_TEAMS }), teamsEl);
+  if (items.length < teams.length) return fail(t('wd.errFewWords', { n: teams.length }), wordsEl);
   err.hidden = true;
   clearBlocks();
-  const all = shuffle(words), per = Math.floor(all.length / teams.length);
+  const all = shuffle(items), per = Math.floor(all.length / teams.length);
   G = {
     total: per * teams.length,
-    teams: teams.map((n, i) => ({name: n, lives: S.lives, score: 0, out: false, deck: all.slice(i * per, (i + 1) * per)})),
-    active: 0, blocks: [], state: 'turn', since: 0,
-    failed: [], stolen: [], passed: new Set(), fall: SPEEDS[S.speed - 1].t, max: S.max, solo: teams.length === 1, first: true
+    teams: teams.map((tm, i) => ({ name: tm.name, members: tm.members, lives: S.lives, score: 0, out: false, deck: all.slice(i * per, (i + 1) * per) })),
+    active: 0, blocks: [], state: 'turn', since: 0, lives: S.lives,
+    failed: [], stolen: [], passed: new Set(), fall: SPEEDS[S.speed - 1], max: S.max, solo: teams.length === 1, first: true,
   };
-  show('game'); requestWake(); renderBoard(); turnCard();
+  pill.textContent = t('wd.task.' + S.task); pill.hidden = S.task === 'answer';
+  show('game'); Kit.wake.on(); renderBoard(); turnCard();
 }
 
-function renderBoard(){
-  board.innerHTML = G.teams.map((t, i) =>
-    `<div class="team ${i === G.active && !t.out ? 'active' : ''} ${t.out ? 'out' : ''}" data-i="${i}">
-      <span class="team-name">${esc(t.name)}</span>${hearts(t.lives, S.lives)}<span class="team-left">${t.deck.length} left</span><span class="team-score" aria-label="points">${t.score}</span></div>`).join('');
-  const used = G.total - G.teams.reduce((n, t) => n + t.deck.length, 0) - G.blocks.length;
-  $('#progress').textContent = used + ' / ' + G.total + ' words';
+function renderBoard() {
+  board.innerHTML = G.teams.map((tm, i) =>
+    `<div class="team ${i === G.active && !tm.out ? 'active' : ''} ${tm.out ? 'out' : ''}" data-i="${i}">
+      <span class="team-name">${esc(tm.name)}</span>${hearts(tm.lives, G.lives)}<span class="team-left">${esc(t('wd.left', { n: tm.deck.length }))}</span><span class="team-score" aria-label="${esc(t('points'))}">${tm.score}</span></div>`).join('');
+  const used = G.total - G.teams.reduce((n, tm) => n + tm.deck.length, 0) - G.blocks.length;
+  $('#progress').textContent = t('wd.progress', { used, total: G.total });
 }
 
-function openOverlay(html){ card.innerHTML = html; overlay.hidden = false; const b = card.querySelector('[data-focus]'); b && b.focus(); }
-function closeOverlay(){ overlay.hidden = true; }
+function openOverlay(html) { card.innerHTML = html; overlay.hidden = false; const b = card.querySelector('[data-focus]'); b && b.focus(); }
+function closeOverlay() { overlay.hidden = true; }
 
-function turnCard(){
+function turnCard() {
   G.state = 'turn';
-  const t = G.teams[G.active];
-  const label = G.first ? (G.solo ? 'Ready?' : 'First up') : (G.solo ? 'Keep going' : 'Next up');
+  const tm = G.teams[G.active];
+  const label = G.first ? (G.solo ? t('ready') : t('firstUp')) : (G.solo ? t('keepGoing') : t('nextUp'));
   openOverlay(`
-    <span class="eyebrow">${label}</span>
-    <h2>${esc(t.name)}</h2>
-    ${hearts(t.lives, S.lives)}
-    <p class="sub">${t.deck.length} ${t.deck.length === 1 ? 'word' : 'words'} left for this team</p>
-    <div class="card-actions"><button class="btn btn-primary btn-big" data-act="go" data-focus type="button">Go</button></div>
-    <span class="keyhint">or press <kbd>Space</kbd></span>`);
+    <span class="eyebrow">${esc(label)}</span>
+    <h2>${esc(tm.name)}</h2>
+    ${tm.members.length ? `<p class="members">${tm.members.map(esc).join(' · ')}</p>` : ''}
+    ${hearts(tm.lives, G.lives)}
+    <span class="task-pill">${esc(t('wd.task.' + S.task))}</span>
+    <p class="sub">${esc(t('wd.leftForTeam', { n: tm.deck.length }))}</p>
+    <div class="card-actions"><button class="btn btn-primary btn-big" data-act="go" data-focus type="button">${esc(t('go'))}</button></div>
+    <span class="keyhint">${t('orPress', { key: '<kbd>' + esc(t('spaceKey')) + '</kbd>' })}</span>`);
 }
 
-function go(){
-  closeOverlay(); G.first = false; G.state = 'play'; G.since = 0; beep('go');
-}
+function go() { closeOverlay(); G.first = false; G.state = 'play'; G.since = 0; Kit.beep('go'); }
 
-function pause(){
+function pause() {
   if (!G || G.state !== 'play') return;
   G.state = 'paused';
   openOverlay(`
-    <span class="eyebrow">Paused</span>
-    <h2>Take a breath</h2>
+    <span class="eyebrow">${esc(t('paused'))}</span>
+    <h2>${esc(t('takeBreath'))}</h2>
     <div class="card-actions">
-      <button class="btn btn-primary btn-big" data-act="resume" data-focus type="button">Resume</button>
-      <button class="btn btn-ghost" data-act="end" type="button">End game</button>
+      <button class="btn btn-primary btn-big" data-act="resume" data-focus type="button">${esc(t('resume'))}</button>
+      <button class="btn btn-ghost" data-act="end" type="button">${esc(t('endGame'))}</button>
     </div>`);
 }
-function resume(){ closeOverlay(); G.state = 'play'; }
+function resume() { closeOverlay(); G.state = 'play'; }
 $('#btn-pause').addEventListener('click', () => G && (G.state === 'play' ? pause() : G.state === 'paused' ? resume() : null));
 
 card.addEventListener('click', e => {
   const a = e.target.closest('[data-act]'); if (!a) return;
-  ({go, resume, end: () => endGame('ended'), again: startGame,
+  ({ go, resume, end: () => endGame('ended'), again: startGame,
     settings: () => { clearBlocks(); G = null; show('setup'); },
-    hub: () => { clearBlocks(); G = null; show('hub'); }})[a.dataset.act]?.();
+    hub: () => { clearBlocks(); G = null; show('hub'); } })[a.dataset.act]?.();
 });
 
 document.addEventListener('keydown', e => {
@@ -171,17 +154,19 @@ document.addEventListener('keydown', e => {
   } else if (e.key === 'Escape' && G.state === 'play') pause();
 });
 
-function spawn(){
-  const word = G.teams[G.active].deck.shift();
+function spawn() {
+  const item = G.teams[G.active].deck.shift();
   const el = document.createElement('button');
-  el.type = 'button'; el.className = 'block block-in' + (G.passed.has(word) ? ' steal' : ''); el.textContent = word;
-  el.setAttribute('aria-label', word + ' — tap when answered correctly');
+  el.type = 'button';
+  el.className = 'block block-in' + (G.passed.has(item.prompt) ? ' steal' : '') + (item.prompt.length > 14 ? ' long' : '');
+  el.textContent = item.prompt; el.dataset.bonus = t('wd.bonus');
+  el.setAttribute('aria-label', t('wd.tapHint', { word: item.prompt }));
   field.appendChild(el);
   const w = el.offsetWidth, h = el.offsetHeight, W = field.clientWidth, H = field.clientHeight;
   let x, tries = 0;
   do { x = Math.random() * Math.max(0, W - w); tries++; }
   while (tries < 14 && G.blocks.some(o => o.p * (H - o.h) < h * 1.8 && x < o.x + o.w + 16 && x + w + 16 > o.x));
-  const b = {word, el, x, w, h, p: 0, done: false};
+  const b = { item, el, x, w, h, p: 0, done: false };
   el.style.transform = `translate(${x}px,0px)`;
   el.addEventListener('pointerdown', ev => { ev.preventDefault(); hit(b); });
   el.addEventListener('click', () => hit(b));
@@ -189,112 +174,128 @@ function spawn(){
   renderBoard();
 }
 
-function hit(b){
+function hit(b) {
   if (!G || G.state !== 'play' || b.done) return;
   b.done = true;
   G.blocks = G.blocks.filter(o => o !== b);
-  const t = G.teams[G.active]; t.score++;
-  if (G.passed.has(b.word)) G.stolen.push({word: b.word, by: t.name});
+  const tm = G.teams[G.active]; tm.score++;
+  if (G.passed.has(b.item.prompt)) G.stolen.push({ item: b.item, by: tm.name });
   b.el.classList.add('pop');
   const p = document.createElement('div'); p.className = 'plus1'; p.textContent = '+1';
   const y = b.p * (field.clientHeight - b.h);
   p.style.left = (b.x + b.w / 2 - 18) + 'px'; p.style.top = (y - 10) + 'px';
   field.appendChild(p);
   setTimeout(() => { b.el.remove(); p.remove(); }, 700);
-  beep('hit'); renderBoard();
+  Kit.beep('hit'); renderBoard();
   board.querySelector(`[data-i="${G.active}"]`)?.classList.add('bump');
 }
 
-function miss(b){
+function miss(b) {
   G.state = 'miss'; b.done = true;
   b.el.classList.add('missed');
-  const others = G.blocks.filter(o => o !== b);
-  others.forEach(o => { o.done = true; o.el.classList.add('fade'); setTimeout(() => o.el.remove(), 300);
-    const d = G.teams[G.active].deck; d.splice(Math.floor(Math.random() * (d.length + 1)), 0, o.word); });
+  if (b.item.answer) b.el.textContent = b.item.prompt + ' → ' + b.item.answer;   // the class sees the answer
+  G.blocks.filter(o => o !== b).forEach(o => {
+    o.done = true; o.el.classList.add('fade'); setTimeout(() => o.el.remove(), 300);
+    const d = G.teams[G.active].deck; d.splice(Math.floor(Math.random() * (d.length + 1)), 0, o.item);
+  });
   G.blocks = [];
-  const t = G.teams[G.active]; t.lives--; if (t.lives <= 0) t.out = true;
+  const tm = G.teams[G.active];
+  if (G.lives) { tm.lives--; if (tm.lives <= 0) tm.out = true; }
   // A missed word passes once to the next team still in the game, as their first word
   let receiver = null;
-  if (!G.passed.has(b.word)) {
+  if (!G.passed.has(b.item.prompt)) {
     const n = G.teams.length;
     for (let k = 1; k < n; k++) { const o = G.teams[(G.active + k) % n]; if (!o.out) { receiver = o; break; } }
-    if (receiver) { receiver.deck.unshift(b.word); G.passed.add(b.word); G.total++; }
+    if (receiver) { receiver.deck.unshift(b.item); G.passed.add(b.item.prompt); G.total++; }
   }
-  if (!receiver) G.failed.push(b.word); // nobody answered it
+  if (!receiver) G.failed.push(b.item);   // nobody answered it
   const floor = $('#floor'); floor.classList.remove('flash'); void floor.offsetWidth; floor.classList.add('flash');
   const ban = document.createElement('div'); ban.className = 'banner';
-  ban.textContent = (t.out ? `${t.name} is out!` : `${t.name} loses a life`) + (receiver ? ` · ${b.word} goes to ${receiver.name}` : '');
+  ban.textContent = (!G.lives ? t('wd.passTurn') : tm.out ? t('wd.isOut', { name: tm.name }) : t('wd.losesLife', { name: tm.name })) +
+    (receiver ? ' · ' + t('wd.goesTo', { word: b.item.prompt, name: receiver.name }) : '');
   field.appendChild(ban);
-  beep('miss'); renderBoard();
+  Kit.beep('miss'); renderBoard();
   setTimeout(() => {
     b.el.remove(); ban.remove();
     if (!G) return;
     if (isOver()) endGame(G.teams.some(playable) ? 'lives' : 'words');
     else { nextTeam(); renderBoard(); turnCard(); }
-  }, 1300);
+  }, b.item.answer ? 2200 : 1300);
 }
 
-const playable = t => !t.out && t.deck.length > 0;
-const aliveCount = () => G.teams.filter(t => !t.out).length;
-function isOver(){
+const playable = tm => !tm.out && tm.deck.length > 0;
+const aliveCount = () => G.teams.filter(tm => !tm.out).length;
+function isOver() {
   if (!G.teams.some(playable)) return true;
+  if (!G.lives) return false;                       // no elimination: play until the words run out
   return G.solo ? aliveCount() === 0 : aliveCount() <= 1;
 }
-function nextTeam(){
+function nextTeam() {
   const n = G.teams.length;
   for (let k = 1; k <= n; k++) { const i = (G.active + k) % n; if (playable(G.teams[i])) { G.active = i; return; } }
 }
-function teamFinished(){
+function teamFinished() {
   G.state = 'miss';
-  const t = G.teams[G.active];
+  const tm = G.teams[G.active];
   const ban = document.createElement('div'); ban.className = 'banner'; ban.style.background = 'var(--good)';
-  ban.textContent = t.name + ' finished all their words!';
-  field.appendChild(ban); beep('go');
+  ban.textContent = t('wd.finished', { name: tm.name });
+  field.appendChild(ban); Kit.beep('go');
   setTimeout(() => {
     ban.remove(); if (!G) return;
     if (isOver()) endGame('words'); else { nextTeam(); renderBoard(); turnCard(); }
   }, 1300);
 }
-function clearBlocks(){ field.querySelectorAll('.block,.plus1,.banner').forEach(n => n.remove()); }
+function clearBlocks() { field.querySelectorAll('.block,.plus1,.banner').forEach(n => n.remove()); }
 
-function endGame(reason){
-  G.state = 'over'; clearBlocks();
-  // passed words the receiving team never got to play also count as unanswered
-  G.teams.forEach(t => t.deck.forEach(w => { if (G.passed.has(w) && !G.failed.includes(w)) G.failed.push(w); })); G.blocks = []; renderBoard();
-  const ranked = G.teams.map((t, i) => ({...t, i})).sort((a, b) => (a.out - b.out) || (b.score - a.score) || (b.lives - a.lives));
+function endGame(reason) {
+  G.state = 'over';
+  // words still on screen go back to their team, so they are listed as not played
+  G.blocks.forEach(b => G.teams[G.active].deck.unshift(b.item)); G.blocks = [];
+  clearBlocks();
+  // passed words the receiving team never got to play count as unanswered; the rest were never played
+  const notPlayed = [];
+  G.teams.forEach(tm => tm.deck.forEach(it => {
+    if (G.passed.has(it.prompt)) { if (!G.failed.includes(it)) G.failed.push(it); } else notPlayed.push(it);
+  }));
+  renderBoard();
+  const ranked = G.teams.map((tm, i) => ({ ...tm, i })).sort((a, b) => (G.lives ? a.out - b.out : 0) || (b.score - a.score) || (b.lives - a.lives));
   let title, sub;
-  if (G.solo) {
-    const t = G.teams[0];
-    title = t.score + (t.score === 1 ? ' word' : ' words');
-    sub = reason === 'words' ? `${esc(t.name)} cleared the whole list!` : `${esc(t.name)}'s score`;
+  if (reason === 'ended') { title = t('gameEnded'); sub = G.solo ? t('wd.score', { name: G.teams[0].name }) + ': ' + G.teams[0].score : t('endedEarly'); }
+  else if (G.solo) {
+    const tm = G.teams[0];
+    title = t('wd.wordsN', { n: tm.score });
+    sub = reason === 'words' ? t('wd.cleared', { name: tm.name }) : t('wd.score', { name: tm.name });
   } else {
-    const top = ranked[0], tie = ranked[1] && !ranked[1].out === !top.out && ranked[1].score === top.score && ranked[1].lives === top.lives;
-    title = tie ? 'It’s a tie!' : esc(top.name) + ' wins!';
-    sub = reason === 'words' ? 'Every team used its words' : reason === 'ended' ? 'Game ended early' : 'Last team standing';
+    const top = ranked[0], two = ranked[1];
+    const tie = two && (!G.lives || !two.out === !top.out) && two.score === top.score && two.lives === top.lives;
+    title = tie ? t('tie') : t('wins', { name: top.name });
+    sub = reason === 'words' ? t('wd.allUsed') : t('wd.lastStanding');
   }
-  const rows = G.solo ? '' : `<table class="results"><thead><tr><th>Team</th><th class="num">Points</th><th class="num">Lives</th></tr></thead><tbody>${
-    ranked.map((t, k) => `<tr class="${k === 0 ? 'win' : ''}"><td>${esc(t.name)}</td><td class="num">${t.score}</td><td class="num">${t.lives}</td></tr>`).join('')}</tbody></table>`;
+  const rows = G.solo ? '' : `<table class="results"><thead><tr><th>${esc(t('team'))}</th><th class="num">${esc(t('points'))}</th>${G.lives ? `<th class="num">${esc(t('lives'))}</th>` : ''}</tr></thead><tbody>${
+    ranked.map((tm, k) => `<tr class="${k === 0 && reason !== 'ended' ? 'win' : ''}"><td>${esc(tm.name)}</td><td class="num">${tm.score}</td>${G.lives ? `<td class="num">${tm.lives}</td>` : ''}</tr>`).join('')}</tbody></table>`;
+  const list = (items, cls) => `<div class="review-words">${items.map(it => `<span class="${cls || ''}">${withAnswer(it)}</span>`).join('')}</div>`;
   const failed = G.failed.length
-    ? `<div class="review"><span class="eyebrow">Nobody answered · ${G.failed.length}</span><p class="hint">Go over these with the class.</p><div class="review-words">${G.failed.map(w => `<span>${esc(w)}</span>`).join('')}</div></div>`
-    : `<div class="review"><span class="eyebrow">Nobody answered</span><p class="hint">Every word was answered by someone.</p></div>`;
+    ? `<div class="review"><span class="eyebrow">${esc(t('wd.nobody'))} · ${G.failed.length}</span><p class="hint">${esc(t('wd.goOver'))}</p>${list(G.failed)}</div>`
+    : `<div class="review"><span class="eyebrow">${esc(t('wd.nobody'))}</span><p class="hint">${esc(t('wd.everyAnswered'))}</p></div>`;
+  const unplayed = notPlayed.length
+    ? `<div class="review"><span class="eyebrow">${esc(t('wd.notPlayed'))} · ${notPlayed.length}</span><p class="hint">${esc(t('wd.notPlayedHint'))}</p>${list(notPlayed, 'stolen')}</div>` : '';
   const stolen = G.stolen.length
-    ? `<div class="review"><span class="eyebrow">Answered on the bonus · ${G.stolen.length}</span><div class="review-words">${G.stolen.map(x => `<span class="stolen">${esc(x.word)} <small>${esc(x.by)}</small></span>`).join('')}</div></div>` : '';
-  const review = failed + stolen;
+    ? `<div class="review"><span class="eyebrow">${esc(t('wd.onBonus'))} · ${G.stolen.length}</span><div class="review-words">${G.stolen.map(x => `<span class="stolen">${withAnswer(x.item)} <small>${esc(x.by)}</small></span>`).join('')}</div></div>` : '';
   openOverlay(`
-    <span class="eyebrow">${sub}</span>
-    <h2>${title}</h2>
-    ${rows}${review}
+    <span class="eyebrow">${esc(sub)}</span>
+    <h2>${esc(title)}</h2>
+    ${rows}${failed}${unplayed}${stolen}
     <div class="card-actions">
-      <button class="btn btn-primary" data-act="again" data-focus type="button">Play again</button>
-      <button class="btn btn-ghost" data-act="settings" type="button">Change settings</button>
-      <button class="btn btn-ghost" data-act="hub" type="button">All games</button>
+      <button class="btn btn-primary" data-act="again" data-focus type="button">${esc(t('playAgain'))}</button>
+      <button class="btn btn-ghost" data-act="settings" type="button">${esc(t('changeSettings'))}</button>
+      <button class="btn btn-ghost" data-act="hub" type="button">${esc(t('allGames').replace('← ', ''))}</button>
     </div>`);
-  releaseWake();
+  Kit.wake.off();
 }
 
 let last = 0;
-function frame(t){
-  const dt = Math.min(.05, (t - last) / 1000 || 0); last = t;
+function frame(now) {
+  const dt = Math.min(.1, (now - last) / 1000 || 0); last = now;
   if (G && G.state === 'play') {
     G.since += dt;
     const deck = G.teams[G.active].deck;
@@ -311,5 +312,5 @@ function frame(t){
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
-document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); else if (G && G.state !== 'over' && !views.game.hidden) requestWake(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); else if (G && G.state !== 'over' && !views.game.hidden) Kit.wake.on(); });
 })();

@@ -1,0 +1,74 @@
+{
+  "$schema": "../../tools/game.schema.json",
+  "id": "stealth-squad",
+  "order": 70,
+  "status": "experimental",
+  "name": {
+    "en": "Stealth Squad",
+    "es": "Escuadrón sigiloso"
+  },
+  "summary": {
+    "en": "A co-op stealth game on phones: sneak past robots, switch off the radio, reach the boat. Each role sees or does something the others can't.",
+    "es": "Un juego cooperativo de sigilo con móviles: pasar sin que los robots los vean, apagar la radio y llegar al barco. Cada rol ve o hace algo que los demás no pueden."
+  },
+  "entry": "CLAUDE.md",
+  "docs": "docs/DEPLOY.md",
+  "ages": [
+    10,
+    99
+  ],
+  "levels": [
+    "A2",
+    "B1",
+    "B2"
+  ],
+  "players": {
+    "min": 2,
+    "max": 6,
+    "grouping": "co-op"
+  },
+  "skills": [
+    "speaking",
+    "listening",
+    "cooperation"
+  ],
+  "minutes": [
+    15,
+    40
+  ],
+  "setupMinutes": 5,
+  "devices": {
+    "teacher": [
+      "laptop"
+    ],
+    "students": "required"
+  },
+  "needs": {
+    "server": "node",
+    "keyboard": false
+  },
+  "start": "cd Commands/stealth-squad && npm install && npm run dev",
+  "offline": false,
+  "uiLanguages": [
+    "en"
+  ],
+  "contentTypes": [],
+  "tags": {
+    "en": [
+      "Speaking",
+      "Co-op",
+      "Phones",
+      "Up to 6"
+    ],
+    "es": [
+      "Hablar",
+      "Cooperativo",
+      "Móviles",
+      "Hasta 6"
+    ]
+  },
+  "authors": [
+    "Classroom Games contributors"
+  ],
+  "license": "MIT"
+}

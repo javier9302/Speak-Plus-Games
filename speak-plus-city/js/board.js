@@ -225,7 +225,7 @@ function renderWelcome() {
       <div class="welcome-code">${esc(NET.code)}</div><div class="welcome-url">${esc(NET.joinUrl)}</div></div></div>
       ${NET.joined && NET.joined.length ? `<div class="welcome-joined">📱 ${NET.joined.map(n => `<span>${esc(n)}</span>`).join('')}</div>` : ''}` : '';
   patch(boardEl, `<div class="welcome"><div class="logo logo-xl">speak<svg><use href="#plus"/></svg></div>
-    <h1>Speak Plus City</h1>${join}<p>${connected() ? 'The teacher is setting up the game…' : 'Open the teacher window to start: <b>teacher.html</b>'}</p></div>`);
+    <h1>${esc(window.SPC_NAME || 'Talk City')}</h1>${join}<p>${connected() ? 'The teacher is setting up the game…' : 'Open the teacher window to start: <b>teacher.html</b>'}</p></div>`);
   patch($('#side-status'), '');
   patch($('#side-players'), '');
 }

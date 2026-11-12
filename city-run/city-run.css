@@ -83,7 +83,7 @@
 .cr-code.top{bottom:auto;top:18px}
 .cr-q{font-weight:700;font-size:clamp(18px,2.4vw,30px);text-align:center;text-wrap:balance}
 .cr-letters{display:flex;gap:6px}
-.cr-letters span{width:1.5em;height:1.7em;font-size:clamp(26px,3.6vw,48px);font-weight:700;border-radius:10px;background:var(--bg);border:2px solid var(--line);display:inline-flex;align-items:center;justify-content:center}
+.cr-letters span{text-transform:uppercase;width:1.5em;height:1.7em;font-size:clamp(26px,3.6vw,48px);font-weight:700;border-radius:10px;background:var(--bg);border:2px solid var(--line);display:inline-flex;align-items:center;justify-content:center}
 .cr-letters span.ok{background:var(--good);border-color:var(--good);color:#fff}
 .cr-letters span.next{border-color:var(--fg)}
 
@@ -95,3 +95,13 @@
   .cr-pad{flex:1 1 100%}
 }
 @media (prefers-reduced-motion:reduce){#cr-car{transition:none}.cr-car-body.bump{animation-duration:.01s}.cr-light.warn rect,.cr-light.warn circle{animation:none}}
+
+/* Useful language during play, and typing at a door on a tablet */
+.cr-phrases{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:4px 6px;font-size:clamp(14px,1.4vw,18px);font-weight:500}
+.cr-phrases li{padding:2px 8px;border-radius:8px;background:var(--bg);border:1px solid var(--line)}
+.cr-type{width:min(320px,80vw);min-height:48px;border-radius:12px;border:2px solid var(--line);background:var(--bg);color:var(--fg);font-size:22px;font-weight:700;text-align:center;text-transform:uppercase}
+.cr-code-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.cr-code .btn{min-height:44px;font-size:14px;padding:0 16px}
+.cr-watch{margin:0;font-size:clamp(15px,1.6vw,18px);color:var(--muted);text-wrap:balance}
+#cr-places,#cr-quiz,#cr-phrases{font-size:15px;line-height:1.6}
+@media (max-height:640px){.cr-say{display:none}}

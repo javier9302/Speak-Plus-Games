@@ -1,0 +1,89 @@
+{
+  "$schema": "../tools/game.schema.json",
+  "id": "speak-plus-city",
+  "order": 40,
+  "status": "stable",
+  "name": {
+    "en": "Talk City",
+    "es": "Ciudad parlante"
+  },
+  "brandNames": {
+    "speakplus": {
+      "en": "Speak Plus City",
+      "es": "Speak Plus City"
+    }
+  },
+  "summary": {
+    "en": "A board game where every move is a sentence. Students buy, trade, bid and negotiate with the bank (you). Board on the projector, bank on your laptop.",
+    "es": "Un juego de tablero donde cada jugada es una frase. Los estudiantes compran, negocian y pujan con el banco (tú). Tablero en el proyector, banco en tu portátil."
+  },
+  "entry": "index.html",
+  "links": [
+    {
+      "label": {
+        "en": "Content editor",
+        "es": "Editor de contenido"
+      },
+      "href": "editor.html"
+    }
+  ],
+  "ages": [
+    11,
+    99
+  ],
+  "levels": [
+    "A1",
+    "A2",
+    "B1",
+    "B2"
+  ],
+  "players": {
+    "min": 2,
+    "max": 6,
+    "grouping": "individual"
+  },
+  "skills": [
+    "speaking",
+    "negotiation",
+    "numbers"
+  ],
+  "minutes": [
+    45,
+    120
+  ],
+  "setupMinutes": 5,
+  "devices": {
+    "teacher": [
+      "laptop"
+    ],
+    "students": "optional"
+  },
+  "needs": {
+    "server": "static",
+    "keyboard": false
+  },
+  "offline": true,
+  "uiLanguages": [
+    "en"
+  ],
+  "contentTypes": [],
+  "docs": "README.md",
+  "tags": {
+    "en": [
+      "Speaking",
+      "Negotiation",
+      "2 to 6 players",
+      "Mixed levels"
+    ],
+    "es": [
+      "Hablar",
+      "Negociar",
+      "2 a 6 jugadores",
+      "Niveles mezclados"
+    ]
+  },
+  "authors": [
+    "Classroom Games contributors"
+  ],
+  "license": "MIT"
+}

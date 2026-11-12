@@ -1,0 +1,8 @@
+<svg viewBox="0 0 320 190" xmlns="http://www.w3.org/2000/svg">
+  <path class="f-yellow" style="opacity:.55" d="M196 92 310 40v104z"/>
+  <rect class="f-muted" x="168" y="74" width="34" height="36" rx="6"/><rect class="f-surface" x="174" y="82" width="22" height="10" rx="3"/><circle class="f-accent" cx="190" cy="87" r="3.5"/>
+  <rect class="f-muted" x="172" y="110" width="8" height="18" rx="3"/><rect class="f-muted" x="190" y="110" width="8" height="18" rx="3"/>
+  <g class="f-good"><circle cx="64" cy="130" r="22"/><circle cx="92" cy="138" r="18"/></g>
+  <g class="f-primary"><circle cx="78" cy="112" r="8"/><rect x="71" y="119" width="14" height="16" rx="4"/></g>
+  <path class="s-sky nofill round dash" stroke-width="4" d="M100 120q30-30 60-26"/>
+</svg>

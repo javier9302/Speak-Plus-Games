@@ -1,0 +1,7 @@
+<svg viewBox="0 0 320 190" xmlns="http://www.w3.org/2000/svg">
+  <path class="s-road nofill" stroke-width="26" d="M0 50H320M0 140H320M60 0V190M160 0V190M260 0V190"/>
+  <path class="s-accent nofill round dash" stroke-width="5" d="M60 140H160V50H260"/>
+  <circle class="f-road s-fg" stroke-width="4" cx="60" cy="140" r="15"/><text class="f-fg t-mid" x="60" y="146">A</text>
+  <circle class="f-accent" cx="260" cy="50" r="15"/><text class="f-white t-mid" x="260" y="56">B</text>
+  <g transform="translate(160 96)"><circle class="f-primary s-field" stroke-width="3" r="16"/><path class="f-primary-fg" d="M0-9 8 6 0 2-8 6Z"/></g>
+</svg>

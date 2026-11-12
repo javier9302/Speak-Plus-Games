@@ -1,0 +1,81 @@
+{
+  "$schema": "../tools/game.schema.json",
+  "id": "trade-gate",
+  "order": 30,
+  "status": "stable",
+  "name": {
+    "en": "Trade Gate",
+    "es": "La puerta del trueque"
+  },
+  "summary": {
+    "en": "Nobody can finish alone. Players meet at a gate, answer a question out loud, and you give them the code that lets them trade and escape together.",
+    "es": "Nadie puede terminar solo. Los jugadores se encuentran en una puerta, responden una pregunta en voz alta y tú les das el código para intercambiar y escapar juntos."
+  },
+  "entry": "index.html",
+  "links": [
+    {
+      "label": {
+        "en": "Teacher sheet",
+        "es": "Hoja del profesor"
+      },
+      "href": "teacher-sheet.html"
+    }
+  ],
+  "ages": [
+    9,
+    99
+  ],
+  "levels": [
+    "A2",
+    "B1",
+    "B2"
+  ],
+  "players": {
+    "min": 2,
+    "max": 4,
+    "grouping": "co-op"
+  },
+  "skills": [
+    "speaking",
+    "cooperation"
+  ],
+  "minutes": [
+    15,
+    30
+  ],
+  "setupMinutes": 3,
+  "devices": {
+    "teacher": [
+      "laptop"
+    ],
+    "students": "none"
+  },
+  "needs": {
+    "server": "static",
+    "keyboard": true,
+    "controllers": "optional"
+  },
+  "offline": true,
+  "uiLanguages": [
+    "en"
+  ],
+  "contentTypes": [],
+  "tags": {
+    "en": [
+      "Speaking",
+      "Co-op",
+      "2 to 4 players",
+      "Keyboard or controllers"
+    ],
+    "es": [
+      "Hablar",
+      "Cooperativo",
+      "2 a 4 jugadores",
+      "Teclado o mandos"
+    ]
+  },
+  "authors": [
+    "Classroom Games contributors"
+  ],
+  "license": "MIT"
+}

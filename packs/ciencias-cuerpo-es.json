@@ -1,0 +1,60 @@
+{
+  "id": "ciencias-cuerpo-es",
+  "type": "word-list",
+  "title": "Ciencias: el cuerpo humano",
+  "language": "es",
+  "subject": "Ciencias naturales",
+  "levels": [
+    "A1",
+    "A2"
+  ],
+  "ages": [
+    8,
+    14
+  ],
+  "author": "Classroom Games contributors",
+  "license": "CC-BY-4.0",
+  "description": "Para clases de ciencias en español: di para qué sirve cada parte.",
+  "items": [
+    {
+      "prompt": "corazón",
+      "answer": "bombea la sangre"
+    },
+    {
+      "prompt": "pulmones",
+      "answer": "toman el aire al respirar"
+    },
+    {
+      "prompt": "cerebro",
+      "answer": "controla el cuerpo y nos ayuda a pensar"
+    },
+    {
+      "prompt": "estómago",
+      "answer": "deshace la comida"
+    },
+    {
+      "prompt": "huesos",
+      "answer": "sostienen el cuerpo"
+    },
+    {
+      "prompt": "músculos",
+      "answer": "mueven los huesos"
+    },
+    {
+      "prompt": "piel",
+      "answer": "cubre y protege el cuerpo"
+    },
+    {
+      "prompt": "riñones",
+      "answer": "limpian la sangre"
+    },
+    {
+      "prompt": "dientes",
+      "answer": "cortan y mastican la comida"
+    },
+    {
+      "prompt": "sangre",
+      "answer": "lleva el oxígeno"
+    }
+  ]
+}

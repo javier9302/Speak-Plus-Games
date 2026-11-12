@@ -1,22 +1,38 @@
 /* Speak Plus City — brand tokens and shared pieces (start page, board, teacher, editor).
    The folder is self-contained, so the brand tokens from ../shared/styles.css are repeated here. */
+/* Lexend, self-hosted (SIL Open Font License, ../fonts/OFL-Lexend.txt): no requests to Google, works offline */
+@font-face{font-family:'Lexend';font-style:normal;font-display:swap;font-weight:100 900;src:url(../fonts/lexend-latin-wght-normal.woff2) format('woff2-variations'),url(../fonts/lexend-latin-wght-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Lexend';font-style:normal;font-display:swap;font-weight:100 900;src:url(../fonts/lexend-latin-ext-wght-normal.woff2) format('woff2-variations'),url(../fonts/lexend-latin-ext-wght-normal.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
 [hidden]{display:none!important}
 *{box-sizing:border-box}
 body{margin:0}
 :root{
-  --washi:#F7F4EE; --indigo:#1F2F5C; --vermilion:#E8483B; --sky:#9DB4E0;
-  --bg:#F7F4EE; --surface:#FFFFFF; --fg:#1F2F5C; --muted:#4A5578; --line:#E4DFD4;
-  --primary:#1F2F5C; --primary-fg:#F7F4EE; --accent:#E8483B; --accent-soft:#FBE3E0;
-  --field:#EFEBE2; --good:#2E7D5B; --good-soft:#DDF0E6; --gold:#E3A21A;
-  --f-display:'Lexend','Zen Kaku Gothic New',system-ui,sans-serif;
-  --f-jp:'Zen Kaku Gothic New','Lexend','Hiragino Sans','Yu Gothic',sans-serif;
+  --bg:#F6F6F2; --surface:#FFFFFF; --fg:#1C2B33; --muted:#4E5D66; --line:#DCE1E3; --sky:#7FB7D1;
+  --primary:#0E6363; --primary-fg:#FFFFFF; --accent:#C2410C; --accent-soft:#FBE4D6;
+  --field:#ECEFEC; --good:#2E7D5B; --good-soft:#DDF0E6; --gold:#E3A21A;
+  --f-display:'Lexend','Hiragino Sans','Yu Gothic','Noto Sans JP',system-ui,sans-serif;
+  --f-jp:'Lexend','Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif;
   --r:14px;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F1A1F; --surface:#17262D; --fg:#EEF3F2; --muted:#A6B7BA; --line:#2A3D44;
+  --primary:#7FDBD2; --primary-fg:#0F1A1F; --accent:#FB8A4C; --accent-soft:#3D2418;
+  --field:#13222A; --good:#5CC496; --good-soft:#1C3B33; --gold:#F2BE4A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1A1F; --surface:#17262D; --fg:#EEF3F2; --muted:#A6B7BA; --line:#2A3D44;
+  --primary:#7FDBD2; --primary-fg:#0F1A1F; --accent:#FB8A4C; --accent-soft:#3D2418;
+  --field:#13222A; --good:#5CC496; --good-soft:#1C3B33; --gold:#F2BE4A; color-scheme:dark}
+/* Speak Plus brand (js/brand.js sets data-brand="speakplus") */
+:root[data-brand="speakplus"]{
+  --washi:#F7F4EE; --indigo:#1F2F5C; --vermilion:#E8483B; --sky:#9DB4E0;
+  --bg:#F7F4EE; --surface:#FFFFFF; --fg:#1F2F5C; --muted:#4A5578; --line:#E4DFD4;
+  --primary:#1F2F5C; --primary-fg:#F7F4EE; --accent:#E8483B; --accent-soft:#FBE3E0;
+  --field:#EFEBE2; --good:#2E7D5B; --good-soft:#DDF0E6; --gold:#E3A21A}
+@media (prefers-color-scheme: dark){:root[data-brand="speakplus"]:not([data-theme="light"]){
   --bg:#101830; --surface:#1A2546; --fg:#F7F4EE; --muted:#AEB8D3; --line:#2C3A63;
   --primary:#F7F4EE; --primary-fg:#1F2F5C; --accent:#F0625A; --accent-soft:#3A2333;
   --field:#141E3B; --good:#5CC496; --good-soft:#1C3B33; --gold:#F2BE4A; color-scheme:dark}}
-:root[data-theme="dark"]{
+:root[data-brand="speakplus"][data-theme="dark"]{
   --bg:#101830; --surface:#1A2546; --fg:#F7F4EE; --muted:#AEB8D3; --line:#2C3A63;
   --primary:#F7F4EE; --primary-fg:#1F2F5C; --accent:#F0625A; --accent-soft:#3A2333;
   --field:#141E3B; --good:#5CC496; --good-soft:#1C3B33; --gold:#F2BE4A; color-scheme:dark}
@@ -35,6 +51,9 @@ a{color:inherit}
 /* Logo "Exponente" */
 .logo{display:inline-flex;align-items:flex-start;font-weight:700;letter-spacing:-.04em;line-height:1;color:var(--fg);font-size:24px}
 .logo svg{width:.62em;height:.62em;flex:none}
+.logo-neutral{align-items:center;gap:.3em;letter-spacing:-.03em}
+.logo-neutral .logo-mark{width:1.15em;height:1.15em}
+.logo-neutral b{color:var(--primary);font-weight:700}
 .logo-xl{font-size:clamp(48px,8vw,96px)}
 .logo-jp{font-family:var(--f-jp);font-weight:700;font-size:10px;letter-spacing:.42em;color:var(--fg);margin-top:4px}
 .brand{display:flex;flex-direction:column}

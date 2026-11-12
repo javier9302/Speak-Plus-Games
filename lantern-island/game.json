@@ -1,0 +1,77 @@
+{
+  "$schema": "../tools/game.schema.json",
+  "id": "lantern-island",
+  "order": 60,
+  "status": "stable",
+  "name": {
+    "en": "Lantern Island",
+    "es": "Isla de los faroles"
+  },
+  "summary": {
+    "en": "A co-op adventure on a pixel island. Students join from their phones; each has abilities the others need, so nothing happens without talking.",
+    "es": "Una aventura cooperativa en una isla pixelada. Los estudiantes entran con el móvil; cada uno tiene habilidades que los demás necesitan, así que nada pasa sin hablar."
+  },
+  "entry": "README.md",
+  "docs": "README.md",
+  "ages": [
+    10,
+    99
+  ],
+  "levels": [
+    "A1",
+    "A2",
+    "B1",
+    "B2",
+    "C1"
+  ],
+  "players": {
+    "min": 2,
+    "max": 24,
+    "grouping": "co-op"
+  },
+  "skills": [
+    "speaking",
+    "listening",
+    "reading",
+    "cooperation"
+  ],
+  "minutes": [
+    20,
+    45
+  ],
+  "setupMinutes": 5,
+  "devices": {
+    "teacher": [
+      "laptop"
+    ],
+    "students": "required"
+  },
+  "needs": {
+    "server": "node",
+    "keyboard": false
+  },
+  "start": "cd lantern-island && npm install && npm start",
+  "offline": false,
+  "uiLanguages": [
+    "en"
+  ],
+  "contentTypes": [],
+  "tags": {
+    "en": [
+      "Speaking",
+      "Co-op",
+      "Phones",
+      "2 to 6 per team"
+    ],
+    "es": [
+      "Hablar",
+      "Cooperativo",
+      "Móviles",
+      "2 a 6 por equipo"
+    ]
+  },
+  "authors": [
+    "Classroom Games contributors"
+  ],
+  "license": "MIT"
+}

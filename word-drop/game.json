@@ -1,0 +1,76 @@
+{
+  "$schema": "../tools/game.schema.json",
+  "id": "word-drop",
+  "order": 10,
+  "status": "stable",
+  "name": {
+    "en": "Word Drop",
+    "es": "Lluvia de palabras"
+  },
+  "summary": {
+    "en": "Words fall from the top. Students answer out loud, you tap the word, it disappears. Let one hit the floor and the team loses a life.",
+    "es": "Las palabras caen. Los estudiantes responden en voz alta, tú tocas la palabra y desaparece. Si una toca el suelo, el equipo pierde una vida."
+  },
+  "entry": "index.html",
+  "ages": [
+    6,
+    99
+  ],
+  "levels": [
+    "pre-A1",
+    "A1",
+    "A2",
+    "B1",
+    "B2",
+    "C1"
+  ],
+  "players": {
+    "min": 1,
+    "max": 60,
+    "grouping": "teams"
+  },
+  "skills": [
+    "vocabulary",
+    "speaking"
+  ],
+  "minutes": [
+    5,
+    15
+  ],
+  "setupMinutes": 1,
+  "devices": {
+    "teacher": [
+      "laptop",
+      "tablet"
+    ],
+    "students": "none"
+  },
+  "needs": {
+    "server": "none",
+    "keyboard": false
+  },
+  "offline": true,
+  "uiLanguages": [
+    "en",
+    "es"
+  ],
+  "contentTypes": [
+    "word-list"
+  ],
+  "tags": {
+    "en": [
+      "Vocabulary",
+      "Teams",
+      "Any subject"
+    ],
+    "es": [
+      "Vocabulario",
+      "Equipos",
+      "Cualquier materia"
+    ]
+  },
+  "authors": [
+    "Classroom Games contributors"
+  ],
+  "license": "MIT"
+}

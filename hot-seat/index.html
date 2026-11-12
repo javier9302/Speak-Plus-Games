@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hot Seat</title>
+<!-- Every static game loads the same four shared files first, then its own strings. -->
+<script src="../shared/config.js"></script>
+<script src="../shared/kit.js"></script>
+<script src="../shared/strings.js"></script>
+<script src="../shared/registry.js"></script>
+<script src="strings.js"></script>
+<link rel="stylesheet" href="../shared/fonts.css">
+<link rel="stylesheet" href="../shared/styles.css">
+<link rel="stylesheet" href="hot-seat.css">
+<link rel="manifest" href="../manifest.webmanifest">
+</head>
+<body>
+
+<!-- SETUP: content on the left, class and options on the right -->
+<section id="view-setup">
+  <div class="wrap">
+    <div class="row-between"><a class="link-back" href="../index.html" data-i18n="allGames">← All games</a><span data-lang-switch></span></div>
+    <div class="setup-head">
+      <div><span class="eyebrow" data-i18n="gameSetup">Game setup</span><h1 data-i18n="hs.title">Hot Seat</h1></div>
+      <div data-logo></div>
+    </div>
+    <div class="setup">
+      <div class="panel">
+        <div class="field-group">
+          <span class="legend" data-i18n="hs.how">How it works</span>
+          <p class="hint" data-i18n="hs.howText"></p>
+        </div>
+        <div class="field-group">
+          <div class="row-between"><label for="words" data-i18n="hs.words">Words to describe</label><span class="count" id="word-count"></span></div>
+          <p class="hint" data-i18n="hs.wordsHint"></p>
+          <textarea id="words" spellcheck="false"></textarea>
+        </div>
+        <div id="content-tools"></div>
+        <fieldset id="side-row"><span class="legend" data-i18n="hs.side">The card shows</span><div class="seg" id="seg-side"></div></fieldset>
+      </div>
+      <div class="panel">
+        <div class="field-group">
+          <div class="row-between"><label for="teams" data-i18n="classList">Teams or students</label><span class="count" id="team-count"></span></div>
+          <p class="hint" data-i18n="hs.teamsHint"></p>
+          <textarea id="teams" spellcheck="false"></textarea>
+          <div id="roster"></div>
+        </div>
+        <fieldset><span class="legend" data-i18n="hs.turnTime">Time per turn</span><div class="seg" id="seg-time"></div></fieldset>
+        <fieldset><span class="legend" data-i18n="hs.turns">Turns per team</span><div class="seg" id="seg-turns"></div></fieldset>
+        <fieldset><span class="legend" data-i18n="hs.skips">Skips per turn</span><div class="seg" id="seg-skips"></div></fieldset>
+        <label class="switch"><input type="checkbox" id="sound"> <span data-i18n="soundEffects">Sound effects</span></label>
+        <div class="start-row">
+          <p class="error" id="setup-error" role="alert" hidden></p>
+          <button class="btn btn-primary btn-big" id="start" type="button" data-i18n="startGame">Start game</button>
+          <span class="keyhint" data-i18n-html="hs.keys"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- GAME: scoreboard, the word, the clock, three big buttons -->
+<section id="view-game" hidden>
+  <div class="bar">
+    <div data-logo></div>
+    <span class="progress" id="progress"></span>
+    <span class="spacer"></span>
+    <button class="icon-btn" id="btn-full" type="button" data-i18n-attr="aria-label:fullScreen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+    <button class="icon-btn" id="btn-pause" type="button" data-i18n-attr="aria-label:pause"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 5v14M15 5v14"/></svg></button>
+  </div>
+  <div class="board" id="board"></div>
+  <div class="hs-stage">
+    <div class="hs-clock"><i id="clock-bar"></i><span id="clock"></span></div>
+    <div class="hs-word" id="word"></div>
+    <p class="hs-seat" id="seat"></p>
+    <div class="hs-actions">
+      <button class="btn hs-got" id="got" type="button"><span data-i18n="hs.got">Got it</span> <kbd>→</kbd></button>
+      <button class="btn btn-ghost hs-skip" id="skip" type="button"></button>
+      <button class="btn btn-ghost hs-said" id="said" type="button"><span data-i18n="hs.said">Said the word</span> <kbd>X</kbd></button>
+    </div>
+    <div class="overlay" id="overlay" hidden><div class="card" id="card"></div></div>
+  </div>
+</section>
+
+<script src="hot-seat.js"></script>
+</body>
+</html>

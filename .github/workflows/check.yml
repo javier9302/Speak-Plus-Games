@@ -1,0 +1,58 @@
+name: Checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  hub:
+    name: Hub, static games and packs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: node tools/check.mjs
+      - run: node trade-gate/tests/run.mjs
+      - run: node dress-up-buddy/tests/test.mjs
+
+  speak-plus-city:
+    name: Talk City (Speak Plus City)
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: speak-plus-city } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm ci
+      - run: npm test
+
+  lantern-island:
+    name: Lantern Island
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults: { run: { working-directory: lantern-island } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm ci
+      - run: npm run check
+      - run: npm test
+
+  stealth-squad:
+    name: Stealth Squad
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: Commands/stealth-squad } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run check-level
+      - run: npm run build

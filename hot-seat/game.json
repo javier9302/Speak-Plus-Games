@@ -1,0 +1,77 @@
+{
+  "$schema": "../tools/game.schema.json",
+  "id": "hot-seat",
+  "order": 15,
+  "status": "experimental",
+  "template": true,
+  "name": {
+    "en": "Hot Seat",
+    "es": "Silla caliente"
+  },
+  "summary": {
+    "en": "One student sits with their back to the screen. The team describes the word without saying it. Everyone on the team talks on every turn.",
+    "es": "Un estudiante se sienta de espaldas a la pantalla. Su equipo describe la palabra sin decirla. Todo el equipo habla en cada turno."
+  },
+  "entry": "index.html",
+  "ages": [
+    8,
+    99
+  ],
+  "levels": [
+    "A1",
+    "A2",
+    "B1",
+    "B2",
+    "C1"
+  ],
+  "players": {
+    "min": 2,
+    "max": 60,
+    "grouping": "teams"
+  },
+  "skills": [
+    "speaking",
+    "vocabulary",
+    "listening"
+  ],
+  "minutes": [
+    5,
+    20
+  ],
+  "setupMinutes": 1,
+  "devices": {
+    "teacher": [
+      "laptop",
+      "tablet"
+    ],
+    "students": "none"
+  },
+  "needs": {
+    "server": "none",
+    "keyboard": false
+  },
+  "offline": true,
+  "uiLanguages": [
+    "en",
+    "es"
+  ],
+  "contentTypes": [
+    "word-list"
+  ],
+  "tags": {
+    "en": [
+      "Speaking",
+      "Describing",
+      "Teams"
+    ],
+    "es": [
+      "Hablar",
+      "Describir",
+      "Equipos"
+    ]
+  },
+  "authors": [
+    "Classroom Games contributors"
+  ],
+  "license": "MIT"
+}

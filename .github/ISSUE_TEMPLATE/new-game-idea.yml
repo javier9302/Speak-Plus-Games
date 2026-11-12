@@ -1,0 +1,21 @@
+name: New game or content pack idea
+description: Propose a game or a list before you build it, so others can help.
+labels: ["idea"]
+body:
+  - type: textarea
+    id: idea
+    attributes: { label: The idea, description: "What students do on the screen and out loud." }
+    validations: { required: true }
+  - type: input
+    id: who
+    attributes: { label: "For whom", placeholder: "Ages 8–12, A1–A2, whole class in teams" }
+  - type: input
+    id: subject
+    attributes: { label: "Subject and language", placeholder: "Science, in Spanish" }
+  - type: checkboxes
+    id: rules
+    attributes:
+      label: Fits the hub rules
+      options:
+        - label: Works without student devices (or I know it goes in the "advanced" section)
+        - label: Students talk, listen, read or write, not only click

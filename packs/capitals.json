@@ -1,0 +1,91 @@
+{
+  "id": "capitals",
+  "type": "word-list",
+  "title": "Countries → capitals",
+  "language": "en",
+  "subject": "Geography",
+  "levels": [
+    "A2",
+    "B1"
+  ],
+  "ages": [
+    9,
+    99
+  ],
+  "author": "Classroom Games contributors",
+  "license": "CC-BY-4.0",
+  "items": [
+    {
+      "prompt": "France",
+      "answer": "Paris"
+    },
+    {
+      "prompt": "Japan",
+      "answer": "Tokyo"
+    },
+    {
+      "prompt": "Brazil",
+      "answer": "Brasília"
+    },
+    {
+      "prompt": "Canada",
+      "answer": "Ottawa"
+    },
+    {
+      "prompt": "Australia",
+      "answer": "Canberra"
+    },
+    {
+      "prompt": "Egypt",
+      "answer": "Cairo"
+    },
+    {
+      "prompt": "Mexico",
+      "answer": "Mexico City"
+    },
+    {
+      "prompt": "Italy",
+      "answer": "Rome"
+    },
+    {
+      "prompt": "Kenya",
+      "answer": "Nairobi"
+    },
+    {
+      "prompt": "South Korea",
+      "answer": "Seoul"
+    },
+    {
+      "prompt": "Spain",
+      "answer": "Madrid"
+    },
+    {
+      "prompt": "Thailand",
+      "answer": "Bangkok"
+    },
+    {
+      "prompt": "Argentina",
+      "answer": "Buenos Aires"
+    },
+    {
+      "prompt": "Germany",
+      "answer": "Berlin"
+    },
+    {
+      "prompt": "India",
+      "answer": "New Delhi"
+    },
+    {
+      "prompt": "Peru",
+      "answer": "Lima"
+    },
+    {
+      "prompt": "Colombia",
+      "answer": "Bogotá"
+    },
+    {
+      "prompt": "Chile",
+      "answer": "Santiago"
+    }
+  ]
+}

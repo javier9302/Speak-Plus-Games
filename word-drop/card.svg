@@ -1,0 +1,6 @@
+<svg viewBox="0 0 320 190" xmlns="http://www.w3.org/2000/svg">
+  <g class="fall" style="animation-delay:0s"><rect class="f-block" x="40" y="0" width="86" height="40" rx="10"/><text class="f-block-fg t-mid" x="83" y="27">apple</text></g>
+  <g class="fall" style="animation-delay:-2s"><rect class="f-block" x="168" y="0" width="80" height="40" rx="10"/><text class="f-block-fg t-mid" x="208" y="27">hola</text></g>
+  <g class="fall" style="animation-delay:-4s"><rect class="f-block" x="104" y="0" width="56" height="40" rx="10"/><text class="f-block-fg t-mid" x="132" y="27">猫</text></g>
+  <rect class="f-accent" x="0" y="184" width="320" height="6"/>
+</svg>

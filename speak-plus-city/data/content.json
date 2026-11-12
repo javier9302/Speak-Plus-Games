@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "Speak Plus City",
+    "title": "Talk City",
     "currency": "$",
     "note": "All game texts live here. Edit them with editor.html (no code needed), or by hand. There must be exactly 48 squares; squares 0, 12, 24 and 36 are the corners."
   },
@@ -135,7 +135,7 @@
     { "level": "advanced", "text": "Argue for 30 seconds that homework should be banned. Then argue against it → collect $250.", "reward": 250, "fail": 0 },
     { "level": "advanced", "text": "Make a complaint to the hotel manager (the teacher) about your room → get $150 compensation.", "reward": 150, "fail": 0 },
     { "level": "advanced", "text": "Explain a Japanese custom so a foreigner really understands it → collect $200.", "reward": 200, "fail": 0 },
-    { "level": "advanced", "text": "You are a tour guide. Introduce Speak Plus City to a group of visitors for 30 seconds → collect $200.", "reward": 200, "fail": 0 },
+    { "level": "advanced", "text": "You are a tour guide. Introduce our city to a group of visitors for 30 seconds → collect $200.", "reward": 200, "fail": 0 },
     { "level": "advanced", "text": "Tax inspection! Justify all your spending in 30 seconds → pay $50 (or $150 if the bank isn't convinced).", "reward": -50, "fail": -150, "fund": true },
     { "level": "advanced", "text": "Describe your town 20 years in the future using \"will\" and \"might\" → collect $200.", "reward": 200, "fail": 0 },
     { "level": "advanced", "text": "Interview the player on your right for a job at your company. Ask at least four questions → collect $200.", "reward": 200, "fail": 0 },

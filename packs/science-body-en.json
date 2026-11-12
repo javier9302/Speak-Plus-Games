@@ -1,0 +1,60 @@
+{
+  "id": "science-body-en",
+  "type": "word-list",
+  "title": "Science: the human body",
+  "language": "en",
+  "subject": "Science",
+  "levels": [
+    "A2",
+    "B1"
+  ],
+  "ages": [
+    9,
+    99
+  ],
+  "author": "Classroom Games contributors",
+  "license": "CC-BY-4.0",
+  "description": "Say what each part does.",
+  "items": [
+    {
+      "prompt": "heart",
+      "answer": "pumps blood around the body"
+    },
+    {
+      "prompt": "lungs",
+      "answer": "take in air when we breathe"
+    },
+    {
+      "prompt": "brain",
+      "answer": "controls the body and helps us think"
+    },
+    {
+      "prompt": "stomach",
+      "answer": "breaks down food"
+    },
+    {
+      "prompt": "bones",
+      "answer": "hold the body up"
+    },
+    {
+      "prompt": "muscles",
+      "answer": "move the bones"
+    },
+    {
+      "prompt": "skin",
+      "answer": "covers and protects the body"
+    },
+    {
+      "prompt": "kidneys",
+      "answer": "clean the blood"
+    },
+    {
+      "prompt": "teeth",
+      "answer": "cut and chew food"
+    },
+    {
+      "prompt": "blood",
+      "answer": "carries oxygen"
+    }
+  ]
+}

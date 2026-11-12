@@ -1,4 +1,4 @@
-// Speak Plus City — game state and rules.
+// Talk City (Speak Plus City under the Speak Plus brand) — game state and rules.
 //
 // The teacher window owns the one true game state. Every change goes through
 // apply(state, action, ctx), which returns a NEW state (the old one is left
@@ -244,7 +244,7 @@ function createGame(prev, { players, settings }, ctx) {
   s.phase = 'play';
   s.timer = s.settings.gameMinutes > 0 ? { dur: s.settings.gameMinutes * 60000, startAt: ctx.now, pausedAt: null, paused: 0 } : null;
   log(s, `New game: ${s.players.map(p => p.name).join(', ')}.`, 'turn', ctx);
-  fx(s, { kind: 'announce', title: 'Welcome to Speak Plus City!', text: 'Buy, trade and talk your way to the top.', style: 'start' });
+  fx(s, { kind: 'announce', title: 'Welcome to the city!', text: 'Buy, trade and talk your way to the top.', style: 'start' });
   nextRule(s, ctx);
   startTurn(s, 0, ctx);
   return s;
@@ -1139,7 +1139,7 @@ export function tick(s, ctx) {
 // Markdown report of the session for feedback after class.
 export function sessionReport(s) {
   const d = new Date();
-  const lines = [`# Speak Plus City — ${d.toLocaleDateString('en-GB')}`, ''];
+  const lines = [`# ${(typeof window !== 'undefined' && window.SPC_NAME) || 'Talk City'} — ${d.toLocaleDateString('en-GB')}`, ''];
   lines.push('## Players', '');
   s.players.forEach((p, i) => {
     const w = worth(s, i);

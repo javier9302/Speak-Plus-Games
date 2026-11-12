@@ -1,0 +1,6 @@
+<svg viewBox="0 0 320 190" xmlns="http://www.w3.org/2000/svg">
+  <path class="f-accent s-fg round" stroke-width="5" d="M128 52h18q14 16 28 0h18l34 26-16 24-16-10v74h-96V92l-16 10-16-24z"/>
+  <path class="s-fg nofill round" stroke-width="4" d="M146 52q14 22 28 0"/>
+  <circle class="f-sky" cx="58" cy="60" r="12"/><circle class="f-primary" cx="58" cy="102" r="12"/><circle class="f-yellow" cx="58" cy="144" r="12"/>
+  <rect class="f-surface s-fg" stroke-width="3" x="236" y="40" width="70" height="36" rx="12"/><text class="f-fg t-mid" x="271" y="64">hat!</text>
+</svg>

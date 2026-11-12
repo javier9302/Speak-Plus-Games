@@ -1,0 +1,100 @@
+{
+  "id": "ja-en-basics",
+  "type": "word-list",
+  "title": "Japanese → English: everyday words",
+  "language": "en",
+  "promptLanguage": "ja",
+  "subject": "English",
+  "levels": [
+    "A2",
+    "B1"
+  ],
+  "ages": [
+    12,
+    99
+  ],
+  "author": "Classroom Games contributors",
+  "license": "CC-BY-4.0",
+  "items": [
+    {
+      "prompt": "必要",
+      "answer": "necessary"
+    },
+    {
+      "prompt": "約束",
+      "answer": "promise"
+    },
+    {
+      "prompt": "経験",
+      "answer": "experience"
+    },
+    {
+      "prompt": "天気",
+      "answer": "weather"
+    },
+    {
+      "prompt": "便利",
+      "answer": "convenient"
+    },
+    {
+      "prompt": "旅行",
+      "answer": "trip"
+    },
+    {
+      "prompt": "季節",
+      "answer": "season"
+    },
+    {
+      "prompt": "失敗",
+      "answer": "mistake"
+    },
+    {
+      "prompt": "友達",
+      "answer": "friend"
+    },
+    {
+      "prompt": "図書館",
+      "answer": "library"
+    },
+    {
+      "prompt": "自信",
+      "answer": "confidence"
+    },
+    {
+      "prompt": "準備",
+      "answer": "preparation"
+    },
+    {
+      "prompt": "会議",
+      "answer": "meeting"
+    },
+    {
+      "prompt": "説明",
+      "answer": "explanation"
+    },
+    {
+      "prompt": "興味",
+      "answer": "interest"
+    },
+    {
+      "prompt": "危険",
+      "answer": "danger"
+    },
+    {
+      "prompt": "練習",
+      "answer": "practice"
+    },
+    {
+      "prompt": "予約",
+      "answer": "reservation"
+    },
+    {
+      "prompt": "返事",
+      "answer": "reply"
+    },
+    {
+      "prompt": "安全",
+      "answer": "safety"
+    }
+  ]
+}

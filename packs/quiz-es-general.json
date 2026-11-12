@@ -1,0 +1,79 @@
+{
+  "id": "quiz-es-general",
+  "type": "questions",
+  "title": "Preguntas generales (español fácil)",
+  "language": "es",
+  "subject": "Español",
+  "levels": [
+    "A1",
+    "A2"
+  ],
+  "ages": [
+    6,
+    99
+  ],
+  "author": "Classroom Games contributors",
+  "license": "CC-BY-4.0",
+  "items": [
+    {
+      "prompt": "¿De qué color es un banano?",
+      "answer": "AMARILLO"
+    },
+    {
+      "prompt": "¿De qué color es el cielo?",
+      "answer": "AZUL"
+    },
+    {
+      "prompt": "¿De qué color es la nieve?",
+      "answer": "BLANCO"
+    },
+    {
+      "prompt": "¿Cuántos días tiene una semana?",
+      "answer": "SIETE"
+    },
+    {
+      "prompt": "¿Cuántos meses tiene un año?",
+      "answer": "DOCE"
+    },
+    {
+      "prompt": "¿Cuántas patas tiene una araña?",
+      "answer": "OCHO"
+    },
+    {
+      "prompt": "¿Cuánto es dos más dos?",
+      "answer": "CUATRO"
+    },
+    {
+      "prompt": "¿Qué animal dice “miau”?",
+      "answer": "GATO"
+    },
+    {
+      "prompt": "¿Qué animal dice “guau”?",
+      "answer": "PERRO"
+    },
+    {
+      "prompt": "¿Qué hacen las abejas?",
+      "answer": "MIEL"
+    },
+    {
+      "prompt": "¿Qué es lo contrario de caliente?",
+      "answer": "FRÍO"
+    },
+    {
+      "prompt": "¿Qué es lo contrario de día?",
+      "answer": "NOCHE"
+    },
+    {
+      "prompt": "¿Qué día va después del lunes?",
+      "answer": "MARTES"
+    },
+    {
+      "prompt": "¿Cuál es el primer mes del año?",
+      "answer": "ENERO"
+    },
+    {
+      "prompt": "¿Qué es el agua congelada?",
+      "answer": "HIELO"
+    }
+  ]
+}

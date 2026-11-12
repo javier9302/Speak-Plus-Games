@@ -1,0 +1,67 @@
+{
+  "id": "maths-times-tables",
+  "type": "word-list",
+  "title": "Maths: times tables 6–9",
+  "language": "en",
+  "subject": "Maths",
+  "levels": [
+    "A1"
+  ],
+  "ages": [
+    7,
+    12
+  ],
+  "author": "Classroom Games contributors",
+  "license": "CC-BY-4.0",
+  "description": "Say the answer as a full sentence: “Seven times eight is fifty-six.”",
+  "items": [
+    {
+      "prompt": "6 × 7",
+      "answer": "42"
+    },
+    {
+      "prompt": "7 × 8",
+      "answer": "56"
+    },
+    {
+      "prompt": "8 × 9",
+      "answer": "72"
+    },
+    {
+      "prompt": "6 × 9",
+      "answer": "54"
+    },
+    {
+      "prompt": "7 × 7",
+      "answer": "49"
+    },
+    {
+      "prompt": "9 × 9",
+      "answer": "81"
+    },
+    {
+      "prompt": "6 × 8",
+      "answer": "48"
+    },
+    {
+      "prompt": "8 × 8",
+      "answer": "64"
+    },
+    {
+      "prompt": "7 × 9",
+      "answer": "63"
+    },
+    {
+      "prompt": "6 × 6",
+      "answer": "36"
+    },
+    {
+      "prompt": "9 × 4",
+      "answer": "36"
+    },
+    {
+      "prompt": "8 × 3",
+      "answer": "24"
+    }
+  ]
+}

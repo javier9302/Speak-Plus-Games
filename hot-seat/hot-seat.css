@@ -1,0 +1,19 @@
+/* Hot Seat: one big word, a clock, and buttons the teacher can hit from across the room */
+#words{min-height:220px;font-size:17px;line-height:1.6}
+#teams{min-height:96px}
+.hs-stage{position:relative;flex:1;margin:0 16px 16px;border-radius:18px;background:var(--field);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(14px,3vh,32px);padding:24px;overflow:hidden}
+.hs-clock{position:absolute;left:0;right:0;top:0;height:clamp(36px,6vh,56px);background:var(--surface);border-bottom:1px solid var(--line)}
+.hs-clock i{position:absolute;left:0;top:0;bottom:0;background:var(--good);opacity:.25;transition:width .25s linear}
+.hs-clock.low i{background:var(--accent);opacity:.35}
+.hs-clock span{position:relative;display:flex;align-items:center;justify-content:center;height:100%;font-weight:700;font-size:clamp(22px,3.4vh,34px);font-variant-numeric:tabular-nums}
+.hs-word{font-family:var(--f-jp);font-weight:700;font-size:clamp(44px,10vw,140px);line-height:1.05;text-align:center;letter-spacing:-.02em;text-wrap:balance;overflow-wrap:anywhere;max-width:100%;margin-top:clamp(30px,5vh,50px)}
+.hs-word.long{font-size:clamp(32px,6vw,84px)}
+.hs-seat{margin:0;color:var(--muted);font-size:clamp(16px,2vw,24px);text-align:center}
+.hs-actions{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.hs-actions .btn{min-height:clamp(56px,9vh,84px);font-size:clamp(18px,2.2vw,26px);padding:0 clamp(20px,3vw,40px)}
+.hs-actions kbd{font-size:.6em;opacity:.7}
+.hs-got{background:var(--good);color:#fff}
+.hs-got:hover{filter:brightness(1.1)}
+.hs-word.pop{animation:hspop .25s ease-out}
+@keyframes hspop{from{transform:scale(.92);opacity:.3}}
+@media (prefers-reduced-motion:reduce){.hs-word.pop{animation:none}.hs-clock i{transition:none}}

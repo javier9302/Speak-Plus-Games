@@ -1,0 +1,99 @@
+{
+  "id": "en-everyday",
+  "type": "word-list",
+  "title": "Everyday things (say it in English)",
+  "language": "en",
+  "subject": "English",
+  "levels": [
+    "A1"
+  ],
+  "ages": [
+    6,
+    99
+  ],
+  "author": "Classroom Games contributors",
+  "license": "CC-BY-4.0",
+  "description": "Words to say, describe or use in a sentence. No answers needed.",
+  "items": [
+    {
+      "prompt": "apple",
+      "answer": ""
+    },
+    {
+      "prompt": "umbrella",
+      "answer": ""
+    },
+    {
+      "prompt": "bicycle",
+      "answer": ""
+    },
+    {
+      "prompt": "kitchen",
+      "answer": ""
+    },
+    {
+      "prompt": "teacher",
+      "answer": ""
+    },
+    {
+      "prompt": "homework",
+      "answer": ""
+    },
+    {
+      "prompt": "breakfast",
+      "answer": ""
+    },
+    {
+      "prompt": "weekend",
+      "answer": ""
+    },
+    {
+      "prompt": "birthday",
+      "answer": ""
+    },
+    {
+      "prompt": "hospital",
+      "answer": ""
+    },
+    {
+      "prompt": "rain",
+      "answer": ""
+    },
+    {
+      "prompt": "library",
+      "answer": ""
+    },
+    {
+      "prompt": "shoes",
+      "answer": ""
+    },
+    {
+      "prompt": "window",
+      "answer": ""
+    },
+    {
+      "prompt": "sandwich",
+      "answer": ""
+    },
+    {
+      "prompt": "holiday",
+      "answer": ""
+    },
+    {
+      "prompt": "phone",
+      "answer": ""
+    },
+    {
+      "prompt": "river",
+      "answer": ""
+    },
+    {
+      "prompt": "mountain",
+      "answer": ""
+    },
+    {
+      "prompt": "friend",
+      "answer": ""
+    }
+  ]
+}

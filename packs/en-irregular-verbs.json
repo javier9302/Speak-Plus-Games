@@ -1,0 +1,100 @@
+{
+  "id": "en-irregular-verbs",
+  "type": "word-list",
+  "title": "Irregular verbs: past simple",
+  "language": "en",
+  "subject": "English",
+  "levels": [
+    "A2",
+    "B1"
+  ],
+  "ages": [
+    10,
+    99
+  ],
+  "author": "Classroom Games contributors",
+  "license": "CC-BY-4.0",
+  "description": "Say the past form, or a sentence about yesterday with it.",
+  "items": [
+    {
+      "prompt": "go",
+      "answer": "went"
+    },
+    {
+      "prompt": "eat",
+      "answer": "ate"
+    },
+    {
+      "prompt": "see",
+      "answer": "saw"
+    },
+    {
+      "prompt": "buy",
+      "answer": "bought"
+    },
+    {
+      "prompt": "take",
+      "answer": "took"
+    },
+    {
+      "prompt": "write",
+      "answer": "wrote"
+    },
+    {
+      "prompt": "drink",
+      "answer": "drank"
+    },
+    {
+      "prompt": "come",
+      "answer": "came"
+    },
+    {
+      "prompt": "think",
+      "answer": "thought"
+    },
+    {
+      "prompt": "bring",
+      "answer": "brought"
+    },
+    {
+      "prompt": "teach",
+      "answer": "taught"
+    },
+    {
+      "prompt": "catch",
+      "answer": "caught"
+    },
+    {
+      "prompt": "speak",
+      "answer": "spoke"
+    },
+    {
+      "prompt": "leave",
+      "answer": "left"
+    },
+    {
+      "prompt": "meet",
+      "answer": "met"
+    },
+    {
+      "prompt": "sleep",
+      "answer": "slept"
+    },
+    {
+      "prompt": "swim",
+      "answer": "swam"
+    },
+    {
+      "prompt": "begin",
+      "answer": "began"
+    },
+    {
+      "prompt": "choose",
+      "answer": "chose"
+    },
+    {
+      "prompt": "forget",
+      "answer": "forgot"
+    }
+  ]
+}

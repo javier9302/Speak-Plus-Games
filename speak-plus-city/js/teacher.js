@@ -796,7 +796,7 @@ async function loadGame(file) {
     commit(normalize(s));
     toast(`Game loaded (saved ${new Date(data.savedAt).toLocaleString()}). The timer is paused: press Resume in the Game tab.`);
   } catch {
-    toast('That file is not a Speak Plus City game.', 'bad');
+    toast(`That file is not a ${window.SPC_NAME || 'Talk City'} game.`, 'bad');
   }
 }
 

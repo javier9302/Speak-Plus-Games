@@ -1,0 +1,36 @@
+// Hot Seat strings. Every text the game shows lives here, in English and Spanish.
+// Keys start with the game's prefix ("hs.") so they never clash with shared ones.
+Kit.addStrings({
+  en: {
+    'hs.title': 'Hot Seat', 'hs.how': 'How it works',
+    'hs.howText': 'One student sits in the hot seat with their back to the screen. Their team sees the word and describes it without saying it, spelling it or translating it. Every word guessed is a point. Then the next team plays.',
+    'hs.words': 'Words to describe', 'hs.wordsN': { one: '{n} word', other: '{n} words' },
+    'hs.wordsHint': 'One per line or separated by commas. Lists with answers (gato = cat) work too: choose which side the card shows.',
+    'hs.side': 'The card shows', 'hs.left': 'Left side', 'hs.right': 'Right side (the answer)',
+    'hs.teamsHint': 'Up to 8 teams. Put the members after a colon (Team A: Aiko, Ken, Mio) and the hot seat goes round them in turn.',
+    'hs.turnTime': 'Time per turn', 'hs.turns': 'Turns per team', 'hs.skips': 'Skips per turn', 'hs.unlimited': 'Any',
+    'hs.keys': '<kbd>→</kbd> or <kbd>Enter</kbd> got it · <kbd>S</kbd> skip · <kbd>X</kbd> said the word · <kbd>Space</kbd> pause',
+    'hs.errNoWords': 'Add at least 5 words.', 'hs.errNoTeams': 'Add at least one team or student name.', 'hs.errTooMany': 'Use {max} teams or fewer.',
+    'hs.progress': 'Turn {turn} of {turns}', 'hs.seat': '{name} is in the hot seat', 'hs.seatAny': 'Choose who sits in the hot seat',
+    'hs.cardIntro': 'Hot seat: back to the screen. Team: describe the word, don’t say it.', 'hs.got': 'Got it', 'hs.said': 'Said the word',
+    'hs.skip': 'Skip', 'hs.skipLeft': 'Skip ({n} left)', 'hs.noSkips': 'No skips', 'hs.timeUp': 'Time’s up!',
+    'hs.gotN': { one: '{n} word guessed', other: '{n} words guessed' }, 'hs.gotList': 'Guessed', 'hs.missedList': 'Skipped or said',
+    'hs.nextTeam': 'Next team', 'hs.seeResults': 'See results', 'hs.review': 'Words to go over', 'hs.reviewHint': 'Skipped or said by mistake. Describe them together.',
+  },
+  es: {
+    'hs.title': 'Silla caliente', 'hs.how': 'Cómo se juega',
+    'hs.howText': 'Un estudiante se sienta en la silla caliente de espaldas a la pantalla. Su equipo ve la palabra y la describe sin decirla, deletrearla ni traducirla. Cada palabra adivinada es un punto. Luego juega el siguiente equipo.',
+    'hs.words': 'Palabras para describir', 'hs.wordsN': { one: '{n} palabra', other: '{n} palabras' },
+    'hs.wordsHint': 'Una por línea o separadas por comas. También sirven listas con respuesta (cat = gato): elige qué lado muestra la tarjeta.',
+    'hs.side': 'La tarjeta muestra', 'hs.left': 'Lado izquierdo', 'hs.right': 'Lado derecho (la respuesta)',
+    'hs.teamsHint': 'Hasta 8 equipos. Escribe los miembros después de dos puntos (Equipo A: Ana, Luis, Sara) y la silla caliente rota entre ellos.',
+    'hs.turnTime': 'Tiempo por turno', 'hs.turns': 'Turnos por equipo', 'hs.skips': 'Saltos por turno', 'hs.unlimited': 'Sin límite',
+    'hs.keys': '<kbd>→</kbd> o <kbd>Enter</kbd> acertó · <kbd>S</kbd> saltar · <kbd>X</kbd> dijo la palabra · <kbd>Espacio</kbd> pausa',
+    'hs.errNoWords': 'Escribe al menos 5 palabras.', 'hs.errNoTeams': 'Escribe al menos un equipo o un nombre.', 'hs.errTooMany': 'Usa {max} equipos o menos.',
+    'hs.progress': 'Turno {turn} de {turns}', 'hs.seat': '{name} está en la silla caliente', 'hs.seatAny': 'Elijan quién se sienta en la silla caliente',
+    'hs.cardIntro': 'Silla caliente: de espaldas a la pantalla. Equipo: describan la palabra sin decirla.', 'hs.got': 'Acertó', 'hs.said': 'Dijo la palabra',
+    'hs.skip': 'Saltar', 'hs.skipLeft': 'Saltar (quedan {n})', 'hs.noSkips': 'Sin saltos', 'hs.timeUp': '¡Se acabó el tiempo!',
+    'hs.gotN': { one: '{n} palabra adivinada', other: '{n} palabras adivinadas' }, 'hs.gotList': 'Adivinadas', 'hs.missedList': 'Saltadas o dichas',
+    'hs.nextTeam': 'Siguiente equipo', 'hs.seeResults': 'Ver resultados', 'hs.review': 'Palabras para repasar', 'hs.reviewHint': 'Saltadas o dichas por error. Descríbanlas entre todos.',
+  },
+});

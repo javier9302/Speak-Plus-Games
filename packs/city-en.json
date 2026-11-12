@@ -1,0 +1,104 @@
+{
+  "id": "city-en",
+  "type": "places",
+  "title": "A town in English",
+  "language": "en",
+  "subject": "English",
+  "levels": [
+    "A1",
+    "A2",
+    "B1"
+  ],
+  "ages": [
+    7,
+    99
+  ],
+  "author": "Classroom Games contributors",
+  "license": "CC-BY-4.0",
+  "phrases": [
+    "Go straight three steps",
+    "Turn left",
+    "Turn right",
+    "Stop!",
+    "Wait… go!",
+    "One more step",
+    "Turn around",
+    "Go back",
+    "Wait for the train",
+    "It's closed"
+  ],
+  "items": [
+    {
+      "icon": "🏦",
+      "name": "Bank",
+      "clue": "You keep your money here",
+      "code": "MONEY"
+    },
+    {
+      "icon": "🥐",
+      "name": "Bakery",
+      "clue": "You buy bread here",
+      "code": "BREAD"
+    },
+    {
+      "icon": "🌳",
+      "name": "Park",
+      "clue": "You play outside here",
+      "code": "TREE"
+    },
+    {
+      "icon": "🏫",
+      "name": "School",
+      "clue": "You study here with a teacher",
+      "code": "PENCIL"
+    },
+    {
+      "icon": "🏥",
+      "name": "Hospital",
+      "clue": "You go here when you are sick",
+      "code": "DOCTOR"
+    },
+    {
+      "icon": "📚",
+      "name": "Library",
+      "clue": "You borrow books here",
+      "code": "BOOK"
+    },
+    {
+      "icon": "📮",
+      "name": "Post office",
+      "clue": "You send letters here",
+      "code": "LETTER"
+    },
+    {
+      "icon": "🚉",
+      "name": "Station",
+      "clue": "You catch a train here",
+      "code": "TRAIN"
+    },
+    {
+      "icon": "☕",
+      "name": "Café",
+      "clue": "You drink coffee here",
+      "code": "COFFEE"
+    },
+    {
+      "icon": "🎬",
+      "name": "Cinema",
+      "clue": "You watch movies here",
+      "code": "MOVIE"
+    },
+    {
+      "icon": "🏨",
+      "name": "Hotel",
+      "clue": "You sleep here on a trip",
+      "code": "ROOM"
+    },
+    {
+      "icon": "🏛️",
+      "name": "Museum",
+      "clue": "You see famous paintings here",
+      "code": "PAINT"
+    }
+  ]
+}

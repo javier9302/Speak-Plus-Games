@@ -1,0 +1,71 @@
+{
+  "$schema": "../tools/game.schema.json",
+  "id": "dress-up-buddy",
+  "order": 50,
+  "status": "stable",
+  "name": {
+    "en": "Dress Up Buddy",
+    "es": "Viste a tu amigo"
+  },
+  "summary": {
+    "en": "Each child makes and dresses a character and hears the clothing words in English. Then print it as a colouring page.",
+    "es": "Cada niño crea y viste un personaje y escucha el nombre de la ropa en inglés. Luego se imprime como página para colorear."
+  },
+  "entry": "index.html",
+  "ages": [
+    4,
+    10
+  ],
+  "levels": [
+    "pre-A1",
+    "A1"
+  ],
+  "players": {
+    "min": 1,
+    "max": 30,
+    "grouping": "individual"
+  },
+  "skills": [
+    "listening",
+    "vocabulary"
+  ],
+  "minutes": [
+    10,
+    30
+  ],
+  "setupMinutes": 1,
+  "devices": {
+    "teacher": [
+      "laptop",
+      "tablet"
+    ],
+    "students": "shared"
+  },
+  "needs": {
+    "server": "none",
+    "keyboard": false
+  },
+  "offline": true,
+  "uiLanguages": [
+    "en"
+  ],
+  "contentTypes": [],
+  "tags": {
+    "en": [
+      "Clothes",
+      "Listening",
+      "Young learners",
+      "Printable"
+    ],
+    "es": [
+      "Ropa",
+      "Escuchar",
+      "Niños pequeños",
+      "Para imprimir"
+    ]
+  },
+  "authors": [
+    "Classroom Games contributors"
+  ],
+  "license": "MIT"
+}

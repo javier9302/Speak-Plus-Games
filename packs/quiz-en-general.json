@@ -1,0 +1,103 @@
+{
+  "id": "quiz-en-general",
+  "type": "questions",
+  "title": "General questions (easy English)",
+  "language": "en",
+  "subject": "English",
+  "levels": [
+    "A1",
+    "A2"
+  ],
+  "ages": [
+    7,
+    99
+  ],
+  "author": "Classroom Games contributors",
+  "license": "CC-BY-4.0",
+  "items": [
+    {
+      "prompt": "What colour is a banana?",
+      "answer": "YELLOW"
+    },
+    {
+      "prompt": "What colour is the sky?",
+      "answer": "BLUE"
+    },
+    {
+      "prompt": "What colour is snow?",
+      "answer": "WHITE"
+    },
+    {
+      "prompt": "What colour is grass?",
+      "answer": "GREEN"
+    },
+    {
+      "prompt": "How many days are in a week?",
+      "answer": "SEVEN"
+    },
+    {
+      "prompt": "How many months are in a year?",
+      "answer": "TWELVE"
+    },
+    {
+      "prompt": "How many legs does a spider have?",
+      "answer": "EIGHT"
+    },
+    {
+      "prompt": "What is two plus two?",
+      "answer": "FOUR"
+    },
+    {
+      "prompt": "What animal says “meow”?",
+      "answer": "CAT"
+    },
+    {
+      "prompt": "What animal says “woof”?",
+      "answer": "DOG"
+    },
+    {
+      "prompt": "What animal has a very long neck?",
+      "answer": "GIRAFFE"
+    },
+    {
+      "prompt": "What do bees make?",
+      "answer": "HONEY"
+    },
+    {
+      "prompt": "What is the opposite of hot?",
+      "answer": "COLD"
+    },
+    {
+      "prompt": "What is the opposite of up?",
+      "answer": "DOWN"
+    },
+    {
+      "prompt": "What is the opposite of day?",
+      "answer": "NIGHT"
+    },
+    {
+      "prompt": "What day comes after Monday?",
+      "answer": "TUESDAY"
+    },
+    {
+      "prompt": "What day comes before Sunday?",
+      "answer": "SATURDAY"
+    },
+    {
+      "prompt": "What month comes after April?",
+      "answer": "MAY"
+    },
+    {
+      "prompt": "What is the first month of the year?",
+      "answer": "JANUARY"
+    },
+    {
+      "prompt": "What season comes after winter?",
+      "answer": "SPRING"
+    },
+    {
+      "prompt": "What is frozen water?",
+      "answer": "ICE"
+    }
+  ]
+}

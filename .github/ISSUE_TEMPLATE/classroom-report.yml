@@ -1,0 +1,20 @@
+name: Classroom report or bug
+description: Something went wrong, or could work better, in a real class.
+labels: ["classroom"]
+body:
+  - type: input
+    id: game
+    attributes: { label: Game, placeholder: "Word Drop" }
+    validations: { required: true }
+  - type: textarea
+    id: what
+    attributes: { label: What happened, description: "What you did, what you expected, what you saw." }
+    validations: { required: true }
+  - type: input
+    id: class
+    attributes: { label: "Class (age, level, size)", placeholder: "13-year-olds, A2, 28 students in 4 teams" }
+  - type: input
+    id: device
+    attributes: { label: "Device and browser", placeholder: "Laptop + projector, Chrome / iPad, Safari" }
+  - type: markdown
+    attributes: { value: "Please don't include students' names, photos or recordings." }

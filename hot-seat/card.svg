@@ -1,0 +1,8 @@
+<svg viewBox="0 0 320 190" xmlns="http://www.w3.org/2000/svg">
+  <rect class="f-surface s-line" stroke-width="3" x="70" y="22" width="180" height="82" rx="14"/>
+  <text class="f-fg t-mid" x="160" y="74" style="font-size:30px">umbrella</text>
+  <rect class="f-primary" x="140" y="128" width="40" height="34" rx="8"/><rect class="f-primary" x="134" y="160" width="52" height="10" rx="5"/>
+  <circle class="f-accent" cx="160" cy="118" r="13"/>
+  <g class="f-sky"><circle cx="54" cy="150" r="12"/><circle cx="266" cy="150" r="12"/><circle cx="90" cy="166" r="12"/><circle cx="230" cy="166" r="12"/></g>
+  <path class="s-muted nofill round" stroke-width="4" d="M62 128q10-10 20 0M240 128q10-10 20 0"/>
+</svg>

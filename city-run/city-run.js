@@ -1,5 +1,5 @@
 (() => {
-const $ = s => document.querySelector(s);
+const { $, esc, t, shuffle, pick, store } = Kit;
 const KEY = 'sp-cityrun-v1';
 const MAX_TEAMS = 4;
 const COLS = 13, ROWS = 10, U = 100;          // streets every 3 tiles, 2×2 buildings in between
@@ -9,123 +9,118 @@ const GREEN = 4, CYCLE = 7;                   // traffic lights: seconds green, 
 const TRAIN = {cycle:10, warn:5.5, pass:7};   // crossings: open until `warn`, flashing until `pass`, then the train goes by
 const WORKS = {first:4, gap:8};               // road works: steps before the first street closes, then between closures
 const FUEL = {spare:.3, min:4};               // low fuel: extra steps on top of the shortest route
-const PEN = {bump:3, red:5, letter:2, teacher:5, wrong:3, train:5, unfinished:30};
-const PLACES = [
-  {name:'Bank', icon:'🏦', code:'MONEY', clue:'You keep your money here'}, {name:'Bakery', icon:'🥐', code:'BREAD', clue:'You buy bread here'},
-  {name:'Park', icon:'🌳', code:'TREE', clue:'You play outside here'}, {name:'School', icon:'🏫', code:'PENCIL', clue:'You study here with a teacher'},
-  {name:'Hospital', icon:'🏥', code:'DOCTOR', clue:'You go here when you are sick'}, {name:'Library', icon:'📚', code:'BOOK', clue:'You borrow books here'},
-  {name:'Post office', icon:'📮', code:'LETTER', clue:'You send letters here'}, {name:'Station', icon:'🚉', code:'TRAIN', clue:'You catch a train here'},
-  {name:'Café', icon:'☕', code:'COFFEE', clue:'You drink coffee here'}, {name:'Cinema', icon:'🎬', code:'MOVIE', clue:'You watch movies here'},
-  {name:'Hotel', icon:'🏨', code:'ROOM', clue:'You sleep here on a trip'}, {name:'Museum', icon:'🏛️', code:'PAINT', clue:'You see famous paintings here'}
-];
-const QUIZ = [
-  {q:'What colour is a banana?', a:'YELLOW'}, {q:'What colour is the sky?', a:'BLUE'}, {q:'What colour is snow?', a:'WHITE'},
-  {q:'What colour is grass?', a:'GREEN'}, {q:'How many days are in a week?', a:'SEVEN'}, {q:'How many months are in a year?', a:'TWELVE'},
-  {q:'How many legs does a spider have?', a:'EIGHT'}, {q:'What is two plus two?', a:'FOUR'}, {q:'What animal says “meow”?', a:'CAT'},
-  {q:'What animal says “woof”?', a:'DOG'}, {q:'What animal has a very long neck?', a:'GIRAFFE'}, {q:'What do bees make?', a:'HONEY'},
-  {q:'What is the opposite of hot?', a:'COLD'}, {q:'What is the opposite of up?', a:'DOWN'}, {q:'What is the opposite of day?', a:'NIGHT'},
-  {q:'What day comes after Monday?', a:'TUESDAY'}, {q:'What day comes before Sunday?', a:'SATURDAY'}, {q:'What month comes after April?', a:'MAY'},
-  {q:'What is the first month of the year?', a:'JANUARY'}, {q:'What season comes after winter?', a:'SPRING'}, {q:'What is frozen water?', a:'ICE'}
-];
+const PEN = {bump:3, red:5, letter:2, teacher:5, wrong:3, train:5, skip:5, unfinished:30};
 const LEVELS = [
-  {l:'Easy', stops:1, lights:false, codes:false, note:'One stop on the way to B. No traffic lights.'},
-  {l:'Medium', stops:2, lights:true, codes:false, note:'Two stops and traffic lights.'},
-  {l:'Hard', stops:3, lights:true, codes:true, note:'Three stops, traffic lights, and a word to spell at every door. Needs a keyboard.'}
+  {id:1, stops:1, lights:false, codes:false},
+  {id:2, stops:2, lights:true, codes:false},
+  {id:3, stops:3, lights:true, codes:true}
 ];
 // The level sets how hard a run is; the mission sets what the job is.
 // ordered: goals in list order · reveal: each goal appears when the one before is done · pairs: pick-ups and drop-offs for n stops
 const MISSIONS = [
-  {id:'classic', l:'Classic', brief:'Visit every stop in any order, then drive to B.'},
-  {id:'delivery', l:'Delivery', ordered:true, pairs:n => Math.min(2, n), verbs:['Pick up at', 'Deliver to'],
-    brief:'Pick up each parcel and deliver it, in the order on the list. Then drive to B.'},
-  {id:'taxi', l:'Taxi', ordered:true, reveal:true, pairs:() => 2, verbs:['Pick up at', 'Take them to'],
-    brief:'Pick up a passenger to find out where they want to go. The next passenger appears after each drop-off.'},
-  {id:'mystery', l:'Mystery', clues:true, brief:'The stops are clues, not names. Work out the places and visit them all. A wrong door costs 3 s.'},
-  {id:'works', l:'Road works', brief:'Streets close while you drive. Find another way around.'},
-  {id:'train', l:'Train crossing', brief:'A railway cuts the city in two. Never be on a crossing when the train comes: +5 s.'},
-  {id:'fuel', l:'Low fuel', brief:'There is only fuel for a few extra steps. Plan the route before you move.'},
-  {id:'quiz', l:'Quiz doors', quiz:true, brief:'Every door has a question. The navigator asks it and the driver types the answer.'}
+  {id:'classic'},
+  {id:'delivery', ordered:true, pairs:n => Math.min(2, n), verbs:['cr.verb.pickup', 'cr.verb.deliver']},
+  {id:'taxi', ordered:true, reveal:true, pairs:() => 2, verbs:['cr.verb.taxiPickup', 'cr.verb.taxiDrop']},
+  {id:'mystery', clues:true},
+  {id:'works'},
+  {id:'train'},
+  {id:'fuel'},
+  {id:'quiz', quiz:true}
 ];
 const MIX = MISSIONS.length;
-const DEFAULTS = {teams:'Team A\nTeam B', level:2, mission:0, rounds:2, limit:3, sound:true};
-let S = {...DEFAULTS};
-try { Object.assign(S, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch {}
+const msName = ms => t('cr.ms.' + ms.id);
+
+/* ---------- Content: places (12), useful phrases, quiz questions. From packs, files or typed in. ---------- */
+const placesPack = Kit.packs('places')[0], quizPack = Kit.packs('questions')[0];
+const placesToText = items => items.map(p => [p.icon || '📍', p.name, p.clue || '', p.code || ''].join(' | ')).join('\n');
+const parsePlaces = text => Kit.dedupe(String(text).split(/\r?\n/).map(l => {
+  const [icon, name, clue, code] = l.split('|').map(x => (x || '').trim());
+  return name ? {icon: icon || '📍', name, clue: clue || name, code: code || name} : null;
+}).filter(Boolean), p => p.name);
+const parseQuiz = text => Kit.parseItems(text).filter(x => x.answer);
+
+const DEFAULTS = {teams: t('kit.teamX', {x: 'A'}) + '\n' + t('kit.teamX', {x: 'B'}), level:2, mission:0, rounds:2, limit:3, sound:true,
+  places: placesPack ? placesToText(placesPack.items) : '', phrases: placesPack ? (placesPack.phrases || []).join('\n') : '',
+  lang: placesPack ? placesPack.language : 'en', placesTitle: placesPack ? placesPack.title : '',
+  quiz: quizPack ? Kit.itemsToText(quizPack.items) : '', quizTitle: quizPack ? quizPack.title : ''};
+const S = Object.assign({}, DEFAULTS, store.get(KEY, {}));
 if (!(S.mission >= 0 && S.mission <= MIX)) S.mission = 0;
-const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch {} };
+const save = () => store.set(KEY, S);
+Kit.sound.on = S.sound;
+const lang = () => Kit.langName(S.lang);
+let PLACES = [], QUIZ = [];
 
 const views = {setup:$('#view-city-setup'), game:$('#view-city-game')};
 function show(name){
   if (name === 'hub') { location.href = '../index.html'; return; }
   for (const k in views) views[k].hidden = k !== name;
-  if (name !== 'game') releaseWake();
+  if (name !== 'game') Kit.wake.off();
   window.scrollTo(0,0);
 }
 
-const parseList = s => { const seen = new Set(); return s.split(/[,、，\n]+/).map(x => x.trim()).filter(x => x && !seen.has(x) && seen.add(x)); };
-const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
-const pick = a => a[Math.floor(Math.random() * a.length)];
-const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const key = (x, y) => x + ',' + y;
-const fmt = s => { const t = Math.round(s * 10), m = Math.floor(t / 600); return m + ':' + String(Math.floor(t % 600 / 10)).padStart(2, '0') + '.' + t % 10; };
+const fmt = s => { const n = Math.round(s * 10), m = Math.floor(n / 600); return m + ':' + String(Math.floor(n % 600 / 10)).padStart(2, '0') + '.' + n % 10; };
 
 /* ---------- Setup ---------- */
-const teamsEl = $('#cr-teams');
-teamsEl.value = S.teams; $('#cr-sound').checked = S.sound;
+const teamsEl = $('#cr-teams'), placesEl = $('#cr-places'), phrasesEl = $('#cr-phrases'), quizEl = $('#cr-quiz'), langEl = $('#cr-lang');
+teamsEl.value = S.teams; placesEl.value = S.places; phrasesEl.value = S.phrases; quizEl.value = S.quiz; $('#cr-sound').checked = S.sound;
+langEl.innerHTML = ['en','es','fr','pt','de','it','ja','zh','ko'].map(c => `<option value="${c}" ${c === S.lang ? 'selected' : ''}>${esc(Kit.langName(c))}</option>`).join('');
 
 function seg(id, k, values, label){
   const box = $('#' + id);
-  box.innerHTML = values.map(v => `<input type="radio" name="cr-${k}" id="cr-${k}-${v}" value="${v}" ${S[k] == v ? 'checked' : ''}><label for="cr-${k}-${v}">${label ? label(v) : v}</label>`).join('');
+  box.innerHTML = values.map(v => `<input type="radio" name="cr-${k}" id="cr-${k}-${v}" value="${v}" ${S[k] == v ? 'checked' : ''}><label for="cr-${k}-${v}">${esc(label ? label(v) : v)}</label>`).join('');
   box.addEventListener('change', e => { S[k] = +e.target.value; save(); updateSetup(); });
 }
-seg('cr-seg-level', 'level', [1,2,3], v => LEVELS[v - 1].l);
-seg('cr-seg-mission', 'mission', [...MISSIONS.keys(), MIX], v => v === MIX ? 'Mix' : MISSIONS[v].l);
+seg('cr-seg-level', 'level', [1,2,3], v => t('cr.lv' + v));
+seg('cr-seg-mission', 'mission', [...MISSIONS.keys(), MIX], v => v === MIX ? t('cr.ms.mix') : msName(MISSIONS[v]));
 seg('cr-seg-rounds', 'rounds', [1,2,3,4]);
-seg('cr-seg-limit', 'limit', [2,3,4,5], v => v + ' min');
+seg('cr-seg-limit', 'limit', [2,3,4,5], v => t('minutes', {n: v}));
 
 function updateSetup(){
-  const t = parseList(teamsEl.value).length, ms = MISSIONS[S.mission];
-  $('#cr-team-count').textContent = (t === 1 ? 'Solo' : t + ' teams') + ' · max ' + MAX_TEAMS;
-  $('#cr-team-count').style.color = t > MAX_TEAMS ? 'var(--accent)' : '';
-  $('#cr-level-note').textContent = LEVELS[S.level - 1].note;
-  $('#cr-mission-note').textContent = !ms ? 'A different mission every round. Quiz doors only joins the mix on Hard, because it needs a keyboard.'
-    : ms.brief + (ms.quiz ? ' Needs a keyboard.' : '');
+  const n = Kit.parseTeams(teamsEl.value).length, ms = MISSIONS[S.mission];
+  $('#cr-team-count').textContent = (n === 1 ? t('solo') : t('teamsN', {n})) + ' · ' + t('maxN', {n: MAX_TEAMS});
+  $('#cr-team-count').style.color = n > MAX_TEAMS ? 'var(--accent)' : '';
+  $('#cr-level-note').textContent = t('cr.lv' + S.level + '.note');
+  $('#cr-mission-note').textContent = !ms ? t('cr.brief.mix') : t('cr.brief.' + ms.id) + (ms.quiz ? ' ' + t('cr.needsKeyboard') : '');
+  const np = parsePlaces(placesEl.value).length;
+  $('#cr-place-count').textContent = t('cr.placesN', {n: np});
+  $('#cr-place-count').style.color = np < 12 ? 'var(--accent)' : '';
+  $('#cr-quiz-count').textContent = t('cr.quizN', {n: parseQuiz(quizEl.value).length});
+  const L = lang();
+  document.querySelectorAll('.cr-steps li')[1].innerHTML = t('cr.step2', {lang: esc(L)});
+  $('#cr-pen-tags').innerHTML = [['bump', PEN.bump], ['red', PEN.red], ['letter', PEN.letter], ['wrong', PEN.wrong], ['train', PEN.train], ['teacher', PEN.teacher]]
+    .map(([k, s]) => `<span class="tag">${esc(t('cr.pen.' + k, {n: s, lang: L}))}</span>`).join('');
+  $('#cr-phrase-tags').innerHTML = phraseList().map(p => `<span class="tag">${esc(p)}</span>`).join('');
 }
+const phraseList = () => phrasesEl.value.split(/\r?\n/).map(x => x.trim()).filter(Boolean);
 teamsEl.addEventListener('input', () => { S.teams = teamsEl.value; save(); updateSetup(); });
-$('#cr-sound').addEventListener('change', e => { S.sound = e.target.checked; save(); });
+placesEl.addEventListener('input', () => { S.places = placesEl.value; save(); updateSetup(); });
+phrasesEl.addEventListener('input', () => { S.phrases = phrasesEl.value; save(); updateSetup(); });
+quizEl.addEventListener('input', () => { S.quiz = quizEl.value; save(); updateSetup(); });
+langEl.addEventListener('change', () => { S.lang = langEl.value; save(); updateSetup(); });
+$('#cr-sound').addEventListener('change', e => { S.sound = Kit.sound.on = e.target.checked; save(); });
+Kit.mountRoster($('#cr-roster'), teamsEl, MAX_TEAMS);
+Kit.mountContent($('#cr-place-tools'), {
+  type: 'places',
+  getPack: () => ({title: S.placesTitle || t('cr.places'), language: S.lang, phrases: phraseList(), items: parsePlaces(placesEl.value)}),
+  setPack: p => {
+    if (p.items) placesEl.value = placesToText(p.items); else if (p.text) placesEl.value = p.text;
+    if (p.phrases) phrasesEl.value = p.phrases.join('\n');
+    if (p.language) { S.lang = p.language; langEl.value = p.language; }
+    Object.assign(S, {places: placesEl.value, phrases: phrasesEl.value, placesTitle: p.title || ''}); save(); updateSetup();
+    $('#cr-content').open = true;
+  }
+});
+Kit.mountContent($('#cr-quiz-tools'), {
+  type: 'questions',
+  getPack: () => ({title: S.quizTitle || t('cr.quiz'), language: S.lang, items: parseQuiz(quizEl.value)}),
+  setPack: p => { quizEl.value = p.items ? Kit.itemsToText(p.items) : p.text || ''; Object.assign(S, {quiz: quizEl.value, quizTitle: p.title || ''}); save(); updateSetup(); $('#cr-content').open = true; }
+});
 updateSetup();
 
 $('#cr-back-hub').addEventListener('click', () => show('hub'));
-
-/* ---------- Sound ---------- */
-let ac;
-function beep(kind){
-  if (!S.sound) return;
-  try {
-    ac = ac || new (window.AudioContext || window.webkitAudioContext)();
-    const o = ac.createOscillator(), g = ac.createGain(), t = ac.currentTime;
-    let len = .12;
-    o.connect(g); g.connect(ac.destination);
-    if (kind === 'step') { o.type = 'triangle'; o.frequency.setValueAtTime(520, t); len = .07; }
-    else if (kind === 'turn') { o.type = 'triangle'; o.frequency.setValueAtTime(360, t); len = .07; }
-    else if (kind === 'ok') { o.type = 'triangle'; o.frequency.setValueAtTime(660, t); o.frequency.exponentialRampToValueAtTime(1320, t + .14); len = .22; }
-    else if (kind === 'go') { o.type = 'sine'; o.frequency.setValueAtTime(520, t); o.frequency.exponentialRampToValueAtTime(780, t + .15); len = .3; }
-    else if (kind === 'alert') { o.type = 'sine'; o.frequency.setValueAtTime(880, t); o.frequency.setValueAtTime(660, t + .13); len = .28; }
-    else { o.type = 'sawtooth'; o.frequency.setValueAtTime(220, t); o.frequency.exponentialRampToValueAtTime(90, t + .3); len = .34; }
-    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.16, t + .015); g.gain.exponentialRampToValueAtTime(.0001, t + len);
-    o.start(t); o.stop(t + len + .03);
-  } catch {}
-}
-
-/* ---------- Wake lock / fullscreen ---------- */
-let wake = null;
-function requestWake(){ try { navigator.wakeLock?.request('screen').then(l => wake = l).catch(() => {}); } catch {} }
-function releaseWake(){ try { wake?.release(); } catch {} wake = null; }
-$('#cr-btn-full').addEventListener('click', () => {
-  try {
-    if (document.fullscreenElement) document.exitFullscreen?.();
-    else document.documentElement.requestFullscreen?.().catch(() => {});
-  } catch {}
-});
+$('#cr-btn-full').addEventListener('click', Kit.toggleFullscreen);
+const beep = Kit.beep;
 
 /* ---------- City ---------- */
 const SEGS = [], CORNERS = [];   // the street between two corners is a segment of two tiles
@@ -147,7 +142,7 @@ function bfs(road, sx, sy){
   return d;
 }
 
-function tryCity(lv, ms){
+function tryCity(lv, ms, closed){
   const road = new Set(), parks = [];
   for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) if (x % 3 === 0 || y % 3 === 0) road.add(key(x, y));
   // train mission: one inner street becomes a railway, and only its corners (the crossings) can be driven over
@@ -155,7 +150,7 @@ function tryCity(lv, ms){
   const railSeg = s => s.every(([x, y]) => onRail(rail, {x, y}));
   SEGS.filter(railSeg).forEach(s => s.forEach(([x, y]) => road.delete(key(x, y))));
   // close a few streets so the route is not a straight line, but keep every corner reachable
-  shuffle(SEGS.filter(s => !railSeg(s))).slice(0, rail ? CLOSED - 3 : CLOSED).forEach(s => s.forEach(([x, y]) => { road.delete(key(x, y)); parks.push({x, y}); }));
+  shuffle(SEGS.filter(s => !railSeg(s))).slice(0, Math.max(0, rail ? closed - 3 : closed)).forEach(s => s.forEach(([x, y]) => { road.delete(key(x, y)); parks.push({x, y}); }));
   if (bfs(road, 0, 0).size !== road.size) return null;
   // one door per building, on a street tile next to it
   const used = new Set(), names = shuffle(PLACES), places = [];
@@ -177,7 +172,11 @@ function tryCity(lv, ms){
   const lights = lv.lights ? shuffle(ends.filter(p => p !== a && p !== b)).slice(0, 5).map(p => ({x: p.x, y: p.y, off: Math.random() * CYCLE})) : [];
   return {road, parks, places, a, b, dir, stops, lights, rail};
 }
-function makeCity(lv, ms){ for (;;) { const m = tryCity(lv, ms); if (m) return m; } }
+// Almost always the first few tries work; with fewer closed streets a city is always possible, so this never hangs.
+function makeCity(lv, ms){
+  for (let i = 0; i < 2000; i++) { const m = tryCity(lv, ms, Math.max(0, CLOSED - Math.floor(i / 300))); if (m) return m; }
+  throw new Error('City Run: could not build a city');
+}
 
 // Every team drives the same city mirrored: same distances, different lefts and rights
 function flip(m, fh, fv){
@@ -211,22 +210,33 @@ const mapEl = $('#cr-map'), overlay = $('#cr-overlay'), card = $('#cr-card'), bo
 let G = null;   // the match: teams, rounds, totals
 let R = null;   // the run being driven
 let car = null, train = null, gates = [], cardAt = 0, toastTimer = 0;
+const touch = matchMedia('(pointer: coarse)').matches;
 
 $('#cr-start').addEventListener('click', startGame);
 function startGame(){
-  const teams = parseList(teamsEl.value), err = $('#cr-setup-error');
-  if (!teams.length) { err.textContent = 'Add at least one team or pair.'; err.hidden = false; teamsEl.focus(); return; }
-  if (teams.length > MAX_TEAMS) { err.textContent = 'Use ' + MAX_TEAMS + ' teams or fewer.'; err.hidden = false; teamsEl.focus(); return; }
-  err.hidden = true;
+  const teams = Kit.parseTeams(teamsEl.value), err = $('#cr-setup-error');
+  const fail = (msg, el) => { err.textContent = msg; err.hidden = false; el && el.focus(); };
+  if (!teams.length) return fail(t('cr.errNoTeams'), teamsEl);
+  if (teams.length > MAX_TEAMS) return fail(t('cr.errTooMany', {max: MAX_TEAMS}), teamsEl);
+  const places = parsePlaces(placesEl.value);
+  if (places.length < 12) { $('#cr-content').open = true; return fail(t('cr.errPlaces', {n: places.length}), placesEl); }
   const level = LEVELS[S.level - 1];
+  const wantsQuiz = S.mission === MISSIONS.findIndex(m => m.quiz) || (S.mission === MIX && level.codes);
+  QUIZ = parseQuiz(quizEl.value);
+  if (wantsQuiz && QUIZ.length < 6) { $('#cr-content').open = true; return fail(t('cr.errQuiz'), quizEl); }
+  err.hidden = true;
+  PLACES = places;
   G = {
-    teams: teams.map(n => ({name: n, total: 0, pen: 0, runs: 0})),
+    teams: teams.map(tm => ({name: tm.name, members: tm.members, total: 0, pen: 0, runs: 0})),
     level, rounds: S.rounds, limit: S.limit * 60,
     missions: S.mission === MIX ? shuffle(MISSIONS.filter(m => !m.quiz || level.codes)) : [MISSIONS[S.mission]],   // one per round, in this order
     ms: null, quiz: [],
     round: 0, order: [], k: 0, city: null, state: 'turn', solo: teams.length === 1
   };
-  show('game'); requestWake(); newRound();
+  $('#cr-teacher').textContent = t('cr.teacherBtn', {n: PEN.teacher, lang: lang()});
+  $('#cr-say').innerHTML = phraseList().map(p => `<li>${esc(p)}</li>`).join('');
+  $('#cr-say').closest('.cr-box').hidden = !phraseList().length;
+  show('game'); Kit.wake.on(); newRound();
 }
 
 function newRound(){
@@ -267,8 +277,9 @@ function drawMap(){
     const x0 = (3*p.bx + 1) * U, y0 = (3*p.by + 1) * U;
     const ex = Math.max(x0 + 8, Math.min(x0 + 2*U - 8, c(p.door.x))), ey = Math.max(y0 + 8, Math.min(y0 + 2*U - 8, c(p.door.y)));
     const flat = p.door.y < 3*p.by + 1 || p.door.y > 3*p.by + 2;   // door on the top or bottom wall
+    const small = p.name.length > 12 ? ' style="font-size:19px"' : '';
     s += `<g class="cr-place" data-p="${i}"><rect x="${x0 + 8}" y="${y0 + 8}" width="${2*U - 16}" height="${2*U - 16}" rx="22"/>` +
-      `<text class="cr-icon" x="${x0 + U}" y="${y0 + U + 8}">${p.icon}</text><text class="cr-name" x="${x0 + U}" y="${y0 + U + 62}">${p.name}</text>` +
+      `<text class="cr-icon" x="${x0 + U}" y="${y0 + U + 8}">${esc(p.icon)}</text><text class="cr-name" x="${x0 + U}" y="${y0 + U + 62}"${small}>${esc(p.name)}</text>` +
       `<line class="cr-door" x1="${ex - (flat ? 24 : 0)}" y1="${ey - (flat ? 0 : 24)}" x2="${ex + (flat ? 24 : 0)}" y2="${ey + (flat ? 0 : 24)}"/></g>` +
       `<rect class="cr-ring" data-p="${i}" x="${p.door.x*U + 12}" y="${p.door.y*U + 12}" width="${U - 24}" height="${U - 24}" rx="16"/>`;
   });
@@ -312,7 +323,7 @@ function updateTrain(){
     gates.forEach(el => { el.classList.toggle('warn', gate === 'warn'); el.classList.toggle('red', gate === 'red'); });
     train.style.display = gate === 'red' ? '' : 'none';
     if (G.state === 'play' && gate === 'warn') beep('alert');
-    if (G.state === 'play' && gate === 'red' && onTracks()) penalty(PEN.train, 'On the tracks!');
+    if (G.state === 'play' && gate === 'red' && onTracks()) penalty(PEN.train, t('cr.toast.tracks'));
   }
   if (gate === 'red') {
     const pos = -200 + (p - TRAIN.pass) / (TRAIN.cycle - TRAIN.pass) * ((r.h ? COLS : ROWS) * U + 400), n = r.n * U + U / 2;
@@ -332,7 +343,7 @@ function closeStreet(){
   const open = R.goals.filter(isOpen).map(g => m.places[g.p].door).sort((p, q) => d(from, p) - d(from, q));
   const goal = open[0] || m.b, to = bfs(m.road, goal.x, goal.y);
   const ahead = ok.filter(s => s.some(([x, y]) => from.get(key(x, y)) + to.get(key(x, y)) === d(from, goal)))
-    .sort((s, t) => from.get(key(...s[0])) - from.get(key(...t[0])));
+    .sort((s, u) => from.get(key(...s[0])) - from.get(key(...u[0])));
   const seg = ahead[0] || pick(ok);
   R.works--; R.nextWork = R.steps + WORKS.gap;
   if (!seg) return;
@@ -340,29 +351,29 @@ function closeStreet(){
   const cone = document.createElementNS('http://www.w3.org/2000/svg', 'text');
   cone.setAttribute('class', 'cr-cone'); cone.setAttribute('x', (seg[0][0] + seg[1][0] + 1) * U / 2); cone.setAttribute('y', (seg[0][1] + seg[1][1] + 1) * U / 2 + 18);
   cone.textContent = '🚧'; car.before(cone);
-  toast('Road works! A street is closed', true, 2200); beep('alert');
+  toast(t('cr.toast.works'), true, 2200); beep('alert');
 }
 
 function renderBoard(){
-  board.innerHTML = G.teams.map((t, i) =>
-    `<div class="team ${i === R.team ? 'active' : ''}"><span class="team-name">${esc(t.name)}</span><span class="team-score" aria-label="total time">${t.runs ? fmt(t.total) : '–'}</span></div>`).join('');
-  $('#cr-progress').textContent = `Round ${G.round + 1} of ${G.rounds} · ${G.level.l} · ${G.ms.l} · ${S.limit} min limit`;
+  board.innerHTML = G.teams.map((tm, i) =>
+    `<div class="team ${i === R.team ? 'active' : ''}"><span class="team-name">${esc(tm.name)}</span><span class="team-score" aria-label="${esc(t('time'))}">${tm.runs ? fmt(tm.total) : '–'}</span></div>`).join('');
+  $('#cr-progress').textContent = t('cr.progress', {round: G.round + 1, rounds: G.rounds, level: t('cr.lv' + G.level.id), mission: msName(G.ms), limit: S.limit});
 }
 function renderSide(){
   const m = R.map, ms = G.ms, n = at();
   $('#cr-team').textContent = G.teams[R.team].name;
   $('#cr-time').textContent = fmt(R.t + R.pen);
-  $('#cr-pen').textContent = R.pen ? '+' + R.pen + ' s in penalties' : '';
+  $('#cr-pen').textContent = R.pen ? t('cr.penSoFar', {n: R.pen}) : '';
   fuelEl.hidden = R.fuel === null;
-  if (R.fuel !== null) fuelEl.innerHTML = `<span>Fuel</span><div class="cr-fuel-bar${R.fuel <= 5 ? ' low' : ''}"><i style="width:${R.fuel / R.tank * 100}%"></i></div><b>${R.fuel}</b>`;
+  if (R.fuel !== null) fuelEl.innerHTML = `<span>${esc(t('cr.fuel'))}</span><div class="cr-fuel-bar${R.fuel <= 5 ? ' low' : ''}"><i style="width:${R.fuel / R.tank * 100}%"></i></div><b>${R.fuel}</b>`;
   const more = ms.reveal ? Math.max(0, Math.floor((R.goals.length - 1 - n) / 2)) : 0;
   $('#cr-tasks').innerHTML = R.goals.map((g, k) => {
     if (!isShown(k)) return '';
     const p = m.places[g.p], name = p.icon + ' ' + p.name;
-    const text = g.type !== 'visit' ? ms.verbs[g.type === 'drop' ? 1 : 0] + ' ' + name : ms.clues && !g.done ? p.clue : name;
-    return `<li class="${g.done ? 'done' : ms.ordered && k === n ? 'now' : ''}"><span class="cr-check"></span>${text}</li>`;
-  }).join('') + (more ? `<li class="more">+ ${more} more ${more === 1 ? 'passenger' : 'passengers'}</li>` : '') +
-    `<li class="${R.arrived ? 'done' : ms.ordered && n === R.goals.length ? 'now' : ''}"><span class="cr-check"></span>Reach B</li>`;
+    const text = g.type !== 'visit' ? t(ms.verbs[g.type === 'drop' ? 1 : 0]) + ' ' + name : ms.clues && !g.done ? p.clue : name;
+    return `<li class="${g.done ? 'done' : ms.ordered && k === n ? 'now' : ''}"><span class="cr-check"></span>${esc(text)}</li>`;
+  }).join('') + (more ? `<li class="more">${esc(t('cr.morePassengers', {n: more}))}</li>` : '') +
+    `<li class="${R.arrived ? 'done' : ms.ordered && n === R.goals.length ? 'now' : ''}"><span class="cr-check"></span>${esc(t('cr.reachB'))}</li>`;
 }
 
 function toast(text, bad, ms = 1100){
@@ -381,14 +392,18 @@ function closeOverlay(){ overlay.hidden = true; }
 
 function turnCard(){
   G.state = 'turn';
-  const swap = G.round > 0 && G.k === 0 ? 'New city. Swap driver and navigator. ' : '';
+  const tm = G.teams[R.team];
+  const label = G.solo ? t('ready') : G.k === 0 ? t('firstUp') : t('nextUp');
+  const swap = G.round > 0 && G.k === 0 ? t('cr.swap') + ' ' : '';
   openOverlay(`
-    <span class="eyebrow">Round ${G.round + 1} of ${G.rounds} · ${G.solo ? 'Ready?' : G.k === 0 ? 'First up' : 'Next up'}</span>
-    <h2>${esc(G.teams[R.team].name)}</h2>
-    <p class="cr-brief"><b>Mission: ${G.ms.l}.</b> ${G.ms.brief}</p>
-    <p class="sub">${swap}Driver: back to the screen, fingers on the arrow keys. Navigator: English only.</p>
-    <div class="card-actions"><button class="btn btn-primary btn-big" data-act="go" data-focus type="button">Go</button></div>
-    <span class="keyhint">or press <kbd>Space</kbd> · the clock starts right away</span>`, true);
+    <span class="eyebrow">${esc(t('cr.roundOf', {round: G.round + 1, rounds: G.rounds}))} · ${esc(label)}</span>
+    <h2>${esc(tm.name)}</h2>
+    ${tm.members.length ? `<p class="members">${tm.members.map(esc).join(' · ')}</p>` : ''}
+    <p class="cr-brief"><b>${esc(t('cr.missionIs', {name: msName(G.ms)}))}</b> ${esc(t('cr.brief.' + G.ms.id))}</p>
+    <p class="sub">${esc(swap + t('cr.roles', {lang: lang()}))}</p>
+    ${G.solo ? '' : `<p class="cr-watch">${esc(t('cr.watchers'))}</p>`}
+    <div class="card-actions"><button class="btn btn-primary btn-big" data-act="go" data-focus type="button">${esc(t('go'))}</button></div>
+    <span class="keyhint">${t('cr.clockStarts', {key: '<kbd>' + esc(t('spaceKey')) + '</kbd>'})}</span>`, true);
 }
 function go(){ if (G.state !== 'turn') return; closeOverlay(); G.state = 'play'; beep('go'); }
 
@@ -396,14 +411,14 @@ function pause(){
   if (!G || G.state !== 'play') return;
   G.state = 'paused';
   openOverlay(`
-    <span class="eyebrow">Paused</span>
-    <h2>Take a breath</h2>
+    <span class="eyebrow">${esc(t('paused'))}</span>
+    <h2>${esc(t('takeBreath'))}</h2>
     <div class="card-actions">
-      <button class="btn btn-primary btn-big" data-act="resume" data-focus type="button">Resume</button>
-      <button class="btn btn-ghost" data-act="end" type="button">End game</button>
+      <button class="btn btn-primary btn-big" data-act="resume" data-focus type="button">${esc(t('resume'))}</button>
+      <button class="btn btn-ghost" data-act="end" type="button">${esc(t('endGame'))}</button>
     </div>`, true);
 }
-function resume(){ if (G.state !== 'paused') return; closeOverlay(); G.state = 'play'; }
+function resume(){ if (G.state !== 'paused') return; closeOverlay(); G.state = 'play'; if (R.code) focusType(); }
 $('#cr-btn-pause').addEventListener('click', () => G && (G.state === 'play' ? pause() : resume()));
 
 /* ---------- Driving ---------- */
@@ -412,18 +427,18 @@ function forward(){
   if (!R.map.road.has(key(nx, ny))) {
     R.bumps++;
     const body = car.firstChild; body.classList.remove('bump'); void body.getBoundingClientRect(); body.classList.add('bump');
-    penalty(PEN.bump, 'Bump!'); return;
+    penalty(PEN.bump, t('cr.toast.bump')); return;
   }
   R.x = nx; R.y = ny; R.steps++; placeCar(); beep('step');
   if (R.fuel !== null) { R.fuel--; renderSide(); }
   const light = R.map.lights.find(l => l.x === nx && l.y === ny);
-  if (light && isRed(light)) { R.reds++; penalty(PEN.red, 'Red light!'); }
-  if (onTracks() && R.gate === 'red') penalty(PEN.train, 'Train!');
+  if (light && isRed(light)) { R.reds++; penalty(PEN.red, t('cr.toast.red')); }
+  if (onTracks() && R.gate === 'red') penalty(PEN.train, t('cr.toast.train'));
   if (nx === R.map.b.x && ny === R.map.b.y) {
     if (at() === R.goals.length) return finishRun(true);
-    toast('Finish your jobs first', true);
+    toast(t('cr.toast.jobsFirst'), true);
   }
-  if (R.fuel === 0) return finishRun(false, 'Out of fuel');
+  if (R.fuel === 0) return finishRun(false, t('cr.outOfFuel'));
   if (R.works && R.steps >= R.nextWork) closeStreet();
 }
 function turn(by){
@@ -433,35 +448,55 @@ function action(){
   const m = R.map, here = m.places.findIndex(p => doorAt(p, R.x, R.y));
   const g = R.goals.find((g, k) => g.p === here && isOpen(g, k));
   if (!g) {
-    if (G.ms.clues && here >= 0 && !R.goals.some(g => g.p === here)) return penalty(PEN.wrong, 'Wrong place');
-    toast('No door to open here', true); return;
+    if (G.ms.clues && here >= 0 && !R.goals.some(g => g.p === here)) return penalty(PEN.wrong, t('cr.toast.wrong'));
+    toast(t('cr.toast.noDoor'), true); return;
   }
-  if (G.ms.quiz) { if (!G.quiz.length) G.quiz = shuffle(QUIZ); const q = G.quiz.pop(); R.code = {g, word: q.a, q: q.q, n: 0, miss: 0}; }
-  else if (G.level.codes) R.code = {g, word: m.places[here].code, n: 0, miss: 0};
+  if (G.ms.quiz) { if (!G.quiz.length) G.quiz = shuffle(QUIZ); const q = G.quiz.pop(); R.code = {g, word: [...q.answer], q: q.prompt, n: 0, miss: 0}; }
+  else if (G.level.codes) R.code = {g, word: [...m.places[here].code], n: 0, miss: 0};
   else return completeGoal(g);
-  showCode();
+  // spaces in an answer are typed for the driver
+  skipSpaces(); showCode(); focusType();
 }
+function skipSpaces(){ const c = R.code; while (c.n < c.word.length && c.word[c.n] === ' ') c.n++; }
+// Letters match without caring about case or accents: "cancion" opens CANCIÓN.
 function typeLetter(ch){
   const c = R.code;
-  if (ch !== c.word[c.n]) { c.miss++; penalty(PEN.letter, 'Wrong letter'); return showCode(); }
-  c.n++; c.miss = 0; beep('step'); showCode();
-  if (c.n === c.word.length) completeGoal(c.g);
+  if (!c || ch === ' ') return;
+  if (Kit.fold(ch) !== Kit.fold(c.word[c.n])) { c.miss++; penalty(PEN.letter, t('cr.toast.letter')); return showCode(); }
+  c.n++; c.miss = 0; skipSpaces(); beep('step');
+  if (c.n >= c.word.length) return completeGoal(c.g);
+  showCode();
 }
 // Spelling shows the whole word for the navigator to read out. A quiz hides the answer, and gives away a letter after three misses.
 function showCode(){
-  const c = R.code, show = k => !c.q || k < c.n || (k === c.n && c.miss >= 3);
-  codeEl.innerHTML = `<span class="eyebrow">${c.q ? 'Navigator asks · driver types the answer' : 'Spell it to open the door'}</span>${c.q ? `<span class="cr-q">${c.q}</span>` : ''}<div class="cr-letters">${
-    [...c.word].map((ch, k) => `<span class="${k < c.n ? 'ok' : k === c.n ? 'next' : ''}">${show(k) ? ch : ''}</span>`).join('')}</div>`;
+  const c = R.code, shown = k => !c.q || k < c.n || c.word[k] === ' ' || (k === c.n && c.miss >= 3);
+  const had = codeEl.querySelector('.cr-type'), focused = had && document.activeElement === had;
+  codeEl.innerHTML = `<span class="eyebrow">${esc(c.q ? t('cr.code.quiz') : t('cr.code.spell'))}</span>${c.q ? `<span class="cr-q">${esc(c.q)}</span>` : ''}<div class="cr-letters">${
+    c.word.map((ch, k) => `<span class="${k < c.n ? 'ok' : k === c.n ? 'next' : ''}"${ch === ' ' ? ' style="visibility:hidden"' : ''}>${shown(k) ? esc(ch) : ''}</span>`).join('')}</div>` +
+    `<input class="cr-type" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="done" placeholder="${esc(t('cr.code.type'))}" ${touch ? '' : 'hidden'}>` +
+    `<div class="cr-code-actions"><button class="btn btn-ghost" type="button" data-code="skip">${esc(t('cr.code.skip', {n: PEN.skip}))}</button></div>`;
   codeEl.classList.toggle('top', R.y > ROWS / 2); codeEl.hidden = false;
+  if (focused) focusType();
 }
-function hideCode(){ codeEl.hidden = true; }
+function focusType(){ const el = codeEl.querySelector('.cr-type'); if (el && touch) el.focus({preventScroll: true}); }
+function hideCode(){ codeEl.hidden = true; codeEl.innerHTML = ''; }
+codeEl.addEventListener('input', e => {
+  if (!e.target.matches('.cr-type')) return;
+  const text = e.target.value; e.target.value = '';
+  if (!G || G.state !== 'play') return;
+  for (const ch of text) { if (!R.code) break; typeLetter(ch); }
+});
+codeEl.addEventListener('click', e => {
+  if (!e.target.closest('[data-code="skip"]') || !R.code || G.state !== 'play') return;
+  e.target.blur(); R.pen += PEN.skip; toast(t('cr.toast.skipped'), true); completeGoal(R.code.g);
+});
 function completeGoal(g){
   g.done = true; R.code = null; hideCode();
   const m = R.map, next = R.goals[R.goals.indexOf(g) + 1];
   if (g.type === 'visit') toast(m.places[g.p].name + ' ✓');
-  else if (g.type === 'drop') toast(G.ms.reveal ? 'Thank you!' : 'Delivered ✓');
-  else if (G.ms.reveal) toast(`“${m.places[next.p].name}, please!”`, false, 2200);
-  else toast('Parcel picked up');
+  else if (g.type === 'drop') toast(G.ms.reveal ? t('cr.toast.thanks') : t('cr.toast.delivered'));
+  else if (G.ms.reveal) toast(t('cr.toast.please', {place: m.places[next.p].name}), false, 2200);
+  else toast(t('cr.toast.parcel'));
   beep('ok'); markMap(); renderSide();
 }
 
@@ -469,19 +504,19 @@ function finishRun(arrived, why){
   G.state = 'result'; R.arrived = arrived; R.code = null; hideCode();
   const left = R.goals.length - R.goals.filter(g => g.done).length + 1;   // jobs not done, plus B itself
   const time = arrived ? R.t + R.pen : G.limit + PEN.unfinished * left;
-  const t = G.teams[R.team]; t.total += time; t.pen += R.pen; t.runs++;
+  const tm = G.teams[R.team]; tm.total += time; tm.pen += R.pen; tm.runs++;
   renderBoard(); renderSide(); beep(arrived ? 'ok' : 'bad');
   const lastRun = G.k === G.order.length - 1, lastRound = G.round === G.rounds - 1;
-  const detail = [R.steps + ' steps', R.bumps + (R.bumps === 1 ? ' bump' : ' bumps')];
-  if (G.level.lights) detail.push(R.reds + (R.reds === 1 ? ' red light' : ' red lights'));
-  if (R.fuel !== null) detail.push(R.fuel + ' fuel left');
-  detail.push('+' + R.pen + ' s in penalties');
+  const detail = [t('cr.steps', {n: R.steps}), t('cr.bumps', {n: R.bumps})];
+  if (G.level.lights) detail.push(t('cr.reds', {n: R.reds}));
+  if (R.fuel !== null) detail.push(t('cr.fuelLeft', {n: R.fuel}));
+  detail.push(t('cr.penSoFar', {n: R.pen}));
   openOverlay(`
-    <span class="eyebrow">${esc(t.name)} · ${arrived ? 'Arrived at B' : why || 'Time is up'}</span>
+    <span class="eyebrow">${esc(tm.name)} · ${esc(arrived ? t('cr.arrived') : why || t('cr.timeUp'))}</span>
     <h2>${fmt(time)}</h2>
-    <p class="sub">${arrived ? detail.join(' · ') : `${fmt(G.limit)} limit + ${PEN.unfinished} s for each thing left to do (${left})`}</p>
-    <div class="card-actions"><button class="btn btn-primary btn-big" data-act="next" type="button">${lastRun ? (lastRound ? 'See results' : 'Next round') : 'Next team'}</button></div>
-    <span class="keyhint">or press <kbd>Enter</kbd></span>`);
+    <p class="sub">${esc(arrived ? detail.join(' · ') : t('cr.unfinished', {limit: fmt(G.limit), n: PEN.unfinished, left}))}</p>
+    <div class="card-actions"><button class="btn btn-primary btn-big" data-act="next" type="button">${esc(lastRun ? (lastRound ? t('cr.seeResults') : t('cr.nextRound')) : t('cr.nextTeam'))}</button></div>
+    <span class="keyhint">${t('cr.pressEnter', {key: '<kbd>Enter</kbd>'})}</span>`);
 }
 function next(){
   if (G.state !== 'result') return;
@@ -493,23 +528,24 @@ function next(){
 }
 
 function endGame(){
+  const early = G.state !== 'result' && G.round < G.rounds;
   G.state = 'over'; hideCode();
   const ranked = G.teams.slice().sort((a, b) => (b.runs - a.runs) || (a.total - b.total));
   const top = ranked[0], tie = ranked[1] && ranked[1].runs === top.runs && fmt(ranked[1].total) === fmt(top.total);
-  const title = !top.runs ? 'No runs finished' : G.solo ? fmt(top.total) : tie ? 'It’s a tie!' : esc(top.name) + ' wins!';
-  const sub = G.solo ? esc(top.name) + '’s total time' : 'Fastest total time';
-  const rows = G.solo ? '' : `<table class="results"><thead><tr><th>Team</th><th class="num">Time</th><th class="num">Penalties</th></tr></thead><tbody>${
-    ranked.map((t, k) => `<tr class="${k === 0 ? 'win' : ''}"><td>${esc(t.name)}</td><td class="num">${t.runs ? fmt(t.total) : '–'}</td><td class="num">${t.runs ? '+' + t.pen + ' s' : '–'}</td></tr>`).join('')}</tbody></table>`;
+  const title = !top.runs ? t('cr.noRuns') : early ? t('gameEnded') : G.solo ? fmt(top.total) : tie ? t('tie') : t('wins', {name: top.name});
+  const sub = early ? t('endedEarly') : G.solo ? t('cr.totalOf', {name: top.name}) : t('cr.fastest');
+  const rows = G.solo ? '' : `<table class="results"><thead><tr><th>${esc(t('team'))}</th><th class="num">${esc(t('time'))}</th><th class="num">${esc(t('penalties'))}</th></tr></thead><tbody>${
+    ranked.map((tm, k) => `<tr class="${k === 0 && !early ? 'win' : ''}"><td>${esc(tm.name)}</td><td class="num">${tm.runs ? fmt(tm.total) : '–'}</td><td class="num">${tm.runs ? '+' + tm.pen + ' s' : '–'}</td></tr>`).join('')}</tbody></table>`;
   openOverlay(`
-    <span class="eyebrow">${sub}</span>
-    <h2>${title}</h2>
+    <span class="eyebrow">${esc(sub)}</span>
+    <h2>${esc(title)}</h2>
     ${rows}
     <div class="card-actions">
-      <button class="btn btn-primary" data-act="again" type="button">Play again</button>
-      <button class="btn btn-ghost" data-act="settings" type="button">Change settings</button>
-      <button class="btn btn-ghost" data-act="hub" type="button">All games</button>
+      <button class="btn btn-primary" data-act="again" type="button">${esc(t('playAgain'))}</button>
+      <button class="btn btn-ghost" data-act="settings" type="button">${esc(t('changeSettings'))}</button>
+      <button class="btn btn-ghost" data-act="hub" type="button">${esc(t('allGames').replace('← ', ''))}</button>
     </div>`, true);
-  releaseWake();
+  Kit.wake.off();
 }
 
 /* ---------- Input ---------- */
@@ -527,7 +563,7 @@ document.querySelector('.cr-pad').addEventListener('click', e => {
   b && b.blur();   // so Space on the keyboard never re-presses a tapped button
   if (b && G && G.state === 'play' && !R.code) drive[b.dataset.key]();
 });
-$('#cr-teacher').addEventListener('click', e => { e.currentTarget.blur(); if (G && G.state === 'play') penalty(PEN.teacher, 'English only!'); });
+$('#cr-teacher').addEventListener('click', e => { e.currentTarget.blur(); if (G && G.state === 'play') penalty(PEN.teacher, t('cr.toast.teacher', {lang: lang()})); });
 
 document.addEventListener('keydown', e => {
   if (views.game.hidden || !G) return;
@@ -535,16 +571,17 @@ document.addEventListener('keydown', e => {
   if (G.state === 'turn') { if (e.code === 'Space' && !e.repeat) { e.preventDefault(); go(); } return; }
   if (G.state === 'result') { if (e.key === 'Enter' && !e.repeat) { e.preventDefault(); next(); } return; }
   if (G.state !== 'play') return;
+  if (e.target.matches && e.target.matches('.cr-type')) return;   // the text box types for itself
   const k = {ArrowUp: 'up', ArrowLeft: 'left', ArrowRight: 'right', Space: 'act'}[e.code];
   if (k || e.code === 'ArrowDown') e.preventDefault();   // keep the page still and the focused button unpressed
   if (e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
-  if (R.code) { if (/^Key[A-Z]$/.test(e.code)) typeLetter(e.code.slice(3)); return; }
+  if (R.code) { if (e.key.length === 1 && e.key !== ' ') { e.preventDefault(); typeLetter(e.key); } return; }
   if (k) drive[k]();
 });
 
 let last = 0;
-function frame(t){
-  const dt = Math.min(.05, (t - last) / 1000 || 0); last = t;
+function frame(now){
+  const dt = Math.min(.25, (now - last) / 1000 || 0); last = now;
   if (G && G.state === 'play') {
     R.t += dt;
     $('#cr-time').textContent = fmt(R.t + R.pen);
@@ -554,5 +591,5 @@ function frame(t){
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
-document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); else if (G && G.state !== 'over' && !views.game.hidden) requestWake(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); else if (G && G.state !== 'over' && !views.game.hidden) Kit.wake.on(); });
 })();

@@ -4,23 +4,41 @@ body{margin:0}
 img{max-width:100%}
 :root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 
-/* Layout: brand header → hub of game cards → per-game setup (words | options) → full-screen play field with scoreboard on top */
+/* Colour tokens. The default look is neutral (no school branding); data-brand="speakplus" (set by kit.js
+   from shared/config.js or ?brand=) switches to the Speak Plus palette. Every colour has a dark-mode value. */
 :root{
+  --bg:#F6F6F2; --surface:#FFFFFF; --fg:#1C2B33; --muted:#4E5D66; --line:#DCE1E3;
+  --primary:#0E6363; --primary-fg:#FFFFFF; --accent:#C2410C; --accent-soft:#FBE4D6; --sky:#7FB7D1;
+  --field:#ECEFEC; --field-line:#DCE2DE; --block-bg:#0E6363; --block-fg:#FFFFFF; --block-edge:#083F3F;
+  --good:#2E7D5B;
+  --f-display:'Lexend','Hiragino Sans','Yu Gothic','Noto Sans JP',system-ui,sans-serif;
+  --f-jp:'Lexend','Hiragino Sans','Yu Gothic','Noto Sans JP','Noto Sans CJK JP',system-ui,sans-serif;
+  --r:14px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F1A1F; --surface:#17262D; --fg:#EEF3F2; --muted:#A6B7BA; --line:#2A3D44;
+  --primary:#7FDBD2; --primary-fg:#0F1A1F; --accent:#FB8A4C; --accent-soft:#3D2418; --sky:#7FB7D1;
+  --field:#13222A; --field-line:#1C2F37; --block-bg:#7FDBD2; --block-fg:#0F1A1F; --block-edge:#3E9C93;
+  --good:#5CC496; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1A1F; --surface:#17262D; --fg:#EEF3F2; --muted:#A6B7BA; --line:#2A3D44;
+  --primary:#7FDBD2; --primary-fg:#0F1A1F; --accent:#FB8A4C; --accent-soft:#3D2418; --sky:#7FB7D1;
+  --field:#13222A; --field-line:#1C2F37; --block-bg:#7FDBD2; --block-fg:#0F1A1F; --block-edge:#3E9C93;
+  --good:#5CC496; color-scheme:dark}
+
+/* Speak Plus brand: Washi #F7F4EE, Indigo #1F2F5C, Vermilion #E8483B, Sky #9DB4E0 */
+:root[data-brand="speakplus"]{
   --washi:#F7F4EE; --indigo:#1F2F5C; --vermilion:#E8483B; --sky:#9DB4E0;
   --bg:#F7F4EE; --surface:#FFFFFF; --fg:#1F2F5C; --muted:#4A5578; --line:#E4DFD4;
   --primary:#1F2F5C; --primary-fg:#F7F4EE; --accent:#E8483B; --accent-soft:#FBE3E0;
   --field:#EFEBE2; --field-line:#E4DFD4; --block-bg:#1F2F5C; --block-fg:#F7F4EE; --block-edge:#121C3A;
-  --good:#2E7D5B;
-  --f-display:'Lexend','Zen Kaku Gothic New',system-ui,sans-serif;
-  --f-jp:'Zen Kaku Gothic New','Lexend','Hiragino Sans','Yu Gothic',sans-serif;
-  --r:14px;
-}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --good:#2E7D5B}
+@media (prefers-color-scheme: dark){:root[data-brand="speakplus"]:not([data-theme="light"]){
   --bg:#101830; --surface:#1A2546; --fg:#F7F4EE; --muted:#AEB8D3; --line:#2C3A63;
   --primary:#F7F4EE; --primary-fg:#1F2F5C; --accent:#F0625A; --accent-soft:#3A2333;
   --field:#141E3B; --field-line:#1E2A4E; --block-bg:#F7F4EE; --block-fg:#1F2F5C; --block-edge:#9DB4E0;
   --good:#5CC496; color-scheme:dark}}
-:root[data-theme="dark"]{
+:root[data-brand="speakplus"][data-theme="dark"]{
   --bg:#101830; --surface:#1A2546; --fg:#F7F4EE; --muted:#AEB8D3; --line:#2C3A63;
   --primary:#F7F4EE; --primary-fg:#1F2F5C; --accent:#F0625A; --accent-soft:#3A2333;
   --field:#141E3B; --field-line:#1E2A4E; --block-bg:#F7F4EE; --block-fg:#1F2F5C; --block-edge:#9DB4E0;
@@ -29,13 +47,17 @@ img{max-width:100%}
 html,body{height:100%}
 body{background:var(--bg);color:var(--fg);font-family:var(--f-display);font-size:16px;line-height:1.5}
 *{box-sizing:border-box}
-button{font:inherit;color:inherit;cursor:pointer}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
 :focus-visible{outline:3px solid var(--sky);outline-offset:2px}
 .wrap{max-width:1080px;margin:0 auto;padding-inline:20px;padding-block:20px 48px}
 
-/* Logo */
+/* Logo: filled by kit.js into [data-logo]. Speak Plus = "speak" + the tilted vermilion "+"; neutral = speech bubble + wordmark */
 .logo{display:inline-flex;align-items:flex-start;font-weight:700;letter-spacing:-.04em;line-height:1;color:var(--fg);font-size:24px}
 .logo svg{width:.62em;height:.62em;flex:none}
+.logo-neutral{align-items:center;gap:.3em;letter-spacing:-.03em}
+.logo-neutral .logo-mark{width:1.15em;height:1.15em}
+.logo-neutral b{color:var(--primary);font-weight:700}
 .logo-jp{font-family:var(--f-jp);font-weight:700;font-size:10px;letter-spacing:.42em;color:var(--fg);margin-top:4px}
 .brand{display:flex;flex-direction:column}
 .topnav{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-block:8px 28px}
@@ -53,24 +75,10 @@ button{font:inherit;color:inherit;cursor:pointer}
 .link-back{background:none;border:0;color:var(--muted);font-size:14px;padding:8px 0;display:inline-flex;gap:6px;align-items:center}
 .link-back:hover{color:var(--fg)}
 
-/* Hub */
-.hub-head h1{font-size:clamp(30px,5vw,48px);line-height:1.1;margin:6px 0 10px;text-wrap:balance;letter-spacing:-.02em}
-.hub-head p{color:var(--muted);max-width:56ch;margin:0}
-.games{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:20px;margin-top:32px}
-.game-card{background:var(--surface);border-radius:20px;overflow:hidden;display:flex;flex-direction:column;border:1px solid var(--line)}
-.game-art{position:relative;height:190px;background:var(--field);overflow:hidden;border-bottom:4px solid var(--accent)}
-.game-art span{position:absolute;padding:8px 14px;border-radius:10px;background:var(--block-bg);color:var(--block-fg);font-family:var(--f-jp);font-weight:700;font-size:22px;box-shadow:0 4px 0 var(--block-edge);animation:artfall 6s linear infinite}
-.game-art span:nth-child(1){left:12%;animation-delay:0s}
-.game-art span:nth-child(2){left:52%;animation-delay:-2s}
-.game-art span:nth-child(3){left:30%;animation-delay:-4s}
-@keyframes artfall{from{top:-50px}to{top:200px}}
-.game-body{padding:20px 22px 22px;display:flex;flex-direction:column;gap:10px;flex:1}
-.game-body h2{margin:0;font-size:24px}
-.game-body p{margin:0;color:var(--muted);font-size:15px}
+/* Tags (hub cards, City Run setup) */
 .tags{display:flex;flex-wrap:wrap;gap:6px}
 .tag{font-size:12px;padding:3px 10px;border-radius:999px;background:var(--bg);color:var(--muted);border:1px solid var(--line)}
-.game-body .btn{align-self:flex-start;margin-top:8px}
-.soon{border:1.5px dashed var(--line);border-radius:20px;display:flex;align-items:center;justify-content:center;padding:28px;color:var(--muted);text-align:center;font-size:15px;min-height:160px}
+a.btn{text-decoration:none}
 
 /* Setup */
 .setup-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:8px 0 22px}
@@ -83,8 +91,6 @@ button{font:inherit;color:inherit;cursor:pointer}
 .hint{font-size:13px;color:var(--muted);margin:0}
 textarea{width:100%;font:inherit;color:var(--fg);background:var(--bg);border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;resize:vertical}
 textarea:focus{border-color:var(--sky);outline:none}
-#words{min-height:260px;font-family:var(--f-jp);font-size:18px;line-height:1.7}
-#teams{min-height:96px}
 .count{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
 .row-between{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
 fieldset{border:0;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;min-width:0}
@@ -107,42 +113,22 @@ fieldset{border:0;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;
 .bar{display:flex;align-items:center;gap:12px;padding:10px 16px;flex-wrap:wrap}
 .bar .logo{font-size:20px}
 .bar .spacer{flex:1}
-.progress{font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.progress{font-size:clamp(14px,1.4vw,18px);color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
 .board{display:flex;gap:10px;flex-wrap:wrap;padding:0 16px 12px}
 .team{display:flex;align-items:center;gap:12px;padding:8px 14px;border-radius:14px;background:var(--surface);border:2px solid var(--line);min-width:0}
-.team-name{font-weight:700;font-size:clamp(15px,1.8vw,20px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px}
+.team-name{font-weight:700;font-size:clamp(18px,2.4vw,30px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:min(320px,40vw)}
 .hearts{display:flex;gap:2px}
-.hearts svg{width:20px;height:20px}
+.hearts svg{width:clamp(20px,2.2vw,28px);height:clamp(20px,2.2vw,28px)}
 .heart-on{fill:var(--accent)}
 .heart-off{fill:none;stroke:var(--line);stroke-width:2}
-.team-left{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
-.team-score{font-weight:700;font-size:clamp(18px,2.2vw,26px);font-variant-numeric:tabular-nums;min-width:2ch;text-align:right}
+.team-left{font-size:clamp(14px,1.5vw,18px);color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.team-score{font-weight:700;font-size:clamp(22px,3vw,40px);font-variant-numeric:tabular-nums;min-width:2ch;text-align:right}
 .team.active{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
 .team.active .team-name::before{content:"";display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--accent);margin-right:8px;vertical-align:middle}
 .team.out{opacity:.45}
 .team.out .team-name{text-decoration:line-through}
 .team.bump .team-score{animation:bump .4s}
 @keyframes bump{40%{transform:scale(1.4);color:var(--good)}}
-
-.field{position:relative;flex:1;margin:0 16px 16px;border-radius:18px;background:var(--field);overflow:hidden;
-  background-image:linear-gradient(var(--field-line) 1px,transparent 1px);background-size:100% 64px}
-.floor{position:absolute;left:0;right:0;bottom:0;height:8px;background:var(--accent)}
-.floor.flash{animation:flash .9s}
-@keyframes flash{0%,100%{height:8px}30%{height:28px}}
-.block{position:absolute;left:0;top:0;border:0;border-radius:14px;padding:.32em .7em;background:var(--block-bg);color:var(--block-fg);
-  font-family:var(--f-jp);font-weight:700;font-size:clamp(30px,5.2vw,68px);line-height:1.2;white-space:nowrap;box-shadow:0 6px 0 var(--block-edge);
-  touch-action:manipulation;will-change:transform;user-select:none}
-.block:hover{filter:brightness(1.15)}
-.block-in{animation:blockin .25s ease-out}
-@keyframes blockin{from{opacity:0}to{opacity:1}}
-.block.pop{animation:pop .35s ease-out forwards;pointer-events:none;background:var(--good);color:#fff;box-shadow:none}
-@keyframes pop{to{opacity:0;scale:1.35}}
-.block.steal{outline:4px solid var(--accent);outline-offset:3px}
-.block.steal::after{content:"Bonus";position:absolute;top:-14px;right:-10px;font-family:var(--f-display);font-size:13px;font-weight:700;padding:2px 9px;border-radius:999px;background:var(--accent);color:#fff}
-.block.missed{background:var(--accent);color:#fff;box-shadow:none;pointer-events:none}
-.block.fade{opacity:.25;pointer-events:none;transition:opacity .25s}
-.plus1{position:absolute;font-weight:700;font-size:36px;color:var(--good);pointer-events:none;animation:rise .7s ease-out forwards}
-@keyframes rise{to{transform:translateY(-60px);opacity:0}}
 
 .overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:20px;background:color-mix(in srgb,var(--bg) 80%,transparent);backdrop-filter:blur(3px);z-index:5;overflow:auto}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:28px;max-width:560px;width:100%;display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center}
@@ -165,5 +151,18 @@ kbd{font-family:var(--f-display);font-size:12px;border:1px solid var(--line);bor
 .review-words small{font-family:var(--f-display);font-weight:500;font-size:12px;color:var(--muted);margin-left:4px}
 .review-words span{font-family:var(--f-jp);font-weight:700;font-size:18px;padding:4px 12px;border-radius:10px;background:var(--accent-soft);color:var(--fg)}
 
-@media (max-width:600px){.bar .logo{display:none}.team{padding:6px 10px;gap:8px}.hearts svg{width:16px;height:16px}.field{margin:0 10px 10px}}
-@media (prefers-reduced-motion:reduce){.game-art span{animation:none;top:60px}.block.pop,.plus1,.floor.flash,.team.bump .team-score{animation-duration:.01s}}
+@media (max-width:600px){.bar .logo{display:none}.team{padding:6px 10px;gap:8px}.hearts svg{width:16px;height:16px}}
+@media (prefers-reduced-motion:reduce){.team.bump .team-score{animation-duration:.01s}}
+
+/* Kit pieces: saved classes, content packs, language switch, member list */
+.kit-roster,.kit-content{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.kit-select{min-height:36px;border-radius:999px;border:1.5px solid var(--line);background:var(--bg);color:var(--fg);padding:0 12px;font-size:13px;max-width:100%}
+.kit-split{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap}
+.kit-split .hint{margin-left:4px}
+.kit-msg{min-height:1em}
+.chip-btn{min-height:36px}
+.members{margin:0;color:var(--muted);font-size:clamp(16px,2vw,22px);text-wrap:balance}
+.task-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;background:var(--accent-soft);color:var(--fg);font-weight:700;font-size:clamp(14px,1.5vw,18px)}
+details.more{border-top:1px solid var(--line);padding-top:12px}
+details.more summary{cursor:pointer;font-weight:700;font-size:15px;min-height:32px}
+.topnav-right{display:flex;align-items:center;gap:10px}

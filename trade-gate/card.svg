@@ -1,0 +1,8 @@
+<svg viewBox="0 0 320 190" xmlns="http://www.w3.org/2000/svg">
+  <path class="s-field-line nofill" stroke-width="26" d="M0 150H320"/>
+  <path class="s-fg nofill round" stroke-width="10" d="M124 150V86a36 36 0 0 1 72 0V150"/>
+  <path class="s-accent nofill round dash" stroke-width="5" d="M84 118H236"/>
+  <rect class="f-primary" x="44" y="98" width="40" height="40" rx="8"/><rect class="f-sky" x="236" y="98" width="40" height="40" rx="8"/>
+  <circle class="f-accent s-field" stroke-width="3" cx="160" cy="118" r="11"/>
+  <rect class="f-surface s-line" stroke-width="1.5" x="118" y="6" width="84" height="28" rx="8"/><text class="f-fg t-mid" x="160" y="26" style="letter-spacing:.2em">4821</text>
+</svg>

@@ -1,0 +1,116 @@
+{
+  "id": "es-en-basics",
+  "type": "word-list",
+  "title": "Spanish → English: basics",
+  "language": "en",
+  "promptLanguage": "es",
+  "subject": "English",
+  "levels": [
+    "A1",
+    "A2"
+  ],
+  "ages": [
+    7,
+    99
+  ],
+  "author": "Classroom Games contributors",
+  "license": "CC-BY-4.0",
+  "items": [
+    {
+      "prompt": "perro",
+      "answer": "dog"
+    },
+    {
+      "prompt": "gato",
+      "answer": "cat"
+    },
+    {
+      "prompt": "casa",
+      "answer": "house"
+    },
+    {
+      "prompt": "colegio",
+      "answer": "school"
+    },
+    {
+      "prompt": "libro",
+      "answer": "book"
+    },
+    {
+      "prompt": "agua",
+      "answer": "water"
+    },
+    {
+      "prompt": "comida",
+      "answer": "food"
+    },
+    {
+      "prompt": "familia",
+      "answer": "family"
+    },
+    {
+      "prompt": "amigo",
+      "answer": "friend"
+    },
+    {
+      "prompt": "ciudad",
+      "answer": "city"
+    },
+    {
+      "prompt": "trabajo",
+      "answer": "job"
+    },
+    {
+      "prompt": "dinero",
+      "answer": "money"
+    },
+    {
+      "prompt": "calle",
+      "answer": "street"
+    },
+    {
+      "prompt": "mañana",
+      "answer": "tomorrow"
+    },
+    {
+      "prompt": "cocina",
+      "answer": "kitchen"
+    },
+    {
+      "prompt": "ventana",
+      "answer": "window"
+    },
+    {
+      "prompt": "zapatos",
+      "answer": "shoes"
+    },
+    {
+      "prompt": "camisa",
+      "answer": "shirt"
+    },
+    {
+      "prompt": "lluvia",
+      "answer": "rain"
+    },
+    {
+      "prompt": "montaña",
+      "answer": "mountain"
+    },
+    {
+      "prompt": "playa",
+      "answer": "beach"
+    },
+    {
+      "prompt": "fruta",
+      "answer": "fruit"
+    },
+    {
+      "prompt": "cumpleaños",
+      "answer": "birthday"
+    },
+    {
+      "prompt": "viernes",
+      "answer": "Friday"
+    }
+  ]
+}
