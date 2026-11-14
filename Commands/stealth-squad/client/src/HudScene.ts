@@ -182,7 +182,13 @@ export class HudScene extends Phaser.Scene {
     return { box, bg, label, radius, key: "" };
   }
 
-  /** Crawl bottom-right; skill buttons in a row to its left. */
+  /**
+   * All buttons on the left edge: Crawl in the bottom-left corner, skills in
+   * columns above it (bottom up, then the next column). Every exit is on the
+   * right of its map and the team walks rightwards, so the right side of the
+   * screen stays free for tapping the map and the truck / boat. Left thumb =
+   * buttons, right thumb = map.
+   */
   private layout() {
     const { width, height } = this.scale;
     this.banner?.setPosition(width / 2, height / 2);
@@ -192,13 +198,24 @@ export class HudScene extends Phaser.Scene {
     this.missionTextObj?.setPosition(width / 2, session.spectator ? 64 : 8);
     this.toastText?.setPosition(width / 2, 40);
     this.aimText?.setPosition(width / 2, 76);
-    const crawlX = width - MARGIN - CRAWL_RADIUS;
-    const baseY = height - MARGIN - CRAWL_RADIUS;
-    this.crawlBtn.box.setPosition(crawlX, baseY);
-    let x = crawlX - CRAWL_RADIUS - GAP - SKILL_RADIUS;
+    const colX = MARGIN + CRAWL_RADIUS; // centre of the first column
+    this.crawlBtn.box.setPosition(colX, height - MARGIN - CRAWL_RADIUS);
+    // Leave room for the status line at the top-left.
+    const top = 30;
+    const step = SKILL_RADIUS * 2 + GAP;
+    const firstBottom = height - MARGIN - CRAWL_RADIUS * 2 - GAP; // above Crawl
+    const fitsFirst = Math.max(0, Math.floor((firstBottom - top + GAP) / step));
+    const perColumn = Math.max(1, Math.floor((height - MARGIN - top + GAP) / step));
+    let i = 0;
     for (const b of this.skillBtns.values()) {
-      b.box.setPosition(x, baseY + (CRAWL_RADIUS - SKILL_RADIUS));
-      x -= SKILL_RADIUS * 2 + GAP;
+      if (i < fitsFirst) {
+        b.box.setPosition(colX, firstBottom - SKILL_RADIUS - i * step);
+      } else {
+        const j = i - fitsFirst;
+        const col = 1 + Math.floor(j / perColumn);
+        b.box.setPosition(colX + col * step, height - MARGIN - SKILL_RADIUS - (j % perColumn) * step);
+      }
+      i++;
     }
   }
 }
