@@ -256,6 +256,7 @@ function prepRun(){
 const at = () => { const i = R.goals.findIndex(g => !g.done); return i < 0 ? R.goals.length : i; };
 const isOpen = (g, k) => !g.done && (!G.ms.ordered || k === at());
 const isShown = k => !G.ms.reveal || k <= at();
+const doorAt = (p, x, y) => p.door.x === x && p.door.y === y;
 // The place whose building covers a tile (buildings fill the tiles between streets), or -1
 const placeAt = (x, y) => x > 0 && y > 0 && x < COLS && y < ROWS && x % 3 && y % 3 ? R.map.places.findIndex(p => p.bx === Math.floor(x / 3) && p.by === Math.floor(y / 3)) : -1;
 
@@ -270,9 +271,12 @@ function drawMap(){
   }
   m.places.forEach((p, i) => {
     const x0 = (3*p.bx + 1) * U, y0 = (3*p.by + 1) * U;
+    const ex = Math.max(x0 + 8, Math.min(x0 + 2*U - 8, c(p.door.x))), ey = Math.max(y0 + 8, Math.min(y0 + 2*U - 8, c(p.door.y)));
+    const flat = p.door.y < 3*p.by + 1 || p.door.y > 3*p.by + 2;   // door on the top or bottom wall
     s += `<g class="cr-place" data-p="${i}"><rect x="${x0 + 8}" y="${y0 + 8}" width="${2*U - 16}" height="${2*U - 16}" rx="22"/>` +
       `<text class="cr-icon" x="${x0 + U}" y="${y0 + U + 8}">${p.icon}</text><text class="cr-name" x="${x0 + U}" y="${y0 + U + 62}">${p.name}</text>` +
-      `</g><rect class="cr-ring" data-p="${i}" x="${x0 - 6}" y="${y0 - 6}" width="${2*U + 12}" height="${2*U + 12}" rx="30"/>`;
+      `<line class="cr-door" x1="${ex - (flat ? 24 : 0)}" y1="${ey - (flat ? 0 : 24)}" x2="${ex + (flat ? 24 : 0)}" y2="${ey + (flat ? 0 : 24)}"/></g>` +
+      `<rect class="cr-ring" data-p="${i}" x="${p.door.x*U + 12}" y="${p.door.y*U + 12}" width="${U - 24}" height="${U - 24}" rx="16"/>`;
   });
   const lamp = (l, attr) => `<g class="cr-light" ${attr}><rect x="${l.x*U + 7}" y="${l.y*U + 7}" width="${U - 14}" height="${U - 14}" rx="12"/>` +
     `<circle cx="${l.x*U + 76}" cy="${l.y*U + 24}" r="18"/><path d="M${l.x*U + 68} ${l.y*U + 24}h16"/></g>`;
@@ -448,7 +452,7 @@ function forward(){
   const [dx, dy] = DIRS[R.dir], nx = R.x + dx, ny = R.y + dy;
   if (!R.map.road.has(key(nx, ny))) {
     const place = placeAt(nx, ny);
-    return place >= 0 ? enter(place) : bump();
+    return place >= 0 && doorAt(R.map.places[place], R.x, R.y) ? enter(place) : bump();   // only through the door
   }
   R.x = nx; R.y = ny; moved();
   const light = R.map.lights.find(l => l.x === nx && l.y === ny);
@@ -478,7 +482,7 @@ function afterMove(){
 function turn(by){
   R.dir = (R.dir + by + 4) % 4; R.ang += by * 90; placeCar(); beep('turn');
 }
-// Facing a building from the street next to it, ↑ goes in (any side). Only a place on the list completes a job.
+// On a place's door square, facing the building, ↑ goes in. Only a place on the list completes a job.
 function enter(i){
   const m = R.map, g = R.goals.find((g, k) => g.p === i && isOpen(g, k));
   R.inside = i; R.inDir = R.dir; moved();

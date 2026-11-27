@@ -52,7 +52,7 @@ La configuración se guarda en el navegador (localStorage).
 
 - Dos equipos o parejas (máximo 4). El **conductor** se sienta de espaldas a la pantalla con el teclado; el **navegador** ve el mapa y da instrucciones en inglés.
 - Una tecla es un paso: `↑` avanza una casilla, `←` `→` giran sin moverse.
-- Para entrar en un sitio hay que parar junto a él (por cualquier lado), girar hacia el edificio ("It's on your left") y pulsar `↑` ("Go in"). Para salir, dar la vuelta y `↑` otra vez.
+- Para entrar en un sitio hay que parar en la casilla de su puerta (la marca en la pared), girar hacia el edificio ("It's on your left") y pulsar `↑` ("Go in"). Para salir, dar la vuelta y `↑` otra vez.
 - Opción **Monster**: un monstruo pasea por la ciudad y persigue al coche cuando está cerca; hay que buscar otro camino. Si atrapa al coche, +5 s.
 - Hay que visitar todas las paradas y después llegar a **B**. Gana el menor tiempo total.
 - Penalizaciones: choque +3 s, semáforo en rojo +5 s, letra equivocada +2 s, monstruo +5 s, y el botón del profesor "Not English" +5 s.

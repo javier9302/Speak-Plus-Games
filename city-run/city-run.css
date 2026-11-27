@@ -44,6 +44,9 @@
 .cr-place.done rect{stroke:var(--good);stroke-width:8}
 .cr-icon{font-size:72px;text-anchor:middle}
 .cr-name{font-size:25px;font-weight:700;text-anchor:middle;fill:var(--fg)}
+.cr-door{stroke:var(--fg);stroke-width:14;stroke-linecap:round}
+.cr-place.stop .cr-door{stroke:var(--accent)}
+.cr-place.done .cr-door{stroke:var(--good)}
 .cr-ring{display:none;fill:none;stroke:var(--accent);stroke-width:6;stroke-dasharray:14 10}
 .cr-ring.on{display:block}
 .cr-tile.works{fill:var(--accent-soft);stroke:var(--accent);stroke-width:4;stroke-dasharray:12 9}
