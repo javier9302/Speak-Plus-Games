@@ -36,7 +36,7 @@ Hub de juegos para profesores de inglés de Speak Plus, una eikaiwa en Japón. L
 
 - Juego de hablar por parejas o equipos (máximo 4, `MAX_TEAMS`): el conductor no ve la pantalla y usa el teclado; un solo navegador ve el mapa y da instrucciones en inglés.
 - Una tecla = un paso: `↑` avanza una casilla, `←` `→` giran 90° sin moverse. Los controles son relativos al vehículo, nunca al mapa.
-- Entrar en un sitio: en la casilla de la puerta, girar hasta mirar al edificio (`entry(p)`) y pulsar `↑`; el coche entra (`R.inside`) y ahí se completa la parada (o sale la palabra/pregunta). Para salir, dar la vuelta y `↑`. Solo deja entrar un sitio de la lista; en Mystery, entrar en uno equivocado +3. Entrar y salir cuentan como pasos (y gasolina).
+- Entrar en un sitio: desde cualquier casilla de calle junto al edificio, girar hasta mirarlo y pulsar `↑` (`placeAt`); el coche entra (`R.inside`, `R.inDir`) y, si es un sitio de la lista, ahí se completa la parada (o sale la palabra/pregunta). Para salir, dar la vuelta y `↑`. Se puede entrar en cualquier sitio; en Mystery, uno equivocado +3. `p.door` ya no se dibuja: solo sirve para los cálculos (ruta más corta, obras). Entrar y salir cuentan como pasos (y gasolina).
 - Ciudad de 13×10 casillas generada al azar (`makeCity`): calles cada 3 casillas, 12 edificios de 2×2, `CLOSED` calles cortadas. Todos los equipos juegan la misma ciudad en espejo (`flip`) para que nadie copie la ruta.
 - Objetivo: visitar todas las paradas en cualquier orden y luego llegar a B. Gana el menor tiempo total (suma de rondas).
 - Penalizaciones en segundos (`PEN`): choque +3, semáforo en rojo +5, letra equivocada +2, puerta equivocada +3 (Mystery), tren +5, monstruo +5, "Not English" +5 (botón del profesor). Sin vidas ni eliminación.
