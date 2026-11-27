@@ -245,7 +245,7 @@ function prepRun(){
   const m = flip(G.city, G.k & 1, G.k & 2), ms = G.ms;
   const best = ms.id === 'fuel' ? shortest(m) : 0, fuel = ms.id === 'fuel' ? best + Math.max(FUEL.min, Math.round(best * FUEL.spare)) : null;
   R = {team: G.order[G.k], map: m, x: m.a.x, y: m.a.y, dir: m.dir, ang: m.dir * 90,
-    t: 0, pen: 0, steps: 0, bumps: 0, reds: 0, catches: 0, code: null, arrived: false, inside: -1,
+    t: 0, pen: 0, steps: 0, bumps: 0, reds: 0, catches: 0, code: null, arrived: false, inside: -1, inDir: 0,
     mon: G.monster ? {x: m.den.x, y: m.den.y, dir: 0, next: MONSTER.wait, chase: false} : null,
     goals: m.stops.map((p, k) => ({p, type: ms.pairs ? (k % 2 ? 'drop' : 'pickup') : 'visit', done: false})),
     fuel, tank: fuel, works: ms.id === 'works' ? G.level.stops : 0, nextWork: WORKS.first, gate: null};
@@ -256,9 +256,8 @@ function prepRun(){
 const at = () => { const i = R.goals.findIndex(g => !g.done); return i < 0 ? R.goals.length : i; };
 const isOpen = (g, k) => !g.done && (!G.ms.ordered || k === at());
 const isShown = k => !G.ms.reveal || k <= at();
-const doorAt = (p, x, y) => p.door.x === x && p.door.y === y;
-// The direction from a door into its building
-const entry = p => DIRS.findIndex(([dx, dy]) => { const x = p.door.x + dx, y = p.door.y + dy; return x >= 3*p.bx + 1 && x <= 3*p.bx + 2 && y >= 3*p.by + 1 && y <= 3*p.by + 2; });
+// The place whose building covers a tile (buildings fill the tiles between streets), or -1
+const placeAt = (x, y) => x > 0 && y > 0 && x < COLS && y < ROWS && x % 3 && y % 3 ? R.map.places.findIndex(p => p.bx === Math.floor(x / 3) && p.by === Math.floor(y / 3)) : -1;
 
 function drawMap(){
   const m = R.map, c = v => v * U + U / 2;
@@ -271,12 +270,9 @@ function drawMap(){
   }
   m.places.forEach((p, i) => {
     const x0 = (3*p.bx + 1) * U, y0 = (3*p.by + 1) * U;
-    const ex = Math.max(x0 + 8, Math.min(x0 + 2*U - 8, c(p.door.x))), ey = Math.max(y0 + 8, Math.min(y0 + 2*U - 8, c(p.door.y)));
-    const flat = p.door.y < 3*p.by + 1 || p.door.y > 3*p.by + 2;   // door on the top or bottom wall
     s += `<g class="cr-place" data-p="${i}"><rect x="${x0 + 8}" y="${y0 + 8}" width="${2*U - 16}" height="${2*U - 16}" rx="22"/>` +
       `<text class="cr-icon" x="${x0 + U}" y="${y0 + U + 8}">${p.icon}</text><text class="cr-name" x="${x0 + U}" y="${y0 + U + 62}">${p.name}</text>` +
-      `<line class="cr-door" x1="${ex - (flat ? 24 : 0)}" y1="${ey - (flat ? 0 : 24)}" x2="${ex + (flat ? 24 : 0)}" y2="${ey + (flat ? 0 : 24)}"/></g>` +
-      `<rect class="cr-ring" data-p="${i}" x="${p.door.x*U + 12}" y="${p.door.y*U + 12}" width="${U - 24}" height="${U - 24}" rx="16"/>`;
+      `</g><rect class="cr-ring" data-p="${i}" x="${x0 - 6}" y="${y0 - 6}" width="${2*U + 12}" height="${2*U + 12}" rx="30"/>`;
   });
   const lamp = (l, attr) => `<g class="cr-light" ${attr}><rect x="${l.x*U + 7}" y="${l.y*U + 7}" width="${U - 14}" height="${U - 14}" rx="12"/>` +
     `<circle cx="${l.x*U + 76}" cy="${l.y*U + 24}" r="18"/><path d="M${l.x*U + 68} ${l.y*U + 24}h16"/></g>`;
@@ -296,8 +292,8 @@ function drawMap(){
 }
 // Inside a place the car sits just behind its door, a little smaller
 function placeCar(){
-  const p = R.map.places[R.inside], [dx, dy] = p ? DIRS[entry(p)] : [0, 0];
-  car.style.transform = `translate(${(R.x + .5 + dx * .62) * U}px,${(R.y + .5 + dy * .62) * U}px) rotate(${R.ang}deg) scale(${p ? .75 : 1})`;
+  const p = R.map.places[R.inside], [dx, dy] = p ? DIRS[R.inDir] : [0, 0];
+  car.style.transform = `translate(${(R.x + .5 + dx * .9) * U}px,${(R.y + .5 + dy * .9) * U}px) rotate(${R.ang}deg) scale(${p ? .75 : 1})`;
 }
 function placeMonster(){
   if (!R.mon) return;
@@ -451,9 +447,8 @@ function forward(){
   if (R.inside >= 0) return leave();
   const [dx, dy] = DIRS[R.dir], nx = R.x + dx, ny = R.y + dy;
   if (!R.map.road.has(key(nx, ny))) {
-    const here = R.map.places.findIndex(p => doorAt(p, R.x, R.y));
-    if (here >= 0 && entry(R.map.places[here]) === R.dir) return enter(here);
-    return bump();
+    const place = placeAt(nx, ny);
+    return place >= 0 ? enter(place) : bump();
   }
   R.x = nx; R.y = ny; moved();
   const light = R.map.lights.find(l => l.x === nx && l.y === ny);
@@ -483,16 +478,17 @@ function afterMove(){
 function turn(by){
   R.dir = (R.dir + by + 4) % 4; R.ang += by * 90; placeCar(); beep('turn');
 }
-// Facing a door, ↑ goes into the place. Only a place on the list lets you in.
+// Facing a building from the street next to it, ↑ goes in (any side). Only a place on the list completes a job.
 function enter(i){
   const m = R.map, g = R.goals.find((g, k) => g.p === i && isOpen(g, k));
+  R.inside = i; R.inDir = R.dir; moved();
   if (!g) {
     const mine = R.goals.filter((g, k) => g.p === i && isShown(k));
-    if (G.ms.clues && !R.goals.some(g => g.p === i)) return penalty(PEN.wrong, 'Wrong place');
-    if (mine.length && mine.every(g => g.done)) return toast(m.places[i].name + ' is done ✓');
-    return toast(mine.length ? 'Not yet. Follow the list' : 'Not on your list', true);
+    if (G.ms.clues && !R.goals.some(g => g.p === i)) penalty(PEN.wrong, 'Wrong place');
+    else if (mine.length && mine.every(g => g.done)) toast(m.places[i].name + ' is done ✓');
+    else toast(mine.length ? 'Not yet. Follow the list' : 'Not on your list', true);
+    return afterMove();
   }
-  R.inside = i; moved();
   if (G.ms.quiz) { if (!G.quiz.length) G.quiz = shuffle(QUIZ); const q = G.quiz.pop(); R.code = {g, word: q.a, q: q.q, n: 0, miss: 0}; showCode(); }
   else if (G.level.codes) { R.code = {g, word: m.places[i].code, n: 0, miss: 0}; showCode(); }
   else completeGoal(g);
@@ -500,7 +496,7 @@ function enter(i){
 }
 // Inside, the only way is back out through the door: turn around, then ↑
 function leave(){
-  if (R.dir !== (entry(R.map.places[R.inside]) + 2) % 4) return bump();
+  if (R.dir !== (R.inDir + 2) % 4) return bump();
   R.inside = -1; moved();
   if (R.mon && R.mon.x === R.x && R.mon.y === R.y) caught();
   afterMove();
