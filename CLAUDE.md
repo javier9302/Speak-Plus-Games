@@ -35,10 +35,12 @@ Hub de juegos para profesores de inglés de Speak Plus, una eikaiwa en Japón. L
 ## City Run: reglas implementadas (`city-run/city-run.js`, `city-run/city-run.css`)
 
 - Juego de hablar por parejas o equipos (máximo 4, `MAX_TEAMS`): el conductor no ve la pantalla y usa el teclado; un solo navegador ve el mapa y da instrucciones en inglés.
-- Una tecla = un paso: `↑` avanza una casilla, `←` `→` giran 90° sin moverse, `Espacio` abre la puerta de una parada. Los controles son relativos al vehículo, nunca al mapa.
+- Una tecla = un paso: `↑` avanza una casilla, `←` `→` giran 90° sin moverse. Los controles son relativos al vehículo, nunca al mapa.
+- Entrar en un sitio: en la casilla de la puerta, girar hasta mirar al edificio (`entry(p)`) y pulsar `↑`; el coche entra (`R.inside`) y ahí se completa la parada (o sale la palabra/pregunta). Para salir, dar la vuelta y `↑`. Solo deja entrar un sitio de la lista; en Mystery, entrar en uno equivocado +3. Entrar y salir cuentan como pasos (y gasolina).
 - Ciudad de 13×10 casillas generada al azar (`makeCity`): calles cada 3 casillas, 12 edificios de 2×2, `CLOSED` calles cortadas. Todos los equipos juegan la misma ciudad en espejo (`flip`) para que nadie copie la ruta.
 - Objetivo: visitar todas las paradas en cualquier orden y luego llegar a B. Gana el menor tiempo total (suma de rondas).
-- Penalizaciones en segundos (`PEN`): choque +3, semáforo en rojo +5, letra equivocada +2, puerta equivocada +3 (Mystery), tren +5, "Not English" +5 (botón del profesor). Sin vidas ni eliminación.
+- Penalizaciones en segundos (`PEN`): choque +3, semáforo en rojo +5, letra equivocada +2, puerta equivocada +3 (Mystery), tren +5, monstruo +5, "Not English" +5 (botón del profesor). Sin vidas ni eliminación.
+- Monstruo (opción `S.monster`, se suma a cualquier misión): sale de `den` (la esquina más lejos de A), pasea por las calles acercándose al coche y lo persigue cuando está a `MONSTER.sight` pasos o menos; velocidad por nivel (`beast`, segundos por paso). Si atrapa al coche: +5 y vuelve a su guarida. No se mueve mientras el coche está dentro de un sitio o deletreando.
 - Niveles (`LEVELS`): Easy (1 parada), Medium (2 paradas + semáforos), Hard (3 paradas + semáforos + palabra a deletrear en cada puerta).
 - Misiones (`MISSIONS`): el nivel marca la dificultad y la misión el tipo de trabajo. El profesor elige una, o "Mix" (una distinta por ronda; Quiz doors solo entra en Hard porque necesita teclado). Todos los equipos juegan la misma misión en cada ronda.
   - Classic: paradas en cualquier orden. Delivery: recoger y entregar en orden (1 paquete en Easy, 2 en el resto). Taxi: 2 pasajeros; el destino aparece al recogerlo y el siguiente pasajero al dejarlo.

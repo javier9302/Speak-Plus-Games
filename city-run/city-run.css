@@ -35,7 +35,6 @@
 .cr-brief{margin:0;font-size:clamp(16px,1.8vw,20px);text-wrap:balance}
 .cr-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .cr-pad .icon-btn{width:auto;height:52px;font-size:20px;font-weight:700;touch-action:manipulation}
-.cr-pad .cr-pad-wide{grid-column:1 / -1;font-size:15px}
 
 /* Map pieces (SVG, 100 units per step) */
 .cr-tile{fill:var(--road);stroke:var(--road-edge);stroke-width:2}
@@ -71,6 +70,15 @@
 .cr-light.warn circle{fill:var(--accent);animation:crblink .35s steps(1) infinite}
 @keyframes crblink{50%{opacity:.15}}
 #cr-car{transition:transform .16s ease-out}
+#cr-mon{transition:transform .35s ease-in-out}
+.cr-mon-body > circle:not([class]){fill:var(--accent);stroke:var(--road);stroke-width:4}
+.cr-mon-horn,.cr-mon-foot{fill:var(--primary)}
+.cr-mon-eye{fill:#fff}
+.cr-mon-pupil{fill:#1F2F5C;transition:transform .2s}
+.cr-mon-mouth{fill:none;stroke:#fff;stroke-width:5;stroke-linecap:round}
+#cr-mon.chase .cr-mon-body{animation:crhop .45s ease-in-out infinite}
+#cr-mon.chase .cr-mon-mouth{d:path("M-12 18q12-12 24 0")}
+@keyframes crhop{50%{transform:translateY(-12px)}}
 .cr-car-body circle{fill:var(--primary);stroke:var(--road);stroke-width:5}
 .cr-car-body path{fill:var(--primary-fg)}
 .cr-car-body.bump{animation:crbump .3s}
@@ -94,4 +102,4 @@
   .cr-box{flex:1 1 150px}
   .cr-pad{flex:1 1 100%}
 }
-@media (prefers-reduced-motion:reduce){#cr-car{transition:none}.cr-car-body.bump{animation-duration:.01s}.cr-light.warn rect,.cr-light.warn circle{animation:none}}
+@media (prefers-reduced-motion:reduce){#cr-car,#cr-mon{transition:none}#cr-mon.chase .cr-mon-body{animation:none}.cr-car-body.bump{animation-duration:.01s}.cr-light.warn rect,.cr-light.warn circle{animation:none}}

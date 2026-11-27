@@ -32,17 +32,18 @@
           <ol class="cr-steps">
             <li>The <b>driver</b> sits with their back to the screen and holds the keyboard.</li>
             <li>The <b>navigator</b> watches the screen and gives directions in English. No pointing.</li>
-            <li>One key press is one step: <kbd>↑</kbd> one step forward, <kbd>←</kbd> <kbd>→</kbd> turn on the spot, <kbd>Space</kbd> stop at a door.</li>
+            <li>One key press is one step: <kbd>↑</kbd> one step forward, <kbd>←</kbd> <kbd>→</kbd> turn on the spot.</li>
+            <li>To go into a place, stop at its door, turn to face it and press <kbd>↑</kbd>. To come out, turn around and press <kbd>↑</kbd> again.</li>
             <li>Finish the mission, then reach <b>B</b>. The fastest total time wins.</li>
           </ol>
         </div>
         <div class="field-group">
           <span class="legend">Time penalties</span>
-          <div class="tags"><span class="tag">Bump into a wall +3 s</span><span class="tag">Red light +5 s</span><span class="tag">Wrong letter +2 s</span><span class="tag">Wrong place +3 s (Mystery)</span><span class="tag">Train +5 s</span><span class="tag">Not English +5 s (you tap it)</span></div>
+          <div class="tags"><span class="tag">Bump into a wall +3 s</span><span class="tag">Red light +5 s</span><span class="tag">Wrong letter +2 s</span><span class="tag">Wrong place +3 s (Mystery)</span><span class="tag">Train +5 s</span><span class="tag">Caught by the monster +5 s</span><span class="tag">Not English +5 s (you tap it)</span></div>
         </div>
         <div class="field-group">
           <span class="legend">Useful language</span>
-          <div class="tags"><span class="tag">Go straight three steps</span><span class="tag">Turn left / right</span><span class="tag">Stop!</span><span class="tag">Wait… go!</span><span class="tag">One more step</span><span class="tag">Turn around</span><span class="tag">Go back</span><span class="tag">Wait for the train</span><span class="tag">It's closed</span></div>
+          <div class="tags"><span class="tag">Go straight three steps</span><span class="tag">Turn left / right</span><span class="tag">Stop!</span><span class="tag">Wait… go!</span><span class="tag">One more step</span><span class="tag">It's on your left / right</span><span class="tag">Go in</span><span class="tag">Turn around</span><span class="tag">Come out</span><span class="tag">Watch out, the monster!</span><span class="tag">Go back</span><span class="tag">Wait for the train</span><span class="tag">It's closed</span></div>
         </div>
         <p class="hint">Every team drives the same city, mirrored, so nobody can copy the route. On a laptop, use a separate keyboard or extend the display so the driver's screen doesn't show the map.</p>
       </div>
@@ -56,6 +57,7 @@
         <fieldset><span class="legend">Mission</span><div class="seg" id="cr-seg-mission"></div><span class="hint" id="cr-mission-note"></span></fieldset>
         <fieldset><span class="legend">Rounds</span><div class="seg" id="cr-seg-rounds"></div><span class="hint">A new city each round. Swap driver and navigator between rounds.</span></fieldset>
         <fieldset><span class="legend">Time limit per run</span><div class="seg" id="cr-seg-limit"></div></fieldset>
+        <fieldset><span class="legend">Monster</span><label class="switch"><input type="checkbox" id="cr-monster"> A monster chases the car</label><span class="hint">It walks the streets and runs after the car when it gets close. Find another way around it. It waits while you are inside a place.</span></fieldset>
         <label class="switch"><input type="checkbox" id="cr-sound"> Sound effects</label>
         <div class="start-row">
           <p class="error" id="cr-setup-error" role="alert" hidden></p>
@@ -100,9 +102,8 @@
         <button class="icon-btn" type="button" data-key="left" aria-label="Turn left">←</button>
         <button class="icon-btn" type="button" data-key="up" aria-label="One step forward">↑</button>
         <button class="icon-btn" type="button" data-key="right" aria-label="Turn right">→</button>
-        <button class="icon-btn cr-pad-wide" type="button" data-key="act">Stop at door</button>
       </div>
-      <span class="keyhint"><kbd>↑</kbd> step · <kbd>←</kbd> <kbd>→</kbd> turn · <kbd>Space</kbd> door · <kbd>Esc</kbd> pause</span>
+      <span class="keyhint"><kbd>↑</kbd> step or go in · <kbd>←</kbd> <kbd>→</kbd> turn · <kbd>Esc</kbd> pause</span>
     </aside>
   </div>
 </section>
